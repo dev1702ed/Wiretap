@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/REPLACE_ME/dcp/spec/envelope.schema.json",
+  "title": "DCP Provenance Envelope",
+  "description": "DRAFT v0.1 — see spec/README.md section 4 for open decisions.",
+  "type": "object",
+  "required": ["dcp_version", "trace_id", "edge_id", "op", "dataset", "job", "ts"],
+  "additionalProperties": false,
+  "properties": {
+    "dcp_version": { "type": "string", "const": "0.1" },
+    "trace_id": {
+      "type": "string",
+      "description": "Constant across every hop of one logical flow."
+    },
+    "edge_id": {
+      "type": "string",
+      "description": "Identifies this specific transfer."
+    },
+    "parent": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Upstream edge_ids that fed this transfer. Empty at flow origin. An array because fan-in is real: INSERT INTO t3 SELECT FROM t1 JOIN t2 has two reads feeding one write."
+    },
+    "op": { "type": "string", "enum": ["read", "write"] },
+    "dataset": {
+      "type": "object",
+      "required": ["namespace", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "description": "e.g. postgres://host:port or kafka://broker:port"
+        },
+        "name": {
+          "type": "string",
+          "description": "e.g. db.schema.table or topic"
+        }
+      }
+    },
+    "job": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "host": { "type": "string" },
+        "pid": { "type": "integer" }
+      }
+    },
+    "ts": { "type": "string", "format": "date-time" },
+    "columns": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Column NAMES only. Not column-to-column mapping — out of v1 scope."
+    }
+  }
+}
