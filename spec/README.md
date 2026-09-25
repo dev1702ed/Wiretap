@@ -57,8 +57,8 @@ node, or the graph fragments.
 | Hop | Channel | Mechanism |
 |---|---|---|
 | Within a process | `contextvars` | Current trace/edge state held per-task |
-| Postgres | SQL comment | `SELECT … /* dcp:{trace_id,parent} */`, sqlcommenter style |
-| Kafka | Record header | `dcp-context` header, KIP-82 |
+| Postgres | SQL comment | sqlcommenter format, trace only: `SELECT … /*dcp_trace='…'*/` |
+| Kafka | Record header | `dcp-context` header (KIP-82), JSON: `{"trace": "…", "parent": ["…"]}` |
 
 **Protocols with no metadata channel:** v1 accepts context loss. The chain breaks, the
 graph degrades to disconnected-but-attested edges. This is a stated limitation, not a bug

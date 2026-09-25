@@ -64,9 +64,26 @@ def test_sqlcomment_does_not_alter_semantics():
     assert plain == commented
 
 
-@pytest.mark.xfail(reason="P2", strict=True)
+# @pytest.mark.xfail(reason="P2", strict=True)
 def test_kafka_header_roundtrip():
-    raise NotImplementedError("P2")
+    from dcp.propagation.kafka_header import extract, inject
+
+    assert extract(inject(None, TRACE, [EDGE_A, EDGE_B])) == (TRACE, [EDGE_A, EDGE_B])
+
+
+def test_kafka_header_preserves_caller_headers():
+    from dcp.propagation.kafka_header import HEADER_KEY, inject
+
+    headers = inject([("app", b"1")], TRACE, [EDGE_A])
+    assert ("app", b"1") in headers
+    assert sum(k == HEADER_KEY for k, _ in headers) == 1
+
+
+def test_kafka_header_rejects_malformed():
+    from dcp.propagation.kafka_header import HEADER_KEY, extract, inject
+
+    assert extract([(HEADER_KEY, b"{not json")]) == (None, [])
+    assert extract(inject(None, TRACE, ["*/ DROP"])) == (TRACE, [])
 
 
 @pytest.mark.xfail(reason="P2", strict=True)

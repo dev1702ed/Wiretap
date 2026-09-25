@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/REPLACE_ME/dcp/spec/envelope.schema.json",
+  "$id": "https://github.com/dev1702ed/Wiretap/spec/envelope.schema.json",
   "title": "DCP Provenance Envelope",
   "description": "DRAFT v0.1 — see spec/README.md section 4 for open decisions.",
   "type": "object",

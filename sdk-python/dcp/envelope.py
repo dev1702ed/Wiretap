@@ -5,6 +5,7 @@ lockstep with it. CI validates emitted events against the schema; if you change
 one, change the other in the same PR.
 """
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -74,3 +75,11 @@ def new_id() -> str:
     """
     import uuid
     return str(uuid.uuid4())
+
+_ID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
+
+
+def is_valid_id(value) -> bool:
+    """IDs are UUID-shaped. Validating shape at every trust boundary (SQL
+    comments, Kafka headers) is what makes inbound context safe to adopt."""
+    return isinstance(value, str) and bool(_ID_RE.match(value))

@@ -44,3 +44,21 @@ def set_inbound(edge_ids: list[str]) -> None:
 def inbound() -> list[str]:
     """Upstream edges from a prior hop, if this process received context. P2."""
     return list(_inbound.get())
+
+# Latest read edge per dataset in this flow. Job-level parenting: data a script
+# read earlier can feed anything it writes later. Keyed by dataset so a script
+# polling one table keeps one entry, not one per poll.
+_reads: ContextVar[dict[str, str] | None] = ContextVar("dcp_reads", default=None)
+
+
+def record_read(dataset_key: str, edge_id: str) -> None:
+    """Remember the latest read of a dataset in this flow."""
+    reads = dict(_reads.get() or {})  # copy: never mutate a value other contexts share
+    reads.pop(dataset_key, None)      # re-insert so order reflects recency
+    reads[dataset_key] = edge_id
+    _reads.set(reads)
+
+
+def prior_reads() -> list[str]:
+    """Edge ids of the latest read of each dataset so far in this flow."""
+    return list((_reads.get() or {}).values())

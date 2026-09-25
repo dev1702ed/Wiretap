@@ -15,7 +15,7 @@ import sqlglot
 from sqlglot import exp
 
 from dcp.config import current_emitter, current_job
-from dcp.context import ensure_trace, inbound
+from dcp.context import ensure_trace, inbound, prior_reads, record_read
 from dcp.envelope import Dataset, DCPEvent, new_id
 
 _log = logging.getLogger("dcp")
@@ -47,7 +47,7 @@ def patch_psycopg() -> None:
 
 def _capture(cursor, query) -> None:
     """Emit one event per dataset touched by this statement."""
-    sql = query.decode() if isinstance(query, bytes) else str(query)
+    sql = _sql_text(cursor, query)
     reads, writes = _classify(sql)
     if not reads and not writes:
         return
@@ -76,10 +76,11 @@ def _capture(cursor, query) -> None:
                 job=job,
             )
         )
+        record_read(f"{namespace}/{table}", edge_id)
 
-    # Writes are fed by the reads in THIS statement (option A). Fan-in is why
-    # parent is a list. With no reads here, fall back to prior-hop context.
-    write_parents = read_edge_ids or upstream
+    # Precise when the statement names its sources; job-level when the data
+    # came through the application; prior-hop context as the last resort.
+    write_parents = read_edge_ids or prior_reads() or upstream
     for table in writes:
         emitter.emit(
             DCPEvent(
@@ -162,3 +163,21 @@ def _namespace(cursor) -> str:
     """postgres://host:port, from the live connection."""
     info = cursor.connection.info
     return f"postgres://{info.host}:{info.port}"
+
+
+def _sql_text(cursor, query) -> str:
+    """Query text from any form psycopg accepts.
+
+    psycopg.sql.Composed (dynamic table names via sql.Identifier) is common in
+    ETL scripts. str() on it gives a repr, not SQL, so those queries were being
+    silently missed — a recall hole in exactly the dark-zone scripts DCP exists
+    to see.
+    """
+    if isinstance(query, bytes):
+        return query.decode()
+    if isinstance(query, str):
+        return query
+    as_string = getattr(query, "as_string", None)
+    if as_string is not None:
+        return as_string(cursor)
+    return str(query)

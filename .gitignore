@@ -18,6 +18,6 @@ benchmarks/results/
 .DS_Store
 .idea/
 .vscode/
-scratch_capture.py
+scratch_*.py
 CLAUDE.md
 

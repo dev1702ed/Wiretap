@@ -4,8 +4,9 @@ sqlcommenter-compatible: the context rides in a trailing comment as sorted,
 URL-encoded key-value pairs — `SELECT 1 /*dcp_parent='...',dcp_trace='...'*/`
 
 Postgres has no metadata slot in its wire protocol, so the context travels
-inside the application payload as a comment the server ignores. Visible in
-pg_stat_activity, readable by any downstream DCP-aware hop.
+inside the application payload as a comment the server ignores. It reaches
+the server (pg_stat_activity, logs, pgaudit), not the next process that reads
+the table: rows carry no per-record metadata. See spec/README.md §3.
 
 The format is deliberately sqlcommenter's, not DCP's own: DCP's whole
 positioning is to ride conventions that already exist rather than invent a
@@ -15,7 +16,8 @@ tolerate.
 
 Keys:
     dcp_trace   the trace_id
-    dcp_parent  upstream edge_ids, comma-joined (UUIDs contain no commas)
+    dcp_parent  upstream edge_ids, comma-joined. Supported by the format, but
+                the Postgres interceptor sends dcp_trace only (spec §3).
 """
 
 import re
