@@ -1,0 +1,37 @@
+{
+  "workload": "dark_zone",
+  "description": "An uninstrumented script reads Postgres and produces to Kafka; a second process consumes and writes a warehouse table. The dark-zone scenario from the concept brief.",
+  "processes": [
+    {
+      "job": "nightly_enrich.py",
+      "steps": [
+        {"sql": "SELECT id, total FROM orders"},
+        {"produce": "enriched_orders", "record": "r1"}
+      ]
+    },
+    {
+      "job": "warehouse_loader.py",
+      "steps": [
+        {"sql": "CREATE TABLE IF NOT EXISTS daily_revenue (id int, total numeric)"},
+        {"consume": "enriched_orders", "record": "r1"},
+        {"sql": "INSERT INTO daily_revenue VALUES (1, 10)"}
+      ]
+    }
+  ],
+  "datasets": {
+    "orders": {"namespace": "postgres://localhost:5432", "name": "dcp.public.orders"},
+    "enriched_orders": {"namespace": "kafka://localhost:9092", "name": "enriched_orders"},
+    "daily_revenue": {"namespace": "postgres://localhost:5432", "name": "dcp.public.daily_revenue"}
+  },
+  "dataset_edges": [
+    {"from": "orders", "to": "enriched_orders", "job": "nightly_enrich.py"},
+    {"from": "enriched_orders", "to": "daily_revenue", "job": "warehouse_loader.py"}
+  ],
+  "run_edges": [
+    {"from_job": "nightly_enrich.py", "to_job": "warehouse_loader.py", "via": "enriched_orders"}
+  ],
+  "provenance": [
+    {"dataset": "enriched_orders", "upstream": ["orders"]},
+    {"dataset": "daily_revenue", "upstream": ["enriched_orders", "orders"]}
+  ]
+}

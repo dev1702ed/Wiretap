@@ -14,9 +14,10 @@ import logging
 import sqlglot
 from sqlglot import exp
 
-from dcp.config import current_emitter, current_job
+from dcp.config import current_emitter, current_job, sql_propagation_enabled
 from dcp.context import ensure_trace, inbound, prior_reads, record_read
 from dcp.envelope import Dataset, DCPEvent, new_id
+from dcp.propagation import sqlcomment
 
 _log = logging.getLogger("dcp")
 
@@ -34,12 +35,13 @@ def patch_psycopg() -> None:
     original_execute = psycopg.Cursor.execute
 
     def execute(self, query, params=None, **kwargs):
-        result = original_execute(self, query, params, **kwargs)
+        
         try:
-          _capture(self, query)
+          sent = _outbound(query)
         except Exception:  # noqa: BLE001 — monitor-only: never break the caller
-          _log.debug("dcp capture failed", exc_info=True)
-        return result
+          _log.debug("dcp comment injection failed", exc_info=True)
+          sent = query
+        result = original_execute(self, sent, params, **kwargs)
 
     psycopg.Cursor.execute = execute
     _patched = True
@@ -181,3 +183,15 @@ def _sql_text(cursor, query) -> str:
     if as_string is not None:
         return as_string(cursor)
     return str(query)
+
+def _outbound(query):
+      """The query actually sent: with a trace comment only when opted in.
+
+      Trace only, never parents. Parents change on every call, so they would make
+      each query's text unique and defeat psycopg's prepared-statement cache. And
+      their URL-encoding (e.g. %2C) would put a bare % into the text, which
+      psycopg treats as a placeholder in parameterised queries.
+      """
+      if not sql_propagation_enabled() or not isinstance(query, str):
+          return query
+      return sqlcomment.inject(query, ensure_trace())

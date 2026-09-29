@@ -25,9 +25,11 @@ class JobIdentity:
 
 _job: JobIdentity | None = None
 _emitter = None
+_propagate_sql = False
 
-
-def init(emit: str = "console", job_name: str | None = None) -> None:
+def init(
+      emit: str = "console", job_name: str | None = None, propagate_sql: bool = False
+  ) -> None:
     """Initialise DCP for this process.
 
     Args:
@@ -35,7 +37,8 @@ def init(emit: str = "console", job_name: str | None = None) -> None:
               or "marquez://host:port". Only "console" is implemented so far.
         job_name: override the inferred script name.
     """
-    global _job, _emitter
+    global _job, _emitter, _propagate_sql
+    _propagate_sql = propagate_sql
     _job = JobIdentity(
         name=job_name or os.path.basename(sys.argv[0]) or "<interactive>",
         host=socket.gethostname(),
@@ -64,3 +67,6 @@ def current_job() -> JobIdentity:
     if _job is None:
         raise RuntimeError("dcp.init() must be called before instrumenting")
     return _job
+def sql_propagation_enabled() -> bool:
+    """Whether outbound SQL carries a trace comment. Off unless init() opts in."""
+    return _propagate_sql

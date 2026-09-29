@@ -86,7 +86,7 @@ def test_kafka_header_rejects_malformed():
     assert extract(inject(None, TRACE, ["*/ DROP"])) == (TRACE, [])
 
 
-@pytest.mark.xfail(reason="P2", strict=True)
+# @pytest.mark.xfail(reason="P2", strict=True)
 def test_context_survives_threadpool_dispatch():
     """Known contextvars hazard — work dispatched to a ThreadPoolExecutor does
     not inherit context automatically. Documented failure mode in the OTel

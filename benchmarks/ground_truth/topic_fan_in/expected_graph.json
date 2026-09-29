@@ -1,0 +1,45 @@
+{
+  "workload": "topic_fan_in",
+  "description": "Two producers write one topic. Producer B runs before the consumer, so its record is on the topic when the consumer runs, and time ordering cannot rule it out. The consumer processes only producer A's record (the earliest offset) and exits. Dataset-level lineage says daily_revenue derives from both orders and refunds; only per-record context can say it came from orders alone.",
+  "processes": [
+    {
+      "job": "enrich_orders.py",
+      "steps": [
+        {"sql": "SELECT id, total FROM orders"},
+        {"produce": "enriched_orders", "record": "from_orders"}
+      ]
+    },
+    {
+      "job": "enrich_refunds.py",
+      "steps": [
+        {"sql": "SELECT id, amount FROM refunds"},
+        {"produce": "enriched_orders", "record": "from_refunds"}
+      ]
+    },
+    {
+      "job": "revenue_loader.py",
+      "steps": [
+        {"consume": "enriched_orders", "record": "from_orders"},
+        {"sql": "INSERT INTO daily_revenue VALUES (1, 10)"}
+      ]
+    }
+  ],
+  "datasets": {
+    "orders": {"namespace": "postgres://localhost:5432", "name": "dcp.public.orders"},
+    "refunds": {"namespace": "postgres://localhost:5432", "name": "dcp.public.refunds"},
+    "enriched_orders": {"namespace": "kafka://localhost:9092", "name": "enriched_orders"},
+    "daily_revenue": {"namespace": "postgres://localhost:5432", "name": "dcp.public.daily_revenue"}
+  },
+  "dataset_edges": [
+    {"from": "orders", "to": "enriched_orders", "job": "enrich_orders.py"},
+    {"from": "refunds", "to": "enriched_orders", "job": "enrich_refunds.py"},
+    {"from": "enriched_orders", "to": "daily_revenue", "job": "revenue_loader.py"}
+  ],
+  "run_edges": [
+    {"from_job": "enrich_orders.py", "to_job": "revenue_loader.py", "via": "enriched_orders"}
+  ],
+  "provenance": [
+    {"dataset": "enriched_orders", "upstream": ["orders", "refunds"]},
+    {"dataset": "daily_revenue", "upstream": ["enriched_orders", "orders"]}
+  ]
+}
