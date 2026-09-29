@@ -20,7 +20,7 @@ measure a gap.
 | Field | Meaning |
 |---|---|
 | `processes` | The workload itself: ordered steps per process (`sql`, `produce`, `consume`). Tests replay it through DCP's capture code with fakes; P5 replays it live |
-| `datasets` | Alias → `{namespace, name}`. Names follow the spec (`db.schema.table`), **not** the current implementation |
+| `datasets` | Alias → `{namespace, name}`. Names follow the spec (`db.schema.table`) |
 | `dataset_edges` | `{from, to, job}` — dataset-level lineage, the unit comparable to OpenLineage |
 | `run_edges` | `{from_job, to_job, via}` — which producer run fed which consumer run |
 | `provenance` | `{dataset, upstream}` — every dataset the given dataset actually derives from |
@@ -54,8 +54,18 @@ Producer B runs *before* the consumer, so its record is already on the topic
 when the consumer runs. Time ordering therefore cannot rule B out; only the
 record's own context can.
 
-## Tests
+## Replay, tests, and score
 
-`sdk-python/tests/test_ground_truth.py` replays each workload and compares the
-P3 graph to the key. It is `xfail(strict=True)` until P3's builder exists, and
-it also requires dataset names to include the database, as the spec says.
+`harness.py` is the one replay implementation. It loads an answer key, runs
+each process's steps through DCP's real capture code with faked database and
+broker I/O (each process in a fresh `contextvars.Context`, so only record
+headers cross between them), and returns the events.
+
+- `sdk-python/tests/test_ground_truth.py` builds the P3 graph from those events
+  and requires it to match the key exactly at every level. It is skipped only
+  when the backend isn't installed; CI installs it.
+- `python benchmarks/ground_truth/score.py` prints precision and recall for
+  every level, and a dataset-level baseline row for every provenance entry.
+  Results: `docs/results/P3.md`.
+
+These are replays, not live runs. Live replay against Postgres and Kafka is P5.
