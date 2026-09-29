@@ -5,13 +5,9 @@ DCP's real capture code (fake cursor and messages, so no infrastructure), the
 events are handed to the P3 graph builder, and every level of the graph is
 compared to the answer key.
 
-The comparison is xfail until P3: the builder (backend app.graph.build) is an
-ImportError in CI, where the backend isn't installed, and NotImplementedError
-locally. Any other failure, such as an AssertionError once the builder exists,
-is a real failure and is reported as one.
-
-The answer keys follow the spec (db.schema.table), not the current code, so the
-comparison also stays red until dataset names include the database.
+The builder lives in the backend (app.graph.build). The comparison is skipped
+when the backend isn't installed, so an SDK-only run doesn't hard-fail; CI
+installs both packages, so it runs there.
 """
 
 import contextvars
@@ -123,18 +119,12 @@ def test_topic_fan_in_discriminates():
     assert set(truth["upstream"]) < reachable
 
 
-@pytest.mark.xfail(
-    reason="P3: graph builder not implemented",
-    raises=(ImportError, NotImplementedError),
-    strict=True,
-)
 @pytest.mark.parametrize("workload", WORKLOADS)
 def test_graph_matches_answer_key(workload, events, monkeypatch):
+    build = pytest.importorskip("app.graph").build
     key = load(workload)
     ds = datasets(key)
     replay(key, monkeypatch)
-
-    from app.graph import build
 
     g = build(events)
     assert g.datasets() == set(ds.values())
