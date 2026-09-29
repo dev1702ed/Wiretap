@@ -35,13 +35,17 @@ def patch_psycopg() -> None:
     original_execute = psycopg.Cursor.execute
 
     def execute(self, query, params=None, **kwargs):
-        
         try:
-          sent = _outbound(query)
+            sent = _outbound(query)
         except Exception:  # noqa: BLE001 — monitor-only: never break the caller
-          _log.debug("dcp comment injection failed", exc_info=True)
-          sent = query
+            _log.debug("dcp comment injection failed", exc_info=True)
+            sent = query
         result = original_execute(self, sent, params, **kwargs)
+        try:
+            _capture(self, query)
+        except Exception:  # noqa: BLE001 — monitor-only: never break the caller
+            _log.debug("dcp capture failed", exc_info=True)
+        return result
 
     psycopg.Cursor.execute = execute
     _patched = True
@@ -59,7 +63,6 @@ def _capture(cursor, query) -> None:
     emitter = current_emitter()
     job = current_job()
 
-    
     upstream = inbound()
 
     # Reads first. Each is parented only to context from a prior hop, never to
@@ -109,16 +112,14 @@ def _classify(query: str) -> tuple[list[str], list[str]]:
         _log.debug("dcp could not parse query", exc_info=True)
         return [], []
     if statement is None:
-      return [], []
+        return [], []
 
     # Only statements that actually move data produce edges. A plain
     # CREATE/DROP/ALTER moves nothing; CTAS (CREATE ... AS SELECT) does.
     if isinstance(statement, exp.Create):
         if statement.expression is None:
             return [], []
-    elif not isinstance(
-        statement, (exp.Select, exp.Union, exp.Insert, exp.Update, exp.Delete)
-    ):
+    elif not isinstance(statement, (exp.Select, exp.Union, exp.Insert, exp.Update, exp.Delete)):
         return [], []
 
     writes: list[str] = []
@@ -136,9 +137,7 @@ def _classify(query: str) -> tuple[list[str], list[str]]:
                 write_nodes.add(id(target))
 
     reads = [
-        _qualify(table)
-        for table in statement.find_all(exp.Table)
-        if id(table) not in write_nodes
+        _qualify(table) for table in statement.find_all(exp.Table) if id(table) not in write_nodes
     ]
 
     return _dedupe(reads), _dedupe(writes)
@@ -184,14 +183,15 @@ def _sql_text(cursor, query) -> str:
         return as_string(cursor)
     return str(query)
 
-def _outbound(query):
-      """The query actually sent: with a trace comment only when opted in.
 
-      Trace only, never parents. Parents change on every call, so they would make
-      each query's text unique and defeat psycopg's prepared-statement cache. And
-      their URL-encoding (e.g. %2C) would put a bare % into the text, which
-      psycopg treats as a placeholder in parameterised queries.
-      """
-      if not sql_propagation_enabled() or not isinstance(query, str):
-          return query
-      return sqlcomment.inject(query, ensure_trace())
+def _outbound(query):
+    """The query actually sent: with a trace comment only when opted in.
+
+    Trace only, never parents. Parents change on every call, so they would make
+    each query's text unique and defeat psycopg's prepared-statement cache. And
+    their URL-encoding (e.g. %2C) would put a bare % into the text, which
+    psycopg treats as a placeholder in parameterised queries.
+    """
+    if not sql_propagation_enabled() or not isinstance(query, str):
+        return query
+    return sqlcomment.inject(query, ensure_trace())

@@ -27,9 +27,8 @@ _job: JobIdentity | None = None
 _emitter = None
 _propagate_sql = False
 
-def init(
-      emit: str = "console", job_name: str | None = None, propagate_sql: bool = False
-  ) -> None:
+
+def init(emit: str = "console", job_name: str | None = None, propagate_sql: bool = False) -> None:
     """Initialise DCP for this process.
 
     Args:
@@ -46,6 +45,7 @@ def init(
     )
     if emit == "console":
         from dcp.emitters.console import ConsoleEmitter
+
         _emitter = ConsoleEmitter()
     else:
         raise NotImplementedError(f"P3: emitter sink '{emit}' not yet supported")
@@ -67,6 +67,8 @@ def current_job() -> JobIdentity:
     if _job is None:
         raise RuntimeError("dcp.init() must be called before instrumenting")
     return _job
+
+
 def sql_propagation_enabled() -> bool:
     """Whether outbound SQL carries a trace comment. Off unless init() opts in."""
     return _propagate_sql

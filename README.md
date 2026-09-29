@@ -50,15 +50,14 @@ Why Python first: the dark zones application-layer tools miss — ad-hoc scripts
 glue jobs — are overwhelmingly Python. That is precisely the gap being measured.
 
 ## Quickstart
-
-> Not yet functional — scaffold only. See ROADMAP.md for phase status.
-
 ```python
 import dcp
 dcp.init(emit="console")
 dcp.patch_psycopg()
-# every query is now captured
+dcp.patch_kafka()        # before `from confluent_kafka import Producer`
+dcp.patch_threadpool()   # optional: keep the trace inside ThreadPoolExecutor workers
 ```
+
 
 ## Layout
 

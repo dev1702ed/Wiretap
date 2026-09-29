@@ -10,6 +10,7 @@ Public surface is deliberately tiny. The adoption bar is two lines:
 from dcp.config import init, shutdown
 from dcp.interceptors.kafka import patch_kafka
 from dcp.interceptors.postgres import patch_psycopg
+from dcp.interceptors.threads import patch_threadpool
 
-__all__ = ["init", "patch_kafka", "patch_psycopg", "shutdown"]
+__all__ = ["init", "patch_kafka", "patch_psycopg", "patch_threadpool", "shutdown"]
 __version__ = "0.1.0.dev0"

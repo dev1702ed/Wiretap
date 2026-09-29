@@ -74,7 +74,9 @@ def new_id() -> str:
     ID is opaque to every downstream consumer.
     """
     import uuid
+
     return str(uuid.uuid4())
+
 
 _ID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
 

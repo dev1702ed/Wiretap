@@ -17,3 +17,15 @@ def downstream(dataset: str) -> list[str]:
 
 def upstream(dataset: str) -> list[str]:
     raise NotImplementedError("P3")
+
+def build(events: list[dict]):
+    """Build a lineage graph from DCP events. P3.
+
+    Contract, fixed in advance by sdk-python/tests/test_ground_truth.py:
+        g.datasets()      -> set[(namespace, name)]
+        g.dataset_edges() -> set[((ns, name), (ns, name), job_name)]
+        g.run_edges()     -> set[(from_job, to_job, (ns, name))]
+        g.upstream(ds)    -> set[(ns, name)]: run-level provenance, every
+                             dataset `ds` derives from, following parent edges
+    """
+    raise NotImplementedError("P3")
