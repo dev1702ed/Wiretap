@@ -197,6 +197,13 @@ def test_rejected_batch_is_not_retried(backend, emitters):
     assert emitter.dropped == 1
 
 
+@pytest.mark.parametrize("kwargs", [{"queue_size": 0}, {"batch_size": 0}])
+def test_queue_is_always_bounded(kwargs):
+    """queue.Queue(maxsize=0) would be unbounded."""
+    with pytest.raises(ValueError):
+        HTTPEmitter("http://127.0.0.1:1", **kwargs)
+
+
 def test_emit_after_close_is_counted(backend, emitters):
     emitter = emitters(backend.url)
     emitter.close(timeout=2)

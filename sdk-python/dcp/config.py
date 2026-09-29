@@ -76,7 +76,9 @@ def _make_emitter(emit: str):
     if emit.startswith("http://"):
         from dcp.emitters.http import HTTPEmitter
 
-        if not urlsplit(emit).hostname:
+        parts = urlsplit(emit)
+        # Reading .port raises ValueError for a malformed port, as promised above.
+        if not parts.hostname or parts.port == 0:
             raise ValueError(f"http:// sink needs a host, e.g. http://localhost:8000: {emit!r}")
         return HTTPEmitter(emit)
     if emit.startswith("marquez://"):

@@ -73,7 +73,15 @@ def test_marquez_is_p4(registered):
 
 @pytest.mark.parametrize(
     "spec",
-    ["", "consol", "kafka://localhost:9092", "https://localhost:8000", "file://", "http://"],
+    [
+        "",
+        "consol",
+        "kafka://localhost:9092",
+        "https://localhost:8000",
+        "file://",
+        "http://",
+        "http://localhost:notaport",
+    ],
 )
 def test_anything_else_is_rejected(registered, spec):
     with pytest.raises(ValueError):

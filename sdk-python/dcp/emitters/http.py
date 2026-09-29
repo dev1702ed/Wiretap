@@ -49,6 +49,9 @@ class HTTPEmitter(Emitter):
         backoff: float = 0.5,
         timeout: float = 5.0,
     ):
+        if queue_size < 1 or batch_size < 1:
+            # queue.Queue(maxsize=0) is unbounded: exactly what this must never be.
+            raise ValueError("queue_size and batch_size must be at least 1")
         self.endpoint = endpoint.rstrip("/")
         self.url = f"{self.endpoint}/events"
         self.queue_size = queue_size
