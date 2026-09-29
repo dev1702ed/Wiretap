@@ -20,7 +20,10 @@ Known gaps, stated plainly:
     Attestation here means "the application sent it", not "the broker stored it".
   - SerializingProducer / DeserializingConsumer bind the original C types at
     import time and are not covered.
-  - A batch from consume() adopts the trace of its last record.
+  - A batch from consume() adopts the trace of its last record, and only that
+    record's edge parents later writes: each record's read is recorded under
+    the same topic key, so the last one replaces the others in job-level
+    parenting.
 """
 
 import logging

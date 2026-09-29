@@ -18,6 +18,7 @@ def downstream(dataset: str) -> list[str]:
 def upstream(dataset: str) -> list[str]:
     raise NotImplementedError("P3")
 
+
 def build(events: list[dict]):
     """Build a lineage graph from DCP events. P3.
 

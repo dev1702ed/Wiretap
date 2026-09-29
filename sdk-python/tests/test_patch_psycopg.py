@@ -18,6 +18,7 @@ from dcp.propagation.sqlcomment import extract
 class _Info:
     host = "localhost"
     port = 5432
+    dbname = "dcp"
 
 
 class _Conn:
@@ -49,7 +50,7 @@ def test_returns_what_psycopg_returns(cursor_cls, events):
 def test_captures_the_query(cursor_cls, events):
     cursor_cls().execute("SELECT id FROM orders")
     (read,) = events
-    assert read["op"] == "read" and read["dataset"]["name"] == "public.orders"
+    assert read["op"] == "read" and read["dataset"]["name"] == "dcp.public.orders"
 
 
 def test_capture_failure_never_reaches_the_caller(cursor_cls, events, monkeypatch):

@@ -11,6 +11,7 @@ from dcp.interceptors.postgres import _capture
 class _Info:
     host = "localhost"
     port = 5432
+    dbname = "dcp"
 
 
 class _Conn:
@@ -43,8 +44,8 @@ def test_join_reads_do_not_chain(events):
 def test_insert_select_write_parented_to_its_own_read_only(events):
     run("SELECT id FROM customers")  # earlier, unrelated read
     run("INSERT INTO summary SELECT id FROM orders")
-    (orders_read,) = by_op(events, "read", "public.orders")
-    (summary_write,) = by_op(events, "write", "public.summary")
+    (orders_read,) = by_op(events, "read", "dcp.public.orders")
+    (summary_write,) = by_op(events, "write", "dcp.public.summary")
     assert summary_write["parent"] == [orders_read["edge_id"]]
 
 
@@ -53,7 +54,7 @@ def test_insert_values_is_job_level(events):
     run("SELECT id FROM customers")
     run("INSERT INTO summary VALUES (1, 10)")
     reads = {e["dataset"]["name"]: e["edge_id"] for e in events if e["op"] == "read"}
-    (write,) = by_op(events, "write", "public.summary")
+    (write,) = by_op(events, "write", "dcp.public.summary")
     assert sorted(write["parent"]) == sorted(reads.values())
 
 
@@ -62,8 +63,8 @@ def test_job_level_keeps_only_latest_read_per_dataset(events):
     run("SELECT id FROM orders")
     run("SELECT id FROM orders")
     run("INSERT INTO summary VALUES (1, 10)")
-    orders_reads = by_op(events, "read", "public.orders")
-    (write,) = by_op(events, "write", "public.summary")
+    orders_reads = by_op(events, "read", "dcp.public.orders")
+    (write,) = by_op(events, "write", "dcp.public.summary")
     assert write["parent"] == [orders_reads[-1]["edge_id"]]
 
 
@@ -71,3 +72,17 @@ def test_one_flow_shares_one_trace(events):
     run("SELECT id FROM orders")
     run("INSERT INTO summary VALUES (1, 10)")
     assert len({e["trace_id"] for e in events}) == 1
+
+
+def test_names_include_the_database(events):
+    """Spec: Postgres datasets are db.schema.table, the db from the connection."""
+    run("SELECT id FROM orders JOIN sales.refunds USING (id)")
+    assert [e["dataset"]["name"] for e in events] == ["dcp.public.orders", "dcp.sales.refunds"]
+
+
+def test_named_catalog_is_not_prefixed_twice(events):
+    """A query that names the database already has three parts, and one table
+    named two ways is still one dataset."""
+    run("SELECT id FROM other.public.orders")
+    run("SELECT o.id FROM orders o JOIN dcp.public.orders p USING (id)")
+    assert [e["dataset"]["name"] for e in events] == ["other.public.orders", "dcp.public.orders"]
