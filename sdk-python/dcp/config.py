@@ -1,13 +1,15 @@
 """Process-level setup. P1.
 
-Captures job identity ONCE at init (spec/README.md open decision #4) and wires
+Captures job identity ONCE at init (spec/README.md decision #4) and wires
 the emitter. Nothing here touches the hot path.
 """
 
+import atexit
 import os
 import socket
 import sys
 from dataclasses import dataclass
+from urllib.parse import urlsplit
 
 
 @dataclass(frozen=True)
@@ -32,23 +34,66 @@ def init(emit: str = "console", job_name: str | None = None, propagate_sql: bool
     """Initialise DCP for this process.
 
     Args:
-        emit: sink spec — "console", "file://path", "http://host:port",
-              or "marquez://host:port". Only "console" is implemented so far.
+        emit: sink spec — "console"; "file://path" (JSONL, the event of record);
+              "http://host:port" (the DCP backend). "marquez://host:port" is P4
+              and raises NotImplementedError; anything else raises ValueError.
         job_name: override the inferred script name.
+        propagate_sql: append a trace comment to outbound SQL (spec §3). Off by
+              default: it is DCP's one modification of traffic.
+
+    The file and HTTP sinks buffer, so shutdown() is registered with atexit: a
+    script that never calls dcp.shutdown() still delivers its events.
     """
     global _job, _emitter, _propagate_sql
+    emitter = _make_emitter(emit)  # first, so a bad spec changes nothing
+    previous = _emitter
+    _emitter = emitter
     _propagate_sql = propagate_sql
     _job = JobIdentity(
         name=job_name or os.path.basename(sys.argv[0]) or "<interactive>",
         host=socket.gethostname(),
         pid=os.getpid(),
     )
+    close = getattr(previous, "close", None)
+    if close is not None:
+        close()  # re-init: deliver what the old sink holds, release its thread/file
+    if emit != "console":
+        _register_shutdown()
+
+
+def _make_emitter(emit: str):
     if emit == "console":
         from dcp.emitters.console import ConsoleEmitter
 
-        _emitter = ConsoleEmitter()
-    else:
-        raise NotImplementedError(f"P3: emitter sink '{emit}' not yet supported")
+        return ConsoleEmitter()
+    if emit.startswith("file://"):
+        from dcp.emitters.file import FileEmitter
+
+        path = emit.removeprefix("file://")
+        if not path:
+            raise ValueError("file:// sink needs a path, e.g. file://events.jsonl")
+        return FileEmitter(path)
+    if emit.startswith("http://"):
+        from dcp.emitters.http import HTTPEmitter
+
+        if not urlsplit(emit).hostname:
+            raise ValueError(f"http:// sink needs a host, e.g. http://localhost:8000: {emit!r}")
+        return HTTPEmitter(emit)
+    if emit.startswith("marquez://"):
+        raise NotImplementedError("P4")
+    raise ValueError(
+        f"unknown emitter sink {emit!r}: expected console, file://path or http://host:port"
+    )
+
+
+_shutdown_registered = False
+
+
+def _register_shutdown() -> None:
+    global _shutdown_registered
+    if not _shutdown_registered:
+        atexit.register(shutdown)
+        _shutdown_registered = True
 
 
 def current_emitter():
