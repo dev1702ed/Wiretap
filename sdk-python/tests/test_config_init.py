@@ -66,8 +66,8 @@ def test_reinit_closes_the_previous_sink(registered, tmp_path):
     assert first._file.closed
 
 
-def test_marquez_is_p4(registered):
-    with pytest.raises(NotImplementedError, match="P4"):
+def test_marquez_points_at_the_batch_bridge(registered):
+    with pytest.raises(NotImplementedError, match=r"file://.*python -m dcp_openlineage"):
         config.init("marquez://localhost:5000")
 
 

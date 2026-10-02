@@ -35,8 +35,9 @@ def init(emit: str = "console", job_name: str | None = None, propagate_sql: bool
 
     Args:
         emit: sink spec — "console"; "file://path" (JSONL, the event of record);
-              "http://host:port" (the DCP backend). "marquez://host:port" is P4
-              and raises NotImplementedError; anything else raises ValueError.
+              "http://host:port" (the DCP backend). "marquez://host:port" raises
+              NotImplementedError pointing at the batch OpenLineage bridge
+              (bridges/openlineage); anything else raises ValueError.
         job_name: override the inferred script name.
         propagate_sql: append a trace comment to outbound SQL (spec §3). Off by
               default: it is DCP's one modification of traffic.
@@ -82,7 +83,11 @@ def _make_emitter(emit: str):
             raise ValueError(f"http:// sink needs a host, e.g. http://localhost:8000: {emit!r}")
         return HTTPEmitter(emit)
     if emit.startswith("marquez://"):
-        raise NotImplementedError("P4")
+        raise NotImplementedError(
+            "there is no live marquez:// sink. Emit with file://dcp_events.jsonl, then run "
+            "the batch bridge: python -m dcp_openlineage --events dcp_events.jsonl "
+            "--post http://localhost:5000 (see bridges/openlineage)"
+        )
     raise ValueError(
         f"unknown emitter sink {emit!r}: expected console, file://path or http://host:port"
     )
