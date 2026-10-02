@@ -6,7 +6,9 @@
    `spec/envelope.schema.json` in the same PR. CI fails otherwise.
 2. **No claim without a number.** Performance or coverage claims in docs must trace to a
    reproducible benchmark in `/benchmarks`.
-3. **Monitor-only.** v1 does not block, drop, or modify traffic. PRs adding inline
+3. **Monitor-only.** v1 never blocks or drops traffic and never alters query semantics.
+   Its one modification, a trace comment on outbound SQL, is opt-in via
+   `dcp.init(propagate_sql=True)` and tested not to change results. PRs adding inline
    enforcement will be declined for v1 scope.
 
 ## Good first issues

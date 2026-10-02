@@ -3,95 +3,47 @@
 Each benchmarks/ground_truth/<workload>/expected_graph.json is replayed through
 DCP's real capture code (fake cursor and messages, so no infrastructure), the
 events are handed to the P3 graph builder, and every level of the graph is
-compared to the answer key.
+compared to the answer key. The replay is benchmarks/ground_truth/harness.py,
+the same one score.py uses.
 
-The comparison is xfail until P3: the builder (backend app.graph.build) is an
-ImportError in CI, where the backend isn't installed, and NotImplementedError
-locally. Any other failure, such as an AssertionError once the builder exists,
-is a real failure and is reported as one.
-
-The answer keys follow the spec (db.schema.table), not the current code, so the
-comparison also stays red until dataset names include the database.
+The builder lives in the backend (app.graph.build). The comparison is skipped
+when the backend isn't installed, so an SDK-only run doesn't hard-fail; CI
+installs both packages, so it runs there.
 """
 
-import contextvars
+import importlib.util
 import json
 import pathlib
+import sys
 from collections import deque
 
+import jsonschema
 import pytest
 
 from dcp import config
-from dcp.interceptors.kafka import _on_consume, _on_produce
-from dcp.interceptors.postgres import _capture
 
-GROUND_TRUTH = pathlib.Path(__file__).parents[2] / "benchmarks" / "ground_truth"
-WORKLOADS = sorted(p.parent.name for p in GROUND_TRUTH.glob("*/expected_graph.json"))
-KAFKA_NS = "kafka://localhost:9092"
+ROOT = pathlib.Path(__file__).parents[2]
+SCHEMA = json.loads((ROOT / "spec" / "envelope.schema.json").read_text())
 
 
-class _Info:
-    host = "localhost"
-    port = 5432
-    dbname = "dcp"
+def _load_harness():
+    spec = importlib.util.spec_from_file_location(
+        "ground_truth_harness", ROOT / "benchmarks" / "ground_truth" / "harness.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
-class _Conn:
-    info = _Info()
-
-
-class FakeCursor:
-    connection = _Conn()
-
-
-class FakeMsg:
-    def __init__(self, topic, headers):
-        self._topic, self._headers = topic, headers
-
-    def error(self):
-        return None
-
-    def headers(self):
-        return self._headers
-
-    def topic(self):
-        return self._topic
-
-
-def load(workload: str) -> dict:
-    return json.loads((GROUND_TRUTH / workload / "expected_graph.json").read_text())
-
-
-def datasets(key: dict) -> dict:
-    return {alias: (d["namespace"], d["name"]) for alias, d in key["datasets"].items()}
-
-
-def replay(key: dict, monkeypatch) -> None:
-    """Run each process's steps through the real capture code, in order.
-
-    Each process gets a fresh contextvars.Context, standing in for a separate
-    OS process: the only thing that crosses between them is a record header.
-    """
-    records: dict = {}
-
-    def run(steps):
-        for step in steps:
-            if "sql" in step:
-                _capture(FakeCursor(), step["sql"])
-            elif "produce" in step:
-                records[step["record"]] = _on_produce(KAFKA_NS, step["produce"], None)
-            elif "consume" in step:
-                _on_consume(KAFKA_NS, FakeMsg(step["consume"], records[step["record"]]))
-
-    for process in key["processes"]:
-        monkeypatch.setattr(config, "_job", config.JobIdentity(process["job"], "bench", 1))
-        contextvars.Context().run(run, process["steps"])
+harness = _load_harness()
+WORKLOADS = harness.workloads()
 
 
 @pytest.mark.parametrize("workload", WORKLOADS)
 def test_answer_key_is_well_formed(workload):
     """Every alias the key references is defined. Checks the key, not DCP."""
-    key = load(workload)
+    key = harness.load(workload)
     aliases = set(key["datasets"])
     jobs = {p["job"] for p in key["processes"]}
     for e in key["dataset_edges"]:
@@ -109,7 +61,7 @@ def test_topic_fan_in_discriminates():
     daily_revenue's provenance. If it didn't, this workload couldn't show what
     propagation adds, and would be useless as a benchmark.
     """
-    key = load("topic_fan_in")
+    key = harness.load("topic_fan_in")
     parents: dict = {}
     for e in key["dataset_edges"]:
         parents.setdefault(e["to"], set()).add(e["from"])
@@ -123,18 +75,23 @@ def test_topic_fan_in_discriminates():
     assert set(truth["upstream"]) < reachable
 
 
-@pytest.mark.xfail(
-    reason="P3: graph builder not implemented",
-    raises=(ImportError, NotImplementedError),
-    strict=True,
-)
 @pytest.mark.parametrize("workload", WORKLOADS)
-def test_graph_matches_answer_key(workload, events, monkeypatch):
-    key = load(workload)
-    ds = datasets(key)
-    replay(key, monkeypatch)
+def test_replay_leaves_dcp_config_untouched(workload, events):
+    """The harness swaps in its own emitter and job, and puts ours back."""
+    before = config._emitter, config._job
+    assert harness.replay(harness.load(workload))
+    assert (config._emitter, config._job) == before
+    assert events == []
 
-    from app.graph import build
+
+@pytest.mark.parametrize("workload", WORKLOADS)
+def test_graph_matches_answer_key(workload):
+    build = pytest.importorskip("app.graph").build
+    key = harness.load(workload)
+    ds = harness.datasets(key)
+    events = harness.replay(key)
+    for event in events:
+        jsonschema.validate(event, SCHEMA)
 
     g = build(events)
     assert g.datasets() == set(ds.values())

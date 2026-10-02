@@ -16,11 +16,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install SDK
-        run: pip install -e "./sdk-python[dev]"
+      - name: Install SDK and backend
+        run: pip install -e "./sdk-python[dev]" -e "./backend[dev]"
       - name: Lint
         run: ruff check sdk-python backend
+      - name: Format
+        run: ruff format --check sdk-python backend
       - name: Validate the spec schema
         run: python -c "import json,pathlib; json.loads(pathlib.Path('spec/envelope.schema.json').read_text()); print('schema ok')"
-      - name: Tests
+      - name: SDK tests
         run: pytest sdk-python/tests -v
+      - name: Backend tests
+        run: pytest backend/tests -v

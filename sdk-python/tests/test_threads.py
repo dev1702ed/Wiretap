@@ -12,6 +12,7 @@ from dcp.interceptors.threads import patch_threadpool
 class _Info:
     host = "localhost"
     port = 5432
+    dbname = "dcp"
 
 
 class _Conn:

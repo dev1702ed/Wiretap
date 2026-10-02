@@ -28,9 +28,9 @@ truth rather than two:
 
 | Case | Workload | State |
 |---|---|---|
-| 1 | `ground_truth/dark_zone` | xfail until P3 |
+| 1 | `ground_truth/dark_zone` | Passes on replay with faked I/O (P3); live run is P5 |
 | 2 | needs a notebook workload | P5 |
-| 3 | `ground_truth/topic_fan_in` | xfail until P3 |
+| 3 | `ground_truth/topic_fan_in` | Passes on replay with faked I/O (P3); live run is P5 |
 | 4 | none — not claimed | — |
 
 The baseline side needs no test: with no integration for the stack, the
@@ -55,7 +55,7 @@ them.
 | `psql` / CLI `COPY` | C binary; an in-process Python interceptor cannot see it (a sidecar or eBPF could) |
 | Non-Python services | Same reason |
 | `cursor.executemany()`, `cursor.copy()` | Not intercepted in v1 |
-| Write → later read through a Postgres table | Rows carry no per-record metadata, so this link is inferred by dataset identity (P3), not attested |
+| Write → later read through a Postgres table | Rows carry no per-record metadata, so nothing attests this link. The dataset-level graph joins the two only through the shared table node; run-level provenance (`upstream`) stops at the table, and P3 infers no such links |
 | Batch `consume()` | The batch adopts the trace of its last record, and only that record's edge parents later writes |
 | Reads inside `ThreadPoolExecutor` workers | The trace follows the work, but the context copy is one-way, so worker reads don't parent writes made after the pool returns |
 | Kafka writes | Attested at `produce()`, not at broker acknowledgement |

@@ -59,6 +59,9 @@ def _capture(cursor, query) -> None:
         return
 
     namespace = _namespace(cursor)
+    # Dedupe again: `orders` and `dcp.public.orders` are one table once qualified.
+    reads = _dedupe([_with_database(cursor, table) for table in reads])
+    writes = _dedupe([_with_database(cursor, table) for table in writes])
     trace_id = ensure_trace()
     emitter = current_emitter()
     job = current_job()
@@ -158,6 +161,18 @@ def _dedupe(names: list[str]) -> list[str]:
             seen.add(name)
             out.append(name)
     return out
+
+
+def _with_database(cursor, table: str) -> str:
+    """db.schema.table, as the spec names Postgres datasets.
+
+    _classify only sees query text, which rarely names the database, so the
+    name comes from the live connection. A query that named the catalog
+    already has three parts and is left as is.
+    """
+    if table.count(".") >= 2:
+        return table
+    return f"{cursor.connection.info.dbname}.{table}"
 
 
 def _namespace(cursor) -> str:
