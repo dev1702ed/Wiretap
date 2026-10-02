@@ -9,7 +9,7 @@ Three-week v1 sprint. Critical path is **P0 → P1 → P2 → P5**. P3 and P4 ma
 | **P1** | Capture one protocol | `dcp.patch_psycopg()` emits schema-valid dataset events | 3–4 | ☑ |
 | **P2** | Prove multi-hop | Kafka interceptor + contextvars + header propagation; 2-hop flow links | 4–5 | ☑ |
 | **P3** | Queryable lineage | FastAPI ingest → networkx → `GET /downstream/{dataset}` | 2–3 | ☑ [results](docs/results/P3.md) |
-| **P4** | Interop | OpenLineage bridge → graph visible in Marquez | 1–2 | ☐ |
+| **P4** | Interop | OpenLineage bridge → graph visible in Marquez | 1–2 | ☑ [results](docs/results/P4.md) (the Marquez view is written up but not yet run) |
 | **P5** | **The measurement** | Ground truth precision/recall, adversarial suite, overhead numbers | 4–5 | ☐ |
 
 ## Why the adversarial suite is written at P0
