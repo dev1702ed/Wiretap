@@ -64,7 +64,6 @@ def test_sqlcomment_does_not_alter_semantics():
     assert plain == commented
 
 
-# @pytest.mark.xfail(reason="P2", strict=True)
 def test_kafka_header_roundtrip():
     from dcp.propagation.kafka_header import extract, inject
 

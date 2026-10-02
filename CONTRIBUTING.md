@@ -19,10 +19,18 @@
 
 ## Dev setup
 
+From the repository root, install every package the way CI does, then run
+every CI step:
+
 ```bash
-cd sdk-python && pip install -e ".[dev]"
-pytest
+pip install -e "./sdk-python[dev]" -e "./backend[dev]"
+ruff check sdk-python backend benchmarks bridges
+ruff format --check sdk-python backend benchmarks bridges
+pytest sdk-python/tests
+pytest backend/tests
 ```
+
+CI runs these on Python 3.10, 3.12 and 3.14 (`.github/workflows/ci.yml`).
 
 ## Style
 
