@@ -1,0 +1,64 @@
+# Marquez (API, web UI, and Marquez's own Postgres) for viewing DCP lineage.
+# UNVERIFIED IN CI: written for running locally; see README.md.
+#
+# Based on Marquez's official compose files at release 0.51.1
+# (https://github.com/MarquezProject/marquez/tree/0.51.1: docker-compose.yml,
+# docker-compose.web.yml, docker-compose.db.yml), with three changes:
+#   - Marquez's database publishes NO host port, so it cannot clash with a
+#     Postgres you already run on host port 5432. Only the API reaches it.
+#   - Search (OpenSearch) is disabled, so no search container is needed.
+#   - The API waits on a database healthcheck instead of wait-for-it.sh.
+# Image tags are pinned; all three were confirmed to exist on Docker Hub.
+
+name: dcp-marquez
+
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      MARQUEZ_DB: marquez
+      MARQUEZ_USER: marquez
+      MARQUEZ_PASSWORD: marquez
+    volumes:
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+      - marquez-db:/var/lib/postgresql/data
+    # No "ports:" on purpose: see the header.
+    healthcheck:
+      # The init script runs against a socket-only server, so a TCP check
+      # passes only once the real server (with the marquez database) is up.
+      test: ["CMD-SHELL", "pg_isready -h localhost -U postgres -d marquez"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  api:
+    image: marquezproject/marquez:0.51.1
+    environment:
+      MARQUEZ_PORT: "5000"
+      MARQUEZ_ADMIN_PORT: "5001"
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      SEARCH_ENABLED: "false"
+    ports:
+      - "5000:5000"   # lineage API: the bridge POSTs to http://localhost:5000
+      - "5001:5001"   # admin / healthcheck
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: marquezproject/marquez-web:0.51.1
+    environment:
+      MARQUEZ_HOST: api
+      MARQUEZ_PORT: "5000"
+      WEB_PORT: "3000"
+      REACT_APP_ADVANCED_SEARCH: "false"
+    ports:
+      - "3000:3000"   # web UI: http://localhost:3000
+    depends_on:
+      - api
+
+volumes:
+  marquez-db:
