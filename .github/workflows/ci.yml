@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.12"]
+        python-version: ["3.10", "3.12", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,9 +19,9 @@ jobs:
       - name: Install SDK and backend
         run: pip install -e "./sdk-python[dev]" -e "./backend[dev]"
       - name: Lint
-        run: ruff check sdk-python backend
+        run: ruff check sdk-python backend benchmarks bridges
       - name: Format
-        run: ruff format --check sdk-python backend
+        run: ruff format --check sdk-python backend benchmarks bridges
       - name: Validate the spec schema
         run: python -c "import json,pathlib; json.loads(pathlib.Path('spec/envelope.schema.json').read_text()); print('schema ok')"
       - name: SDK tests
