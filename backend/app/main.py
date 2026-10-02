@@ -101,6 +101,7 @@ def get_graph(request: Request) -> dict:
         run_edges = graph.run_edges()
         event_count = graph.event_count()
         dangling = len(graph.dangling_parents())
+        conflicting = len(graph.conflicting_edge_ids())
     return {
         "datasets": _ds_list(datasets),
         "dataset_edges": [
@@ -113,6 +114,7 @@ def get_graph(request: Request) -> dict:
         ],
         "event_count": event_count,
         "dangling_parent_count": dangling,
+        "conflicting_edge_id_count": conflicting,
     }
 
 

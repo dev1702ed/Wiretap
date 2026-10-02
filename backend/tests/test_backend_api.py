@@ -164,6 +164,7 @@ def test_graph(loaded):
         ],
         "event_count": 6,
         "dangling_parent_count": 1,
+        "conflicting_edge_id_count": 0,
     }
 
 
@@ -173,3 +174,9 @@ def test_restart_rebuilds_the_graph_from_the_log(loaded, db_path):
     with TestClient(create_app(db_path)) as restarted:
         assert restarted.get("/graph").json() == before
         assert restarted.get("/upstream", params=query(REVENUE)).json() == upstream
+
+
+def test_graph_counts_conflicting_edge_ids(client, ev):
+    events = [ev("w", "write", TOPIC, "a.py"), ev("w", "write", REVENUE, "b.py")]
+    assert client.post("/events", json=events).status_code == 200
+    assert client.get("/graph").json()["conflicting_edge_id_count"] == 1

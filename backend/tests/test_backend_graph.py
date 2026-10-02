@@ -283,3 +283,20 @@ def test_datasets_are_keyed_by_resolved_identity(ev):
         (PG, "dcp.public.Orders"),
     }
     assert g.downstream(("postgres://LOCALHOST:5432", "dcp.public.orders")) == set()
+
+
+def test_conflicting_edge_ids_are_reported(ev):
+    """Two different events claiming one edge_id: an integrity signal."""
+    g = build(
+        [
+            ev("w", "write", TOPIC, "a.py"),
+            ev("w", "write", REVENUE, "b.py"),
+            ev("r", "read", ORDERS),
+        ]
+    )
+    assert g.conflicting_edge_ids() == {"w"}
+
+
+def test_identical_duplicates_are_not_conflicts(fan_in):
+    g = build(fan_in + [dict(event) for event in fan_in])
+    assert g.conflicting_edge_ids() == set()
