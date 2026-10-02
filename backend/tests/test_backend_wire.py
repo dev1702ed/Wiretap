@@ -9,8 +9,9 @@ import time
 
 import pytest
 import uvicorn
-from app.main import create_app
 from fastapi.testclient import TestClient
+
+from app.main import create_app
 
 pytest.importorskip("dcp")
 
@@ -26,9 +27,7 @@ TOPIC = Dataset(namespace="kafka://localhost:9092", name="enriched_orders")
 def sdk_events() -> list[DCPEvent]:
     """A read and the produce it feeds, built by the SDK's own envelope code."""
     trace = new_id()
-    read = DCPEvent(
-        trace_id=trace, edge_id=new_id(), op="read", dataset=ORDERS, job=JOB
-    )
+    read = DCPEvent(trace_id=trace, edge_id=new_id(), op="read", dataset=ORDERS, job=JOB)
     write = DCPEvent(
         trace_id=trace,
         edge_id=new_id(),
@@ -45,9 +44,7 @@ def test_emitter_body_is_accepted(tmp_path):
     events = sdk_events()
     body = encode_batch([event.to_dict() for event in events])
     with TestClient(create_app(tmp_path / "events.db")) as client:
-        response = client.post(
-            "/events", content=body, headers={"Content-Type": CONTENT_TYPE}
-        )
+        response = client.post("/events", content=body, headers={"Content-Type": CONTENT_TYPE})
         assert response.status_code == 200
         assert response.json() == {"accepted": 2}
         edges = client.get("/graph").json()["dataset_edges"]
@@ -65,12 +62,8 @@ def test_emitter_delivers_to_a_running_backend(tmp_path):
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]
-    server = uvicorn.Server(
-        uvicorn.Config(create_app(tmp_path / "events.db"), log_level="error")
-    )
-    thread = threading.Thread(
-        target=server.run, kwargs={"sockets": [sock]}, daemon=True
-    )
+    server = uvicorn.Server(uvicorn.Config(create_app(tmp_path / "events.db"), log_level="error"))
+    thread = threading.Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
     thread.start()
     try:
         for _ in range(200):

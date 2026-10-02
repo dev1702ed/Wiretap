@@ -50,9 +50,7 @@ def health() -> dict:
 
 
 @router.post("/events")
-def post_events(
-    request: Request, payload: Annotated[dict[str, Any] | list[Any], Body()]
-) -> dict:
+def post_events(request: Request, payload: Annotated[dict[str, Any] | list[Any], Body()]) -> dict:
     """Ingest one event or a JSON array of events, atomically."""
     try:
         accepted = _ingestor(request).ingest(payload)
@@ -73,11 +71,7 @@ def get_upstream(
     with ingestor.lock:
         dataset = _known(ingestor, namespace, name)
         graph = ingestor.graph
-        found = (
-            graph.upstream(dataset)
-            if level == "run"
-            else graph.dataset_upstream(dataset)
-        )
+        found = graph.upstream(dataset) if level == "run" else graph.dataset_upstream(dataset)
     return {"dataset": _ds(dataset), "level": level, "upstream": _ds_list(found)}
 
 
@@ -125,9 +119,7 @@ def _ingestor(request: Request) -> Ingestor:
 def _known(ingestor: Ingestor, namespace: str, name: str) -> Dataset:
     dataset = resolve(namespace, name)
     if dataset not in ingestor.graph.datasets():
-        raise HTTPException(
-            status_code=404, detail=f"unknown dataset {namespace} {name}"
-        )
+        raise HTTPException(status_code=404, detail=f"unknown dataset {namespace} {name}")
     return dataset
 
 

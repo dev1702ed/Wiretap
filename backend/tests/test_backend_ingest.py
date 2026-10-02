@@ -4,6 +4,7 @@ the graph is a derived view, so replaying the log must rebuild it exactly."""
 import random
 
 import pytest
+
 from app.graph import build
 from app.ingest import Ingestor, InvalidEvents
 from app.store import EventStore
@@ -97,9 +98,7 @@ def test_replaying_the_log_rebuilds_the_graph_exactly(tmp_path, ev):
 
     rebuilt = build(store.replay())
     assert rebuilt == ingestor.graph
-    assert (
-        rebuilt.dangling_parents() == ingestor.graph.dangling_parents() == {"missing"}
-    )
+    assert rebuilt.dangling_parents() == ingestor.graph.dangling_parents() == {"missing"}
     for ds in rebuilt.datasets():
         assert rebuilt.upstream(ds) == ingestor.graph.upstream(ds)
         assert rebuilt.dataset_upstream(ds) == ingestor.graph.dataset_upstream(ds)

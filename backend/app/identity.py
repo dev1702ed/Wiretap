@@ -28,9 +28,7 @@ def resolve(namespace: str, name: str) -> tuple[str, str]:
 
 
 # scheme://authority, then anything from the first / ? or # onwards (RFC 3986).
-_URI_RE = re.compile(
-    r"^(?P<scheme>[^:/?#]+)://(?P<authority>[^/?#]*)(?P<rest>.*)$", re.DOTALL
-)
+_URI_RE = re.compile(r"^(?P<scheme>[^:/?#]+)://(?P<authority>[^/?#]*)(?P<rest>.*)$", re.DOTALL)
 
 
 def _namespace(namespace: str) -> str:
@@ -38,6 +36,4 @@ def _namespace(namespace: str) -> str:
     if match is None:
         return namespace
     userinfo, at, hostport = match["authority"].rpartition("@")
-    return (
-        f"{match['scheme'].lower()}://{userinfo}{at}{hostport.lower()}{match['rest']}"
-    )
+    return f"{match['scheme'].lower()}://{userinfo}{at}{hostport.lower()}{match['rest']}"

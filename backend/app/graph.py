@@ -93,9 +93,7 @@ class LineageGraph:
     def dataset_edges(self) -> set[tuple[Dataset, Dataset, str]]:
         """(read dataset, write dataset, writing job) for each write parented to a read."""
         return {
-            (src, dst, job)
-            for src, dst, jobs in self._datasets.edges(data="jobs")
-            for job in jobs
+            (src, dst, job) for src, dst, jobs in self._datasets.edges(data="jobs") for job in jobs
         }
 
     def run_edges(self) -> set[tuple[str, str, Dataset]]:
@@ -133,11 +131,7 @@ class LineageGraph:
 
     def dangling_parents(self) -> set[str]:
         """Parent ids referenced by some event but never seen."""
-        return {
-            edge_id
-            for edge_id, records in self._events.nodes(data="records")
-            if not records
-        }
+        return {edge_id for edge_id, records in self._events.nodes(data="records") if not records}
 
     def conflicting_edge_ids(self) -> set[str]:
         """Edge ids carried by more than one distinct event.
@@ -181,9 +175,7 @@ class LineageGraph:
     def _records(self, edge_id: str) -> set[tuple[str, Dataset, str]]:
         return self._events.nodes[edge_id]["records"]
 
-    def _link(
-        self, parent: tuple[str, Dataset, str], child: tuple[str, Dataset, str]
-    ) -> None:
+    def _link(self, parent: tuple[str, Dataset, str], child: tuple[str, Dataset, str]) -> None:
         parent_op, parent_ds, parent_job = parent
         child_op, child_ds, child_job = child
         if parent_op == "read" and child_op == "write":

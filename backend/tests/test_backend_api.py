@@ -1,8 +1,9 @@
 """Every endpoint, through FastAPI's TestClient against a tmp_path event log."""
 
 import pytest
-from app.main import create_app
 from fastapi.testclient import TestClient
+
+from app.main import create_app
 
 PG = "postgres://localhost:5432"
 KAFKA = "kafka://localhost:9092"
@@ -81,9 +82,7 @@ def test_invalid_batch_is_422_and_stores_nothing(client, ev, db_path):
 
 @pytest.mark.parametrize("body", [b"{not json", b'"a string"', b"42"])
 def test_malformed_body_is_422(client, body):
-    response = client.post(
-        "/events", content=body, headers={"Content-Type": "application/json"}
-    )
+    response = client.post("/events", content=body, headers={"Content-Type": "application/json"})
     assert response.status_code == 422
     assert client.get("/graph").json()["event_count"] == 0
 
@@ -96,10 +95,7 @@ def test_upstream_defaults_to_run_level(loaded):
         "level": "run",
         "upstream": [ds(TOPIC), ds(ORDERS)],
     }
-    assert (
-        loaded.get("/upstream", params=query(REVENUE, level="run")).json()
-        == response.json()
-    )
+    assert loaded.get("/upstream", params=query(REVENUE, level="run")).json() == response.json()
 
 
 def test_upstream_dataset_level_is_the_baseline(loaded):
@@ -122,9 +118,7 @@ def test_downstream(loaded):
 
 
 def test_query_resolves_identity(loaded):
-    response = loaded.get(
-        "/downstream", params=query(("POSTGRES://LocalHost:5432", ORDERS[1]))
-    )
+    response = loaded.get("/downstream", params=query(("POSTGRES://LocalHost:5432", ORDERS[1])))
     assert response.status_code == 200
     assert response.json()["dataset"] == ds(ORDERS)
 
