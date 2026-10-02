@@ -14,6 +14,7 @@ measure a gap.
 |---|---|---|
 | `dark_zone/` | A script reads `orders` and produces to Kafka; a second process consumes and writes `daily_revenue` | Capture, and propagation across a process boundary |
 | `topic_fan_in/` | Two producers write one topic; the consumer processes only producer A's record | What propagation adds: run-level precision |
+| `job_granularity/` | One job runs two independent `INSERT … SELECT` statements (written by the project owner, P4) | Statement-level precision inside one job, which OpenLineage's core run model (inputs × outputs) cannot express |
 
 ## Answer-key format (`expected_graph.json`)
 
@@ -53,6 +54,11 @@ discriminating.
 Producer B runs *before* the consumer, so its record is already on the topic
 when the consumer runs. Time ordering therefore cannot rule B out; only the
 record's own context can.
+
+`job_granularity` discriminates inside one job. Its run has inputs
+`{orders, refunds}` and outputs `{summary, refund_summary}`; read as
+inputs × outputs, that is four edges where the truth has two.
+`test_job_granularity_discriminates` checks that property of the key.
 
 ## Replay, tests, and score
 
