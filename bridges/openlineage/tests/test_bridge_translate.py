@@ -183,17 +183,7 @@ def test_unparseable_timestamp_fails_loudly(ev):
         to_openlineage([ev("e", "read", ORDERS, ts="yesterday")])
 
 
-def test_ground_truth_workloads_translate_to_valid_openlineage(validate):
+def test_ground_truth_workloads_translate_to_valid_openlineage(harness, validate):
     """Real capture output, replayed through the shared harness."""
-    pytest.importorskip("dcp")
-    import importlib.util
-    import pathlib
-    import sys
-
-    path = pathlib.Path(__file__).parents[3] / "benchmarks" / "ground_truth" / "harness.py"
-    spec = importlib.util.spec_from_file_location("ground_truth_harness", path)
-    harness = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = harness
-    spec.loader.exec_module(harness)
     for workload in harness.workloads():
         validate(to_openlineage(harness.replay(harness.load(workload))))

@@ -105,3 +105,35 @@ def test_implied_edges_cannot_tell_producers_apart(fan_in):
 def test_provenance_terminates_on_cycles():
     edges = {(ORDERS, SUMMARY, "a"), (SUMMARY, ORDERS, "b"), (SUMMARY, SUMMARY, "c")}
     assert dataset_provenance(edges, SUMMARY) == {ORDERS}
+
+
+def test_ground_truth_scores(harness):
+    """The numbers benchmarks/ground_truth/score.py prints for the bridge.
+
+    Without the facet, OpenLineage's core run model over-approximates exactly
+    where the answer keys say it should; with it, the graph matches every key.
+    """
+    graph = pytest.importorskip("app.graph")
+    for workload in harness.workloads():
+        key = harness.load(workload)
+        ds = harness.datasets(key)
+        ol = to_openlineage(harness.replay(key))
+        truth = {(ds[e["from"]], ds[e["to"]], e["job"]) for e in key["dataset_edges"]}
+        implied = implied_dataset_edges(ol)
+        rebuilt = graph.build(dcp_events(ol))
+        assert truth <= implied
+        assert rebuilt.dataset_edges() == truth
+        for p in key["provenance"]:
+            expected = {ds[a] for a in p["upstream"]}
+            assert rebuilt.upstream(ds[p["dataset"]]) == expected
+            assert expected <= dataset_provenance(implied, ds[p["dataset"]])
+
+    key = harness.load("job_granularity")
+    implied = implied_dataset_edges(to_openlineage(harness.replay(key)))
+    assert len(implied) == 4  # precision 2/4
+    assert dataset_provenance(implied, SUMMARY) == {ORDERS, REFUNDS}
+    assert dataset_provenance(implied, REFUND_SUMMARY) == {ORDERS, REFUNDS}
+
+    key = harness.load("topic_fan_in")
+    implied = implied_dataset_edges(to_openlineage(harness.replay(key)))
+    assert dataset_provenance(implied, REVENUE) == {TOPIC, ORDERS, REFUNDS}  # 2/3

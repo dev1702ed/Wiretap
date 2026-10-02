@@ -1,8 +1,10 @@
 """Shared fixtures: a DCP event builder, and validators for the vendored
 OpenLineage schema and the dcp run facet schema."""
 
+import importlib.util
 import json
 import pathlib
+import sys
 
 import jsonschema
 import pytest
@@ -30,6 +32,18 @@ def validate_all(ol_events) -> None:
 @pytest.fixture
 def validate():
     return validate_all
+
+
+@pytest.fixture(scope="session")
+def harness():
+    """benchmarks/ground_truth/harness.py: real capture output for each workload."""
+    pytest.importorskip("dcp")
+    path = ROOT.parents[1] / "benchmarks" / "ground_truth" / "harness.py"
+    spec = importlib.util.spec_from_file_location("ground_truth_harness", path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def make_event(

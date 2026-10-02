@@ -1,7 +1,9 @@
 """score.py runs as documented and scores every level of every workload.
 
 The numbers themselves are pinned by sdk-python/tests/test_ground_truth.py,
-which replays through the same harness. Needs the SDK as well as the backend.
+which replays through the same harness, and by the bridge's own tests for the
+OpenLineage section. Needs the SDK as well as the backend; score.py finds the
+bridge in bridges/openlineage if it is not installed.
 """
 
 import json
@@ -30,5 +32,8 @@ def test_score_runs_and_covers_every_level():
         for p in key["provenance"]:
             assert f"upstream({p['dataset']}) run-level" in result.stdout
             assert f"upstream({p['dataset']}) dataset-level baseline" in result.stdout
-    for level in ("nodes", "dataset edges", "run edges"):
+            assert f"openlineage provenance({p['dataset']})" in result.stdout
+            assert f"openlineage + dcp facet provenance({p['dataset']})" in result.stdout
+        assert f"-- {key['workload']}: OpenLineage translation" in result.stdout
+    for level in ("nodes", "dataset edges", "run edges", "openlineage dataset edges"):
         assert level in result.stdout
