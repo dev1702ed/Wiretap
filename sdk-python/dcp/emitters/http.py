@@ -26,7 +26,7 @@ import time
 import urllib.error
 import urllib.request
 
-from dcp.emitters.base import DropCounter, Emitter
+from dcp.emitters.base import DropCounter, Emitter, track_fork
 
 _log = logging.getLogger("dcp")
 
@@ -63,8 +63,30 @@ class HTTPEmitter(Emitter):
         self._queue: queue.Queue = queue.Queue(maxsize=queue_size)
         self._stop = threading.Event()
         self._opener = urllib.request.build_opener()
+        self._start_worker()
+        track_fork(self)
+
+    def _start_worker(self) -> None:
         self._worker = threading.Thread(target=self._run, name="dcp-http-emitter", daemon=True)
         self._worker.start()
+
+    def _after_fork_in_child(self) -> None:
+        """Re-arm in a child of os.fork(): only the forking thread survives.
+
+        The queue is replaced, not drained: whatever was queued at fork time
+        belongs to the parent, which still sends it. Sending it here too would
+        deliver it twice. The locks inside the queue, the stop flag and the
+        drop counter are re-created, since another thread may have held one
+        at the moment of the fork. A closed emitter stays closed.
+        """
+        closed = self._stop.is_set()
+        self._queue = queue.Queue(maxsize=self.queue_size)
+        self._stop = threading.Event()
+        self._drops.reset_lock()
+        if closed:
+            self._stop.set()
+        else:
+            self._start_worker()
 
     @property
     def dropped(self) -> int:

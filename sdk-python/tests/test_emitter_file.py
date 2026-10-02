@@ -1,10 +1,15 @@
 """FileEmitter: JSONL, one event per line. The benchmarks' event of record."""
 
 import json
+import os
 import pathlib
+import signal
 import threading
+import time
+import warnings
 
 import jsonschema
+import pytest
 
 from dcp.config import JobIdentity
 from dcp.emitters.file import FileEmitter
@@ -93,3 +98,34 @@ def test_emit_after_close_is_counted_not_raised(tmp_path):
     emitter.emit(make_event())
     emitter.flush()
     assert emitter.dropped == 1
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is not available here")
+def test_forked_child_can_emit_even_if_the_lock_was_held(tmp_path):
+    """Fork while another holder has the write lock: the child re-creates it."""
+    path = tmp_path / "events.jsonl"
+    emitter = FileEmitter(str(path))
+    child_event = make_event()
+    emitter._lock.acquire()  # stands in for another thread mid-write
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        pid = os.fork()
+    if pid == 0:
+        try:
+            emitter.emit(child_event)
+        finally:
+            os._exit(0)
+    emitter._lock.release()
+
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        done, _ = os.waitpid(pid, os.WNOHANG)
+        if done:
+            break
+        time.sleep(0.05)
+    else:
+        os.kill(pid, signal.SIGKILL)
+        os.waitpid(pid, 0)
+        pytest.fail("child deadlocked on the inherited lock")
+    emitter.close()
+    assert [line["edge_id"] for line in read_jsonl(path)] == [child_event.edge_id]

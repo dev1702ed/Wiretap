@@ -7,9 +7,11 @@ is counted.
 
 import json
 import logging
+import os
 import socket
 import threading
 import time
+import warnings
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
@@ -210,3 +212,42 @@ def test_emit_after_close_is_counted(backend, emitters):
     emitter.emit(make_event())
     assert emitter.dropped == 1
     assert backend.requests == []
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is not available here")
+def test_forked_child_delivers_its_own_events_exactly_once(backend):
+    """Fork while one event is in flight and one is queued. The parent still
+    owns both; the child must send only what it emits itself."""
+    emitter = HTTPEmitter(backend.url, max_retries=0)
+    backend.release.clear()
+    in_flight, queued = make_event(), make_event()
+    emitter.emit(in_flight)
+    assert backend.received.wait(timeout=5)
+    emitter.emit(queued)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)  # forking with threads
+        pid = os.fork()
+    if pid == 0:  # child: never return into pytest
+        code = 1
+        try:
+            child_event = make_event()
+            emitter.emit(child_event)
+            emitter.close(timeout=10)
+            print(child_event.edge_id, flush=True)
+            code = 0 if emitter.dropped == 0 else 2
+        finally:
+            os._exit(code)
+
+    backend.release.set()
+    _, status = os.waitpid(pid, 0)
+    emitter.close(timeout=10)
+    assert os.waitstatus_to_exitcode(status) == 0
+
+    received = [event["edge_id"] for event in backend.events()]
+    child_ids = set(received) - {in_flight.edge_id, queued.edge_id}
+    assert received.count(in_flight.edge_id) == 1
+    assert received.count(queued.edge_id) == 1
+    assert len(child_ids) == 1
+    assert len(received) == 3
+    assert emitter.dropped == 0
