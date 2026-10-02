@@ -86,3 +86,27 @@ def test_named_catalog_is_not_prefixed_twice(events):
     run("SELECT id FROM other.public.orders")
     run("SELECT o.id FROM orders o JOIN dcp.public.orders p USING (id)")
     assert [e["dataset"]["name"] for e in events] == ["other.public.orders", "dcp.public.orders"]
+
+
+def test_unquoted_identifiers_fold_to_one_dataset(events):
+    """Postgres folds unquoted identifiers: Orders and orders are one table."""
+    run("SELECT id FROM Orders")
+    run("SELECT id FROM orders")
+    assert {e["dataset"]["name"] for e in events} == {"dcp.public.orders"}
+
+
+def test_quoted_identifier_keeps_its_case(events):
+    run('SELECT id FROM "Orders"')
+    assert [e["dataset"]["name"] for e in events] == ["dcp.public.Orders"]
+
+
+def test_unquoted_schema_and_table_both_fold(events):
+    run("SELECT id FROM Sales.Orders")
+    assert [e["dataset"]["name"] for e in events] == ["dcp.sales.orders"]
+
+
+def test_quoted_name_with_a_dot_is_still_prefixed(events):
+    """Qualification follows the parsed structure, not the dots in the name."""
+    run('SELECT id FROM "a.b"')
+    run('SELECT id FROM "x.y"."a.b"')
+    assert [e["dataset"]["name"] for e in events] == ["dcp.public.a.b", "dcp.x.y.a.b"]

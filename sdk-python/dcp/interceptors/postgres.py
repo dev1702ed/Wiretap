@@ -54,14 +54,14 @@ def patch_psycopg() -> None:
 def _capture(cursor, query) -> None:
     """Emit one event per dataset touched by this statement."""
     sql = _sql_text(cursor, query)
-    reads, writes = _classify(sql)
-    if not reads and not writes:
+    read_parts, write_parts = _classify_parts(sql)
+    if not read_parts and not write_parts:
         return
 
     namespace = _namespace(cursor)
     # Dedupe again: `orders` and `dcp.public.orders` are one table once qualified.
-    reads = _dedupe([_with_database(cursor, table) for table in reads])
-    writes = _dedupe([_with_database(cursor, table) for table in writes])
+    reads = _dedupe([_with_database(cursor, parts) for parts in read_parts])
+    writes = _dedupe([_with_database(cursor, parts) for parts in write_parts])
     trace_id = ensure_trace()
     emitter = current_emitter()
     job = current_job()
@@ -103,11 +103,27 @@ def _capture(cursor, query) -> None:
 
 
 def _classify(query: str) -> tuple[list[str], list[str]]:
-    """Return (tables_read, tables_written).
+    """Return (tables_read, tables_written) as `schema.table` strings.
 
     INSERT ... SELECT yields both, per the decision to emit two events: it is
     what actually happened on the wire, and the read->write edge then falls out
     of the graph naturally.
+    """
+    reads, writes = _classify_parts(query)
+    return [_join(parts) for parts in reads], [_join(parts) for parts in writes]
+
+
+TableParts = tuple[str | None, str, str]  # (catalog or None, schema, table)
+
+
+def _classify_parts(query: str) -> tuple[list[TableParts], list[TableParts]]:
+    """_classify, keeping each table's parts apart: (catalog, schema, table).
+
+    Unquoted identifiers are folded to lower case, as Postgres folds them, so
+    `FROM Orders` and `FROM orders` name one table. Quoted parts are kept
+    exactly. Keeping the parts separate is what lets the database be added by
+    structure (was a catalog named?) rather than by counting dots, which a
+    quoted name like "a.b" would defeat.
     """
     try:
         statement = sqlglot.parse_one(query, dialect="postgres")
@@ -125,7 +141,7 @@ def _classify(query: str) -> tuple[list[str], list[str]]:
     elif not isinstance(statement, (exp.Select, exp.Union, exp.Insert, exp.Update, exp.Delete)):
         return [], []
 
-    writes: list[str] = []
+    writes: list[TableParts] = []
     write_nodes = set()
 
     # exp.Create is here only for CTAS; plain DDL was filtered out above.
@@ -146,33 +162,43 @@ def _classify(query: str) -> tuple[list[str], list[str]]:
     return _dedupe(reads), _dedupe(writes)
 
 
-def _qualify(table: exp.Table) -> str:
-    """Table identity as db.schema.table, defaulting the schema to public."""
-    parts = [p for p in (table.catalog, table.db, table.name) if p]
-    if len(parts) == 1:
-        return f"public.{parts[0]}"
-    return ".".join(parts)
+def _qualify(table: exp.Table) -> TableParts:
+    """(catalog, schema, table), case-folded, defaulting the schema to public."""
+    catalog = _fold(table.args.get("catalog"))
+    schema = _fold(table.args.get("db")) or "public"
+    return catalog or None, schema, _fold(table.this)
 
 
-def _dedupe(names: list[str]) -> list[str]:
+def _fold(identifier) -> str:
+    """An identifier as Postgres resolves it: lower case unless quoted."""
+    if identifier is None:
+        return ""
+    if isinstance(identifier, exp.Identifier):
+        return identifier.this if identifier.quoted else identifier.this.lower()
+    return identifier.name
+
+
+def _join(parts: TableParts) -> str:
+    return ".".join(p for p in parts if p)
+
+
+def _dedupe(items: list) -> list:
     seen, out = set(), []
-    for name in names:
-        if name not in seen:
-            seen.add(name)
-            out.append(name)
+    for item in items:
+        if item not in seen:
+            seen.add(item)
+            out.append(item)
     return out
 
 
-def _with_database(cursor, table: str) -> str:
+def _with_database(cursor, parts: TableParts) -> str:
     """db.schema.table, as the spec names Postgres datasets.
 
-    _classify only sees query text, which rarely names the database, so the
-    name comes from the live connection. A query that named the catalog
-    already has three parts and is left as is.
+    Query text rarely names the database, so it comes from the live
+    connection; a query that named the catalog keeps the catalog it named.
     """
-    if table.count(".") >= 2:
-        return table
-    return f"{cursor.connection.info.dbname}.{table}"
+    catalog, schema, table = parts
+    return f"{catalog or cursor.connection.info.dbname}.{schema}.{table}"
 
 
 def _namespace(cursor) -> str:

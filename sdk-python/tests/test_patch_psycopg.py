@@ -57,7 +57,7 @@ def test_capture_failure_never_reaches_the_caller(cursor_cls, events, monkeypatc
     def boom(_):
         raise RuntimeError("parser exploded")
 
-    monkeypatch.setattr(postgres, "_classify", boom)
+    monkeypatch.setattr(postgres, "_classify_parts", boom)
     cur = cursor_cls()
     assert cur.execute("SELECT id FROM orders") is cur
     assert events == []
