@@ -16,8 +16,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install SDK and backend
-        run: pip install -e "./sdk-python[dev]" -e "./backend[dev]"
+      - name: Install SDK, backend and OpenLineage bridge
+        run: pip install -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]"
       - name: Lint
         run: ruff check sdk-python backend benchmarks bridges
       - name: Format
@@ -28,3 +28,5 @@ jobs:
         run: pytest sdk-python/tests -v
       - name: Backend tests
         run: pytest backend/tests -v
+      - name: Bridge tests
+        run: pytest bridges/openlineage/tests -v

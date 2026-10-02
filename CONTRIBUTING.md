@@ -23,11 +23,12 @@ From the repository root, install every package the way CI does, then run
 every CI step:
 
 ```bash
-pip install -e "./sdk-python[dev]" -e "./backend[dev]"
+pip install -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]"
 ruff check sdk-python backend benchmarks bridges
 ruff format --check sdk-python backend benchmarks bridges
 pytest sdk-python/tests
 pytest backend/tests
+pytest bridges/openlineage/tests
 ```
 
 CI runs these on Python 3.10, 3.12 and 3.14 (`.github/workflows/ci.yml`).

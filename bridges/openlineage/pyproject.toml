@@ -1,0 +1,23 @@
+[project]
+name = "dcp-openlineage"
+version = "0.1.0.dev0"
+description = "Batch bridge: DCP provenance events to OpenLineage RunEvents."
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "jsonschema>=4.21", "ruff==0.16.9"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["dcp_openlineage"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint.isort]
+known-first-party = ["dcp_openlineage"]
