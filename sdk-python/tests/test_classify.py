@@ -36,6 +36,36 @@ from dcp.interceptors.postgres import _classify, _sql_text
         ),
         ("DELETE FROM summary WHERE id = 1", [], ["public.summary"]),
         ("SELECT id FROM sales.orders", ["sales.orders"], []),
+        # A CTE is not a table: its name is never a dataset (P5)
+        ("WITH x AS (SELECT id FROM orders) SELECT id FROM x", ["public.orders"], []),
+        (
+            "WITH x AS (SELECT id FROM orders) INSERT INTO summary SELECT id, 1 FROM x",
+            ["public.orders"],
+            ["public.summary"],
+        ),
+        (
+            (
+                "WITH a AS (SELECT id FROM orders), b AS (SELECT a.id FROM a JOIN refunds r"
+                " ON r.id = a.id) SELECT id FROM b"
+            ),
+            ["public.orders", "public.refunds"],
+            [],
+        ),
+        (
+            (
+                "WITH RECURSIVE t(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM t WHERE n < 3)"
+                " SELECT n FROM t"
+            ),
+            [],
+            [],
+        ),
+        # ... but a schema-qualified name is the table, even when a CTE shares it
+        (
+            "WITH orders AS (SELECT 1 AS id) SELECT id FROM public.orders",
+            ["public.orders"],
+            [],
+        ),
+        ('WITH "X" AS (SELECT id FROM orders) SELECT id FROM x', ["public.x", "public.orders"], []),
     ],
 )
 def test_classify_data_movement(query, reads, writes):

@@ -155,11 +155,24 @@ def _classify_parts(query: str) -> tuple[list[TableParts], list[TableParts]]:
                 writes.append(_qualify(target))
                 write_nodes.add(id(target))
 
+    # A CTE is a name inside the statement, not a table: `WITH x AS (...) ...
+    # FROM x` reads what x reads, and those tables are found inside x's body.
+    # An unqualified reference to a CTE's name is the CTE; `public.x` is still
+    # the table, as Postgres resolves it.
+    ctes = {_fold(cte.args["alias"].this) for cte in statement.find_all(exp.CTE)}
+
     reads = [
-        _qualify(table) for table in statement.find_all(exp.Table) if id(table) not in write_nodes
+        _qualify(table)
+        for table in statement.find_all(exp.Table)
+        if id(table) not in write_nodes and not _is_cte_reference(table, ctes)
     ]
 
     return _dedupe(reads), _dedupe(writes)
+
+
+def _is_cte_reference(table: exp.Table, ctes: set[str]) -> bool:
+    qualified = table.args.get("db") or table.args.get("catalog")
+    return not qualified and _fold(table.this) in ctes
 
 
 def _qualify(table: exp.Table) -> TableParts:
