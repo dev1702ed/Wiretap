@@ -75,6 +75,23 @@ def test_topic_fan_in_discriminates():
     assert set(truth["upstream"]) < reachable
 
 
+def test_job_granularity_discriminates():
+    """The workload must separate statement-level from job-level lineage.
+
+    OpenLineage's core run model gives a run only its inputs and outputs, so a
+    reader can take every input as feeding every output. Over this workload's
+    one job, that product must imply more edges than the answer key has.
+    """
+    key = harness.load("job_granularity")
+    (process,) = key["processes"]
+    edges = [e for e in key["dataset_edges"] if e["job"] == process["job"]]
+    inputs = {e["from"] for e in edges}
+    outputs = {e["to"] for e in edges}
+    truth = {(e["from"], e["to"]) for e in edges}
+    product = {(i, o) for i in inputs for o in outputs}
+    assert truth < product
+
+
 @pytest.mark.parametrize("workload", WORKLOADS)
 def test_replay_leaves_dcp_config_untouched(workload, events):
     """The harness swaps in its own emitter and job, and puts ours back."""

@@ -1,0 +1,28 @@
+{
+  "workload": "job_granularity",
+  "description": "One job runs two independent INSERT ... SELECT statements. Each output derives from exactly one input. OpenLineage's core run model lists every input and every output of a run, so read naively it implies that every input feeds every output.",
+  "processes": [
+    {
+      "job": "split_loader.py",
+      "steps": [
+        {"sql": "INSERT INTO summary SELECT id, total FROM orders"},
+        {"sql": "INSERT INTO refund_summary SELECT id, amount FROM refunds"}
+      ]
+    }
+  ],
+  "datasets": {
+    "orders": {"namespace": "postgres://localhost:5432", "name": "dcp.public.orders"},
+    "refunds": {"namespace": "postgres://localhost:5432", "name": "dcp.public.refunds"},
+    "summary": {"namespace": "postgres://localhost:5432", "name": "dcp.public.summary"},
+    "refund_summary": {"namespace": "postgres://localhost:5432", "name": "dcp.public.refund_summary"}
+  },
+  "dataset_edges": [
+    {"from": "orders", "to": "summary", "job": "split_loader.py"},
+    {"from": "refunds", "to": "refund_summary", "job": "split_loader.py"}
+  ],
+  "run_edges": [],
+  "provenance": [
+    {"dataset": "summary", "upstream": ["orders"]},
+    {"dataset": "refund_summary", "upstream": ["refunds"]}
+  ]
+}

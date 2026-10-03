@@ -9,12 +9,22 @@ links over events) and a dataset-level baseline (`dataset_upstream`,
 reachability over dataset edges), which is what lineage without propagation
 can do.
 
+Each workload also gets an OpenLineage translation section (P4): the same
+events translated by the bridge (bridges/openlineage), then read back two ways
+(reconstruct.py). `openlineage dataset edges` and `openlineage provenance` are
+what OpenLineage's core run model implies (every input of a run feeds every
+output); `openlineage + dcp facet provenance` rebuilds the backend graph from
+the `dcp` run facets and asks it.
+
 The events come from harness.replay: DCP's real capture code with faked
 database and broker I/O. These are not live runs; live replay is P5.
 
 Needs both packages installed: pip install -e ./sdk-python -e ./backend
+The bridge has no dependencies; it is imported from bridges/openlineage when it
+is not installed.
 """
 
+import pathlib
 import sys
 
 from harness import datasets, load, replay, workloads
@@ -24,14 +34,26 @@ try:
 except ImportError:
     sys.exit("score.py needs the DCP backend installed: pip install -e ./backend")
 
+try:
+    import dcp_openlineage  # noqa: F401
+except ImportError:
+    sys.path.insert(
+        0, str(pathlib.Path(__file__).resolve().parents[2] / "bridges" / "openlineage")
+    )
+
+from dcp_openlineage.reconstruct import (
+    dataset_provenance,
+    dcp_events,
+    implied_dataset_edges,
+)
+from dcp_openlineage.translate import to_openlineage
+
 
 def ratio(hits: int, total: int) -> str:
     return f"{hits}/{total} = {hits / total:.3f}" if total else f"{hits}/{total} = n/a"
 
 
-def rows(key: dict):
-    """Yield (label, found, expected, render) for every level of one workload."""
-    ds = datasets(key)
+def _namer(ds: dict):
     alias = {d: a for a, d in ds.items()}
 
     def name(d):
@@ -40,7 +62,14 @@ def rows(key: dict):
     def names(found):
         return [name(d) for d in found]
 
-    g = build(replay(key))
+    return name, names
+
+
+def rows(key: dict, events: list[dict]):
+    """Yield (label, found, expected, render) for every level of one workload."""
+    ds = datasets(key)
+    name, names = _namer(ds)
+    g = build(events)
 
     yield "nodes", g.datasets(), set(ds.values()), names
     yield (
@@ -66,6 +95,51 @@ def rows(key: dict):
         )
 
 
+def openlineage_rows(key: dict, events: list[dict]):
+    """The same, for the events after translation to OpenLineage."""
+    ds = datasets(key)
+    name, names = _namer(ds)
+    ol = to_openlineage(events)
+    implied = implied_dataset_edges(ol)
+    rebuilt = build(dcp_events(ol))
+
+    yield (
+        "openlineage dataset edges",
+        implied,
+        {(ds[e["from"]], ds[e["to"]], e["job"]) for e in key["dataset_edges"]},
+        lambda edges: [f"{name(a)}->{name(b)} ({job})" for a, b, job in edges],
+    )
+    for p in key["provenance"]:
+        target, expected = ds[p["dataset"]], {ds[a] for a in p["upstream"]}
+        yield (
+            f"openlineage provenance({p['dataset']})",
+            dataset_provenance(implied, target),
+            expected,
+            names,
+        )
+    for p in key["provenance"]:
+        target, expected = ds[p["dataset"]], {ds[a] for a in p["upstream"]}
+        yield (
+            f"openlineage + dcp facet provenance({p['dataset']})",
+            rebuilt.upstream(target),
+            expected,
+            names,
+        )
+
+
+def table(levels) -> None:
+    print(f"{'level':<52}{'precision':<16}{'recall':<16}notes")
+    for label, found, expected, render in levels:
+        hits = len(found & expected)
+        notes = [f"+{x}" for x in sorted(render(found - expected))]
+        notes += [f"-{x}" for x in sorted(render(expected - found))]
+        line = (
+            f"{label:<52}{ratio(hits, len(found)):<16}"
+            f"{ratio(hits, len(expected)):<16}{' '.join(notes)}"
+        )
+        print(line.rstrip())
+
+
 def main() -> int:
     print("DCP ground-truth score")
     print(
@@ -75,18 +149,16 @@ def main() -> int:
         "precision = |found & expected| / |found|    recall = |found & expected| / |expected|"
     )
     for workload in workloads():
+        key = load(workload)
+        events = replay(key)
         print()
         print(f"== {workload}")
-        print(f"{'level':<52}{'precision':<16}{'recall':<16}notes")
-        for label, found, expected, render in rows(load(workload)):
-            hits = len(found & expected)
-            notes = [f"+{x}" for x in sorted(render(found - expected))]
-            notes += [f"-{x}" for x in sorted(render(expected - found))]
-            line = (
-                f"{label:<52}{ratio(hits, len(found)):<16}"
-                f"{ratio(hits, len(expected)):<16}{' '.join(notes)}"
-            )
-            print(line.rstrip())
+        table(rows(key, events))
+        print()
+        print(
+            f"-- {workload}: OpenLineage translation (core run model, then with the dcp facet)"
+        )
+        table(openlineage_rows(key, events))
     return 0
 
 

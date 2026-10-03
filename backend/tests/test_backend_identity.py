@@ -8,15 +8,14 @@ import json
 import pathlib
 
 import pytest
+
 from app.identity import resolve
 
 GROUND_TRUTH = pathlib.Path(__file__).parents[2] / "benchmarks" / "ground_truth"
 
 
 def test_ground_truth_identities_come_through_unchanged():
-    keys = [
-        json.loads(p.read_text()) for p in GROUND_TRUTH.glob("*/expected_graph.json")
-    ]
+    keys = [json.loads(p.read_text()) for p in GROUND_TRUTH.glob("*/expected_graph.json")]
     datasets = [d for key in keys for d in key["datasets"].values()]
     assert datasets
     for d in datasets:
@@ -53,10 +52,7 @@ def test_only_scheme_and_host_change(namespace, expected):
 def test_names_are_trimmed_but_never_case_folded():
     """Postgres quoted identifiers and Kafka topics are case-sensitive."""
     assert resolve("kafka://b:9092", " Orders ") == ("kafka://b:9092", "Orders")
-    assert (
-        resolve("postgres://h:5432", 'dcp.public."MixedCase"')[1]
-        == 'dcp.public."MixedCase"'
-    )
+    assert resolve("postgres://h:5432", 'dcp.public."MixedCase"')[1] == 'dcp.public."MixedCase"'
 
 
 @pytest.mark.parametrize(

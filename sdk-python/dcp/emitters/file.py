@@ -9,7 +9,7 @@ that guards against a machine crash, not a process crash, and costs far more.
 import json
 import threading
 
-from dcp.emitters.base import DropCounter, Emitter
+from dcp.emitters.base import DropCounter, Emitter, track_fork
 
 
 class FileEmitter(Emitter):
@@ -19,6 +19,13 @@ class FileEmitter(Emitter):
         self._lock = threading.Lock()
         # Held open for the emitter's lifetime; closed by close().
         self._file = open(path, "a", encoding="utf-8")  # noqa: SIM115
+        track_fork(self)
+
+    def _after_fork_in_child(self) -> None:
+        """Another thread may have held the lock at fork time. Every line is
+        flushed as written, so the child inherits no buffered events."""
+        self._lock = threading.Lock()
+        self._drops.reset_lock()
 
     @property
     def dropped(self) -> int:

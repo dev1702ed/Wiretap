@@ -14,6 +14,7 @@ measure a gap.
 |---|---|---|
 | `dark_zone/` | A script reads `orders` and produces to Kafka; a second process consumes and writes `daily_revenue` | Capture, and propagation across a process boundary |
 | `topic_fan_in/` | Two producers write one topic; the consumer processes only producer A's record | What propagation adds: run-level precision |
+| `job_granularity/` | One job runs two independent `INSERT … SELECT` statements (written by the project owner, P4) | Statement-level precision inside one job, which OpenLineage's core run model (inputs × outputs) cannot express |
 
 ## Answer-key format (`expected_graph.json`)
 
@@ -54,6 +55,11 @@ Producer B runs *before* the consumer, so its record is already on the topic
 when the consumer runs. Time ordering therefore cannot rule B out; only the
 record's own context can.
 
+`job_granularity` discriminates inside one job. Its run has inputs
+`{orders, refunds}` and outputs `{summary, refund_summary}`; read as
+inputs × outputs, that is four edges where the truth has two.
+`test_job_granularity_discriminates` checks that property of the key.
+
 ## Replay, tests, and score
 
 `harness.py` is the one replay implementation. It loads an answer key, runs
@@ -67,5 +73,10 @@ headers cross between them), and returns the events.
 - `python benchmarks/ground_truth/score.py` prints precision and recall for
   every level, and a dataset-level baseline row for every provenance entry.
   Results: `docs/results/P3.md`.
+- Since P4 it also scores each workload after translation to OpenLineage by
+  the bridge (`bridges/openlineage`): the edges and provenance OpenLineage's
+  core run model implies, and the provenance a DCP-aware reader recovers from
+  the `dcp` run facet. `bridges/openlineage/tests/test_bridge_roundtrip.py`
+  pins those numbers. Results: `docs/results/P4.md`.
 
 These are replays, not live runs. Live replay against Postgres and Kafka is P5.

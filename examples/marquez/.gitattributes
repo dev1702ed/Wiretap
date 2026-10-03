@@ -1,0 +1,2 @@
+# The Postgres image runs init-db.sh with bash: keep LF line endings on Windows.
+*.sh text eol=lf

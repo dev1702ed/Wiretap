@@ -1,14 +1,13 @@
 """The SQLite event log: append-only, replayed in ingest order."""
 
 import pytest
+
 from app.store import DEFAULT_PATH, EventStore
 
 
 def test_append_replay_round_trip_in_order(tmp_path, ev):
     store = EventStore(tmp_path / "events.db")
-    events = [
-        ev(f"e{i}", "read", ("postgres://localhost:5432", f"t{i}")) for i in range(20)
-    ]
+    events = [ev(f"e{i}", "read", ("postgres://localhost:5432", f"t{i}")) for i in range(20)]
     for event in events:
         store.append(event)
     assert store.replay() == events

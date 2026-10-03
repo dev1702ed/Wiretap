@@ -17,9 +17,7 @@ import jsonschema
 from app.graph import LineageGraph, build
 from app.store import EventStore
 
-SCHEMA_PATH = (
-    pathlib.Path(__file__).resolve().parents[2] / "spec" / "envelope.schema.json"
-)
+SCHEMA_PATH = pathlib.Path(__file__).resolve().parents[2] / "spec" / "envelope.schema.json"
 SCHEMA = json.loads(SCHEMA_PATH.read_text())
 _validator = jsonschema.Draft202012Validator(SCHEMA)
 

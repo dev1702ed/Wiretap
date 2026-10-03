@@ -51,6 +51,7 @@ class LineageGraph:
         self._run_edges: set[tuple[str, str, Dataset]] = set()
         self._writes: dict[Dataset, set[str]] = {}
         self._seen: set[str] = set()  # canonical JSON of every event added
+        self._variants: dict[str, int] = {}  # edge_id -> distinct events carrying it
 
     def add(self, event: dict) -> None:
         """Fold one event in. Adding an identical event twice is a no-op."""
@@ -62,6 +63,7 @@ class LineageGraph:
         dataset = resolve(event["dataset"]["namespace"], event["dataset"]["name"])
         record = (event["op"], dataset, event["job"]["name"])
         edge_id = event["edge_id"]
+        self._variants[edge_id] = self._variants.get(edge_id, 0) + 1
 
         self._datasets.add_node(dataset)
         self._ensure_event(edge_id)
@@ -91,9 +93,7 @@ class LineageGraph:
     def dataset_edges(self) -> set[tuple[Dataset, Dataset, str]]:
         """(read dataset, write dataset, writing job) for each write parented to a read."""
         return {
-            (src, dst, job)
-            for src, dst, jobs in self._datasets.edges(data="jobs")
-            for job in jobs
+            (src, dst, job) for src, dst, jobs in self._datasets.edges(data="jobs") for job in jobs
         }
 
     def run_edges(self) -> set[tuple[str, str, Dataset]]:
@@ -131,11 +131,16 @@ class LineageGraph:
 
     def dangling_parents(self) -> set[str]:
         """Parent ids referenced by some event but never seen."""
-        return {
-            edge_id
-            for edge_id, records in self._events.nodes(data="records")
-            if not records
-        }
+        return {edge_id for edge_id, records in self._events.nodes(data="records") if not records}
+
+    def conflicting_edge_ids(self) -> set[str]:
+        """Edge ids carried by more than one distinct event.
+
+        With UUID4 ids a collision is not chance: it means corruption or
+        forgery somewhere upstream, so it is reported as an integrity signal.
+        Identical duplicates (a retried POST) are not conflicts.
+        """
+        return {edge_id for edge_id, count in self._variants.items() if count > 1}
 
     def event_count(self) -> int:
         """Distinct events folded in; identical duplicates count once."""
@@ -153,6 +158,7 @@ class LineageGraph:
             "dataset_edges": self.dataset_edges(),
             "run_edges": self.run_edges(),
             "event_count": self.event_count(),
+            "conflicting_edge_ids": self.conflicting_edge_ids(),
         }
 
     def __eq__(self, other: object) -> bool:
@@ -169,9 +175,7 @@ class LineageGraph:
     def _records(self, edge_id: str) -> set[tuple[str, Dataset, str]]:
         return self._events.nodes[edge_id]["records"]
 
-    def _link(
-        self, parent: tuple[str, Dataset, str], child: tuple[str, Dataset, str]
-    ) -> None:
+    def _link(self, parent: tuple[str, Dataset, str], child: tuple[str, Dataset, str]) -> None:
         parent_op, parent_ds, parent_job = parent
         child_op, child_ds, child_job = child
         if parent_op == "read" and child_op == "write":
