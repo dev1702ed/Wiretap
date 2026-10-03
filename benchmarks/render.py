@@ -277,6 +277,191 @@ def _adversarial(results: dict) -> list[str]:
     ]
 
 
+SCALE_NOTE = (
+    "**Generated keys, added in P5.1** (`benchmarks/ground_truth/generate.py`): "
+    "generated from fixed seeds, not hand-written, with truth derived from the "
+    "generator's own construction. Scored with the same row functions as the "
+    "hand-written keys, and **reported apart from them, never pooled**. "
+    "Precision and recall are micro-averaged: summed hits over summed found (or "
+    "expected), over every row of every key in the group; the per-key columns give "
+    "each key's own micro-average, as min / median / max."
+)
+
+
+def _r(value) -> str:
+    return "n/a" if value is None else f"{value:.3f}"
+
+
+def _spread(s) -> str:
+    return (
+        "n/a" if s is None else f"{_r(s['min'])} / {_r(s['median'])} / {_r(s['max'])}"
+    )
+
+
+def _scale_table(rows: list[dict], per_key: bool) -> list[str]:
+    header = ["Method", "Level", "Precision", "Recall"]
+    if per_key:
+        header += [
+            "Keys",
+            "Per-key precision min / median / max",
+            "Per-key recall min / median / max",
+        ]
+    out = []
+    for a in rows:
+        row = [
+            a["method"],
+            a["level"],
+            f"{a['hits']}/{a['found']} = {_r(a['precision'])}",
+            f"{a['hits']}/{a['expected']} = {_r(a['recall'])}",
+        ]
+        if per_key:
+            row += [
+                a["keys"],
+                _spread(a["per_key_precision"]),
+                _spread(a["per_key_recall"]),
+            ]
+        out.append(row)
+    return table(header, out)
+
+
+def _scale_summary(summary: dict) -> list[str]:
+    out = []
+    if summary["seeds"]["names"]:
+        names = summary["seeds"]["names"]
+        out += [
+            f"#### {names[0]} … {names[-1]} ({len(names)} keys), micro-averaged",
+            "",
+            *_scale_table(summary["seeds"]["aggregate"], per_key=True),
+            "",
+        ]
+    for name, rows in summary["others"].items():
+        out += [f"#### {name}, on its own", "", *_scale_table(rows, per_key=False), ""]
+    rows = []
+    for name, e in summary["extras"].items():
+        m = summary["misses"][name]
+        rows.append(
+            [
+                name,
+                e["extras"],
+                e["explained_by_distractors"],
+                "; ".join(e["unexplained"]) or "none",
+                m["misses"],
+                m["explained_by_split_runs"],
+                "; ".join(m["unexplained"]) or "none",
+            ]
+        )
+    out += [
+        (
+            "Every item DCP's own graph found beyond the truth, checked against the "
+            "generator's distractor reads; and every expected item any method missed "
+            "(recall below 1.0), checked against split runs: a consumer that reads "
+            "records from two producers joins two traces, and the P4 bridge maps one "
+            "OpenLineage run per (trace, process), so OpenLineage's core model sees two "
+            "runs where there was one process. Anything unexplained is a bug."
+        ),
+        "",
+        *table(
+            [
+                "Key",
+                "DCP extras",
+                "Explained by a distractor read",
+                "Unexplained extras",
+                "Missed items",
+                "Explained by a split run",
+                "Unexplained misses",
+            ],
+            rows,
+        ),
+        "",
+    ]
+    return out
+
+
+def _scale(results: dict) -> list[str]:
+    if "scale" not in results:
+        return []
+    s = results["scale"]
+    rows = [
+        [
+            k["workload"],
+            k["seed"],
+            k["jobs"],
+            ", ".join(f"{n} {kind}" for kind, n in sorted(k["kinds"].items())),
+            k["jobs_with_distractors"],
+            k["fan_in_topics"],
+            k.get("split_jobs", "n/a"),
+            k["datasets"],
+            k["provenance_entries"],
+        ]
+        for k in s["replay"]["summary"]["keys"]
+    ]
+    out = [
+        "## Ground truth at scale: generated keys (added in P5.1)",
+        "",
+        SCALE_NOTE,
+        "",
+        f"Generator version {s['generator_version']}.",
+        "",
+        *table(
+            [
+                "Key",
+                "Seed",
+                "Jobs",
+                "Job kinds",
+                "Jobs with a distractor read",
+                "Fan-in topics",
+                "Jobs on two traces (split runs)",
+                "Datasets",
+                "Provenance entries",
+            ],
+            rows,
+        ),
+        "",
+        "### Replay",
+        "",
+        "DCP's real capture code with faked I/O, as for the hand-written keys.",
+        "",
+        *_scale_summary(s["replay"]["summary"]),
+    ]
+    live = s.get("live", {})
+    out += ["### Live", ""]
+    if "skipped" in live:
+        return out + [f"Skipped: {live['skipped']}", ""]
+    rows = [
+        [
+            name,
+            r["processes"],
+            ", ".join(map(str, r["exit_codes"])),
+            r["events"],
+            r["manifest_records"],
+            "yes" if r["agrees_with_replay"] else "**NO**",
+        ]
+        for name, r in live["records"].items()
+    ]
+    out += [
+        (
+            f"Real PostgreSQL and Kafka, every process a separate OS process under "
+            f"`dcp-instrument`, consumers reading their named record by exact offset "
+            f"(run id `{live['run_id']}`; {live['mode']})."
+        ),
+        "",
+        *table(
+            [
+                "Key",
+                "Processes",
+                "Exit codes",
+                "DCP events",
+                "Records in the run manifest",
+                "Every row agrees with replay",
+            ],
+            rows,
+        ),
+        "",
+        *_scale_summary(live["summary"]),
+    ]
+    return out
+
+
 def stage5_trigger(results: dict) -> list[str]:
     """Which of Stage 5's trigger conditions fire, from the numbers."""
     fired = []
@@ -692,6 +877,7 @@ def render(results: dict) -> str:
         *_replay(results),
         *_live(results),
         *_adversarial(results),
+        *_scale(results),
         *_cpu(results),
         *_overhead(results),
         *_trigger(results),

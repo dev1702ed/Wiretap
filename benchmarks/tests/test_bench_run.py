@@ -29,6 +29,7 @@ def test_live_stages_are_skipped_with_the_reason():
         "replay": ("run", None),
         "live": ("skipped", reason),
         "adversarial": ("skipped", reason),
+        "scale": ("run", None),  # its replay half needs nothing; live is skipped inside
         "overhead": ("skipped", reason),
         "cpu": ("run", None),
     }
@@ -235,3 +236,40 @@ def test_the_environment_table_shows_the_pin_check():
     ]
     assert "1 of 2 differ" in render._pins(env["pins"])
     assert "uvicorn not installed (pinned 0.54.0)" in render._pins(env["pins"])
+
+
+# P5.1 (B3, B4): the scale stage. Unit CI replays every generated key here.
+
+
+def test_scale_replays_every_generated_key_and_skips_live_with_the_reason(isolated):
+    import generate
+
+    assert run.main(["--label", "unit", "--only", "scale"]) == 0
+    results = json.loads((isolated / "results" / "unit" / "results.json").read_text())
+    scale_results = results["scale"]
+    assert sorted(scale_results["replay"]["scores"]) == sorted(generate.KEYS)
+    assert scale_results["live"] == {"skipped": NO_SERVICES["live"]}
+    summary = scale_results["replay"]["summary"]
+    # Every recall loss is OpenLineage core losing an edge to a split run;
+    # DCP, the baseline and the facet reading miss nothing.
+    assert all(not m["unexplained"] for m in summary["misses"].values())
+    for name, scored in scale_results["replay"]["scores"].items():
+        for row in scored["dcp"] + scored["openlineage"]:
+            if not row["label"].startswith("openlineage provenance(") and (
+                row["label"] != "openlineage dataset edges"
+            ):
+                assert row["hits"] == row["expected"], (name, row["label"])
+    # Everything DCP finds beyond the truth is a distractor read, and there is some.
+    assert all(not e["unexplained"] for e in summary["extras"].values())
+    assert sum(e["extras"] for e in summary["extras"].values()) > 0
+    md = (isolated / "P5-unit.md").read_text(encoding="utf-8")
+    assert "## Ground truth at scale: generated keys (added in P5.1)" in md
+    assert "#### scale_s01 … scale_s10 (10 keys), micro-averaged" in md
+    assert "#### scale_large, on its own" in md
+    assert (
+        "## Ground truth: replay" not in md
+    )  # never pooled with the hand-written keys
+
+
+def test_quick_mode_runs_one_small_seed_live():
+    assert run.QUICK_SCALE_LIVE == ("scale_s01",)
