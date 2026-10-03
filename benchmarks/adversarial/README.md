@@ -9,32 +9,44 @@ Every "OpenLineage misses this" claim is made against this configuration:
 **every OpenLineage integration available for the workload's stack, installed,
 with zero code changes to the workload itself.** For a plain Python script
 using psycopg and confluent-kafka, no such integration exists, so the baseline
-graph is empty by construction. That emptiness is the structural claim. Say it
-in those words; never imply OpenLineage was merely misconfigured.
+graph is empty. Say it in those words; never imply OpenLineage was merely
+misconfigured.
+
+[`BASELINE.md`](BASELINE.md) verifies this against the OpenLineage repository at
+tag 1.53.0 (every integration listed, with links), says exactly what manual
+emission requires, measures the baseline empirically, and states how the claim
+narrows.
 
 ## Cases
 
 | # | Movement | Why the baseline misses it | Gap |
 |---|---|---|---|
-| 1 | Ad-hoc script: Postgres read → Kafka produce | No integration exists for a plain script. OpenLineage *can* be added by hand, but only by declaring the datasets: lineage the author asserts, not lineage that was observed | Structural — **declared vs. attested** |
-| 2 | Jupyter notebook doing the same | As case 1; notebook kernels are not orchestrated jobs | Structural — declared vs. attested |
+| 1 | Ad-hoc script: Postgres read → Kafka produce | No integration exists for a plain script. OpenLineage *can* be added by hand, but only by declaring the datasets: lineage the author asserts, not lineage that was observed. DCP needs **no code changes** (`dcp-instrument`) | **No code changes**: declared vs. attested |
+| 2 | Jupyter notebook doing the same | As case 1; notebook kernels are not orchestrated jobs | No code changes: declared vs. attested |
 | 3 | Two producers share a topic; the consumer processes only one producer's record | Dataset-level lineage says the sink derives from both producers' inputs. Only per-record context says which | Precision — run-level provenance. Ground truth: `topic_fan_in` |
 | 4 | Dynamic table names built at runtime (`psycopg.sql`) | Static SQL analysis sees a template; DCP sees the executed statement | **Candidate — not claimed.** Verify against OpenLineage's SQL parser first |
 
 ### Executable form
 
 The ground-truth workloads are these cases' tests, so there is one source of
-truth rather than two:
+truth rather than two. Since P5 each one also runs **live**
+(`benchmarks/live`): real PostgreSQL and Kafka, each process a separate OS
+process under `dcp-instrument`, programs generated with **no DCP code in them**
+and kept with the results.
 
-| Case | Workload | State |
-|---|---|---|
-| 1 | `ground_truth/dark_zone` | Passes on replay with faked I/O (P3); live run is P5 |
-| 2 | needs a notebook workload | P5 |
-| 3 | `ground_truth/topic_fan_in` | Passes on replay with faked I/O (P3); live run is P5 |
-| 4 | none — not claimed | — |
+| Case | Workload | Replay (faked I/O) | Live evidence |
+|---|---|---|---|
+| 1 | `ground_truth/dark_zone` | Since P3 | Two generated scripts, no DCP code, under `dcp-instrument`; scored against the key |
+| 2 | `ground_truth/notebook` (P5) | Since P5 | A generated notebook, no DCP code, executed by `nbclient` in a kernel started with `dcp-instrument`'s environment; scored against the key |
+| 3 | `ground_truth/topic_fan_in` | Since P3 | Three generated scripts; the consumer **checks the record it reads is producer A's** and fails loudly otherwise; scored against the key, with the dataset-level baseline row alongside |
+| 4 | none — not claimed | — | — |
 
-The baseline side needs no test: with no integration for the stack, the
-OpenLineage graph is empty by construction.
+The live results are generated, never typed: `python benchmarks/run.py --label
+<label>` writes them to `docs/results/P5-<label>.md` (`sandbox`: this repo's
+sandbox run; `ci`: the CI `live` job's summary; `local`: the owner's machine).
+The baseline side is measured too: `baseline_check.py` runs the same programs
+without `dcp-instrument` against a stub OpenLineage endpoint and counts what
+arrives (BASELINE.md §3).
 
 ### What decision 6 changes
 

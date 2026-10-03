@@ -136,13 +136,15 @@ def _check_no_dcp_code(job: str, source: str) -> None:
         raise LiveRunError(f"generated program {job} contains DCP code: {found}")
 
 
-def _run_script(workload: str, process: dict, group: str, run_dir, env) -> dict:
+def _run_script(workload, process, group, run_dir, env, instrument=True) -> dict:
     job = process["job"]
     source = generate.script_source(workload, process, group)
     _check_no_dcp_code(job, source)
     path = run_dir / job
     path.write_text(source, encoding="utf-8", newline="\n")
-    command = [sys.executable, "-m", "dcp.instrument", sys.executable, str(path)]
+    command = [sys.executable, str(path)]
+    if instrument:  # the dcp-instrument entry point, as `python -m`
+        command = [sys.executable, "-m", "dcp.instrument", *command]
     result = subprocess.run(
         command,
         cwd=run_dir,
@@ -160,7 +162,7 @@ def _run_script(workload: str, process: dict, group: str, run_dir, env) -> dict:
     return {"program": path.name, "exit_code": result.returncode}
 
 
-def _run_notebook(workload: str, process: dict, group: str, run_dir, env) -> dict:
+def _run_notebook(workload, process, group, run_dir, env, instrument=True) -> dict:
     import nbformat
     from dcp.instrument import instrumented_env
     from jupyter_client.kernelspec import KernelSpecManager
@@ -194,12 +196,20 @@ def _run_notebook(workload: str, process: dict, group: str, run_dir, env) -> dic
         nb, km=manager, kernel_name=KERNEL_NAME, timeout=PROCESS_TIMEOUT_S
     )
     try:
-        client.execute(env=instrumented_env(env), cwd=str(run_dir))
+        client.execute(
+            env=instrumented_env(env) if instrument else env, cwd=str(run_dir)
+        )
     except CellExecutionError as exc:
         raise LiveRunError(f"{workload}/{job} failed in a cell:\n{exc}") from exc
     executed = run_dir / (pathlib.Path(job).stem + ".executed.ipynb")
     nbformat.write(nb, executed)
     return {"program": path.name, "executed": executed.name, "exit_code": 0}
+
+
+def run_process(workload, process, group, run_dir, env, instrument=True) -> dict:
+    """Write one process as a plain program and run it: a script, or a notebook."""
+    runner = _run_notebook if kind(process) == "notebook" else _run_script
+    return runner(workload, process, group, run_dir, env, instrument)
 
 
 def run_workload(
@@ -219,8 +229,7 @@ def run_workload(
         env["DCP_EMIT"] = "file://" + str(sink)
         env["DCP_JOB_NAME"] = job
         group = generate.group_id(run_id, workload, index)
-        runner = _run_notebook if kind(process) == "notebook" else _run_script
-        record = runner(workload, process, group, run_dir, env)
+        record = run_process(workload, process, group, run_dir, env)
         process_events = read_events(sink)
         record.update(
             job=job, kind=kind(process), events=len(process_events), sink=sink.name
