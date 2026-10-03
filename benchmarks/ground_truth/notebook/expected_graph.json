@@ -1,0 +1,25 @@
+{
+  "workload": "notebook",
+  "description": "A Jupyter kernel reads orders and writes summary through the application: read, compute in Python, insert values. No scheduler, no OpenLineage integration. Adversarial case 2.",
+  "processes": [
+    {
+      "job": "analysis.ipynb",
+      "kind": "notebook",
+      "steps": [
+        {"sql": "SELECT id, total FROM orders"},
+        {"sql": "INSERT INTO summary VALUES (1, 10)"}
+      ]
+    }
+  ],
+  "datasets": {
+    "orders": {"namespace": "postgres://localhost:5432", "name": "dcp.public.orders"},
+    "summary": {"namespace": "postgres://localhost:5432", "name": "dcp.public.summary"}
+  },
+  "dataset_edges": [
+    {"from": "orders", "to": "summary", "job": "analysis.ipynb"}
+  ],
+  "run_edges": [],
+  "provenance": [
+    {"dataset": "summary", "upstream": ["orders"]}
+  ]
+}

@@ -1,0 +1,71 @@
+DCP ground-truth score
+Replays DCP's real capture code with faked database and broker I/O; not a live run.
+precision = |found & expected| / |found|    recall = |found & expected| / |expected|
+
+== dark_zone
+level                                               precision       recall          notes
+nodes                                               3/3 = 1.000     3/3 = 1.000
+dataset edges                                       2/2 = 1.000     2/2 = 1.000
+run edges                                           1/1 = 1.000     1/1 = 1.000
+upstream(enriched_orders) run-level                 1/1 = 1.000     1/1 = 1.000
+upstream(enriched_orders) dataset-level baseline    1/1 = 1.000     1/1 = 1.000
+upstream(daily_revenue) run-level                   2/2 = 1.000     2/2 = 1.000
+upstream(daily_revenue) dataset-level baseline      2/2 = 1.000     2/2 = 1.000
+
+-- dark_zone: OpenLineage translation (core run model, then with the dcp facet)
+level                                               precision       recall          notes
+openlineage dataset edges                           2/2 = 1.000     2/2 = 1.000
+openlineage provenance(enriched_orders)             1/1 = 1.000     1/1 = 1.000
+openlineage provenance(daily_revenue)               2/2 = 1.000     2/2 = 1.000
+openlineage + dcp facet provenance(enriched_orders) 1/1 = 1.000     1/1 = 1.000
+openlineage + dcp facet provenance(daily_revenue)   2/2 = 1.000     2/2 = 1.000
+
+== job_granularity
+level                                               precision       recall          notes
+nodes                                               4/4 = 1.000     4/4 = 1.000
+dataset edges                                       2/2 = 1.000     2/2 = 1.000
+run edges                                           0/0 = n/a       0/0 = n/a
+upstream(summary) run-level                         1/1 = 1.000     1/1 = 1.000
+upstream(summary) dataset-level baseline            1/1 = 1.000     1/1 = 1.000
+upstream(refund_summary) run-level                  1/1 = 1.000     1/1 = 1.000
+upstream(refund_summary) dataset-level baseline     1/1 = 1.000     1/1 = 1.000
+
+-- job_granularity: OpenLineage translation (core run model, then with the dcp facet)
+level                                               precision       recall          notes
+openlineage dataset edges                           2/4 = 0.500     2/2 = 1.000     +orders->refund_summary (split_loader.py) +refunds->summary (split_loader.py)
+openlineage provenance(summary)                     1/2 = 0.500     1/1 = 1.000     +refunds
+openlineage provenance(refund_summary)              1/2 = 0.500     1/1 = 1.000     +orders
+openlineage + dcp facet provenance(summary)         1/1 = 1.000     1/1 = 1.000
+openlineage + dcp facet provenance(refund_summary)  1/1 = 1.000     1/1 = 1.000
+
+== notebook
+level                                               precision       recall          notes
+nodes                                               2/2 = 1.000     2/2 = 1.000
+dataset edges                                       1/1 = 1.000     1/1 = 1.000
+run edges                                           0/0 = n/a       0/0 = n/a
+upstream(summary) run-level                         1/1 = 1.000     1/1 = 1.000
+upstream(summary) dataset-level baseline            1/1 = 1.000     1/1 = 1.000
+
+-- notebook: OpenLineage translation (core run model, then with the dcp facet)
+level                                               precision       recall          notes
+openlineage dataset edges                           1/1 = 1.000     1/1 = 1.000
+openlineage provenance(summary)                     1/1 = 1.000     1/1 = 1.000
+openlineage + dcp facet provenance(summary)         1/1 = 1.000     1/1 = 1.000
+
+== topic_fan_in
+level                                               precision       recall          notes
+nodes                                               4/4 = 1.000     4/4 = 1.000
+dataset edges                                       3/3 = 1.000     3/3 = 1.000
+run edges                                           1/1 = 1.000     1/1 = 1.000
+upstream(enriched_orders) run-level                 2/2 = 1.000     2/2 = 1.000
+upstream(enriched_orders) dataset-level baseline    2/2 = 1.000     2/2 = 1.000
+upstream(daily_revenue) run-level                   2/2 = 1.000     2/2 = 1.000
+upstream(daily_revenue) dataset-level baseline      2/3 = 0.667     2/2 = 1.000     +refunds
+
+-- topic_fan_in: OpenLineage translation (core run model, then with the dcp facet)
+level                                               precision       recall          notes
+openlineage dataset edges                           3/3 = 1.000     3/3 = 1.000
+openlineage provenance(enriched_orders)             2/2 = 1.000     2/2 = 1.000
+openlineage provenance(daily_revenue)               2/3 = 0.667     2/2 = 1.000     +refunds
+openlineage + dcp facet provenance(enriched_orders) 2/2 = 1.000     2/2 = 1.000
+openlineage + dcp facet provenance(daily_revenue)   2/2 = 1.000     2/2 = 1.000

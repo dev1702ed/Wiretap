@@ -52,6 +52,27 @@ def test_answer_key_is_well_formed(workload):
         assert e["via"] in aliases and {e["from_job"], e["to_job"]} <= jobs
     for p in key["provenance"]:
         assert {p["dataset"], *p["upstream"]} <= aliases
+    for process in key["processes"]:
+        assert harness.kind(process) in harness.KINDS
+
+
+def test_notebook_processes_replay_like_scripts():
+    key = harness.load("notebook")
+    assert [harness.kind(p) for p in key["processes"]] == ["notebook"]
+    as_script = json.loads(json.dumps(key))
+    del as_script["processes"][0]["kind"]
+
+    def shape(events):
+        return [(e["op"], e["dataset"], len(e["parent"])) for e in events]
+
+    assert shape(harness.replay(key)) == shape(harness.replay(as_script))
+
+
+def test_unknown_process_kind_is_rejected():
+    key = harness.load("notebook")
+    key["processes"][0]["kind"] = "spreadsheet"
+    with pytest.raises(ValueError, match="unknown process kind"):
+        harness.replay(key)
 
 
 def test_topic_fan_in_discriminates():

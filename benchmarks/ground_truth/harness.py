@@ -25,6 +25,10 @@ from dcp.interceptors.postgres import _capture
 GROUND_TRUTH = pathlib.Path(__file__).resolve().parent
 KAFKA_NS = "kafka://localhost:9092"
 
+# How a process runs live (benchmarks/live): a plain script, or a notebook
+# executed by a Jupyter kernel. Replay treats both the same.
+KINDS = ("script", "notebook")
+
 
 def workloads() -> list[str]:
     return sorted(p.parent.name for p in GROUND_TRUTH.glob("*/expected_graph.json"))
@@ -32,6 +36,14 @@ def workloads() -> list[str]:
 
 def load(workload: str) -> dict:
     return json.loads((GROUND_TRUTH / workload / "expected_graph.json").read_text())
+
+
+def kind(process: dict) -> str:
+    """A process's kind: "script" unless the key says otherwise."""
+    value = process.get("kind", "script")
+    if value not in KINDS:
+        raise ValueError(f"unknown process kind in answer key: {value!r}")
+    return value
 
 
 def datasets(key: dict) -> dict[str, tuple[str, str]]:
@@ -102,6 +114,7 @@ def replay(key: dict) -> list[dict]:
     try:
         config._emitter = collect
         for process in key["processes"]:
+            kind(process)  # validated; a notebook replays like a script
             config._job = config.JobIdentity(process["job"], "bench", 1)
             contextvars.Context().run(run, process["steps"])
     finally:

@@ -1,2 +1,3 @@
 bridges/openlineage/schema/OpenLineage.json -text
 *.sh text eol=lf
+backend/tests/data/score_replay.txt -text
