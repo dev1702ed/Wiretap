@@ -5,3 +5,5 @@ benchmarks/tests/data/render_expected.md -text
 benchmarks/tests/data/render_comparison_expected.md -text
 examples/dark-zone/Dockerfile text eol=lf
 examples/dark-zone/*.py text eol=lf
+benchmarks/tests/data/render_p51_expected.md -text
+benchmarks/tests/data/render_p51_comparison_expected.md -text
