@@ -1,0 +1,119 @@
+"""4a: the CPU cost of capture, with no database. P5.
+
+    python benchmarks/overhead/cpu.py --out cpu.json
+
+Times DCP's `_capture` on a fake cursor with a discarding emitter, and
+`_classify` on its own (sqlglot's share), for every query tier: 1,000 warm-up
+calls, then 10,000 timed calls, each timed with time.perf_counter_ns.
+Reported in microseconds. Run it once per Python: run.py does, for every
+interpreter it is given.
+
+Each tier runs in a fresh contextvars.Context that has already captured one
+point read, so a write (T3) has an earlier read to be parented to: job-level
+parenting, as in a script that reads, then writes.
+
+The emitter discards events, so this is capture alone: parsing, identity,
+parenting, event construction. Serialising and delivering an event is the
+sink's cost, measured live in 4b.
+"""
+
+import argparse
+import contextvars
+import importlib.metadata
+import json
+import platform
+import sys
+import time
+
+from queries import TIERS
+from stats import summarize
+
+WARMUP = 1_000
+TIMED = 10_000
+
+
+class NullEmitter:
+    """Discards every event. Benchmark-only, deliberately not part of the SDK."""
+
+    def emit(self, event) -> None:
+        return None
+
+    def flush(self, timeout: float = 5.0) -> None:
+        return None
+
+
+class _Info:
+    host = "localhost"
+    port = 5432
+    dbname = "dcp"
+
+
+class _Conn:
+    info = _Info()
+
+
+class FakeCursor:
+    connection = _Conn()
+
+
+def _time(fn, query, warmup: int, timed: int) -> list[int]:
+    for _ in range(warmup):
+        fn(query)
+    samples = []
+    clock = time.perf_counter_ns
+    for _ in range(timed):
+        start = clock()
+        fn(query)
+        samples.append(clock() - start)
+    return samples
+
+
+def run(warmup: int = WARMUP, timed: int = TIMED) -> dict:
+    from dcp import config
+    from dcp.interceptors.postgres import _capture, _classify
+
+    cursor = FakeCursor()
+    point_read = TIERS[0].query
+    saved = config._emitter, config._job, config._propagate_sql
+    config._emitter = NullEmitter()
+    config._job = config.JobIdentity("cpu_bench.py", "bench", 1)
+    config._propagate_sql = False
+    tiers = {}
+    try:
+        for tier in TIERS:
+
+            def capture_samples(query=tier.query):
+                _capture(cursor, point_read)  # an earlier read, for job-level parenting
+                return _time(lambda q: _capture(cursor, q), query, warmup, timed)
+
+            capture = contextvars.Context().run(capture_samples)
+            classify = _time(_classify, tier.query, warmup, timed)
+            tiers[tier.name] = {
+                "label": tier.label,
+                "capture_us": summarize(capture, scale=1000),
+                "classify_us": summarize(classify, scale=1000),
+            }
+    finally:
+        config._emitter, config._job, config._propagate_sql = saved
+    return {
+        "python": platform.python_version(),
+        "implementation": platform.python_implementation(),
+        "executable": sys.executable,
+        "sqlglot": importlib.metadata.version("sqlglot"),
+        "warmup": warmup,
+        "timed": timed,
+        "tiers": tiers,
+    }
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description="4a: CPU cost of DCP capture")
+    parser.add_argument("--out", required=True)
+    args = parser.parse_args(argv)
+    with open(args.out, "w", encoding="utf-8") as f:
+        json.dump(run(), f, indent=1)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

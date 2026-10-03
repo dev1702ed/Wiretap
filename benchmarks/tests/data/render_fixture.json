@@ -1,0 +1,834 @@
+{
+ "label": "fixture",
+ "quick": true,
+ "environment": {
+  "timestamp_utc": "2026-01-01T00:00:00+00:00",
+  "finished_utc": "2026-01-01T00:10:00+00:00",
+  "command": "python benchmarks/run.py --label fixture --quick (synthetic test fixture)",
+  "git_commit": "0000000000000000000000000000000000000000",
+  "git_dirty": false,
+  "python": "3.12.0",
+  "python_implementation": "CPython",
+  "os": "Synthetic-OS",
+  "cpu_model": "Synthetic CPU",
+  "cpu_count": 4,
+  "ci": true,
+  "postgres_server_version": "16.0",
+  "kafka_broker_version": null,
+  "kafka_broker_version_note": "not reported to clients by the Kafka protocol; declared: 3.8.0 (DCP_BENCH_KAFKA_VERSION)",
+  "packages": {
+   "dcp": "0.1.0.dev0",
+   "sqlglot": "30.0.0",
+   "psycopg": null
+  },
+  "dcp_configuration": {
+   "instrumentation": "dcp-instrument (sitecustomize), configured by DCP_* variables",
+   "http_emitter": "queue_size=10000, batch_size=500, max_retries=3, backoff=0.5 s",
+   "propagate_sql": "off, except the file+sqlcomment configuration"
+  },
+  "probes": {
+   "live": null,
+   "openlineage": null,
+   "uvicorn": null
+  }
+ },
+ "stages": [
+  {
+   "stage": "replay",
+   "status": "ran",
+   "seconds": 0.1
+  },
+  {
+   "stage": "live",
+   "status": "ran",
+   "seconds": 13.0
+  },
+  {
+   "stage": "adversarial",
+   "status": "ran",
+   "seconds": 10.0
+  },
+  {
+   "stage": "overhead",
+   "status": "failed",
+   "seconds": 1.0,
+   "error": "Traceback (most recent call last):\nRuntimeError: synthetic failure"
+  },
+  {
+   "stage": "cpu",
+   "status": "skipped",
+   "reason": "synthetic reason"
+  }
+ ],
+ "replay": {
+  "workloads": [
+   {
+    "workload": "topic_fan_in",
+    "dcp": [
+     {
+      "label": "nodes",
+      "hits": 4,
+      "found": 4,
+      "expected": 4,
+      "notes": []
+     },
+     {
+      "label": "dataset edges",
+      "hits": 3,
+      "found": 3,
+      "expected": 3,
+      "notes": []
+     },
+     {
+      "label": "run edges",
+      "hits": 1,
+      "found": 1,
+      "expected": 1,
+      "notes": []
+     },
+     {
+      "label": "upstream(enriched_orders) run-level",
+      "hits": 2,
+      "found": 2,
+      "expected": 2,
+      "notes": []
+     },
+     {
+      "label": "upstream(enriched_orders) dataset-level baseline",
+      "hits": 2,
+      "found": 2,
+      "expected": 2,
+      "notes": []
+     },
+     {
+      "label": "upstream(daily_revenue) run-level",
+      "hits": 2,
+      "found": 2,
+      "expected": 2,
+      "notes": []
+     },
+     {
+      "label": "upstream(daily_revenue) dataset-level baseline",
+      "hits": 2,
+      "found": 3,
+      "expected": 2,
+      "notes": [
+       "+refunds"
+      ]
+     }
+    ],
+    "openlineage": [
+     {
+      "label": "openlineage dataset edges",
+      "hits": 3,
+      "found": 3,
+      "expected": 3,
+      "notes": []
+     },
+     {
+      "label": "openlineage provenance(enriched_orders)",
+      "hits": 2,
+      "found": 2,
+      "expected": 2,
+      "notes": []
+     },
+     {
+      "label": "openlineage provenance(daily_revenue)",
+      "hits": 2,
+      "found": 3,
+      "expected": 2,
+      "notes": [
+       "+refunds"
+      ]
+     },
+     {
+      "label": "openlineage + dcp facet provenance(enriched_orders)",
+      "hits": 2,
+      "found": 2,
+      "expected": 2,
+      "notes": []
+     },
+     {
+      "label": "openlineage + dcp facet provenance(daily_revenue)",
+      "hits": 2,
+      "found": 2,
+      "expected": 2,
+      "notes": []
+     }
+    ]
+   }
+  ]
+ },
+ "live": {
+  "run_id": "fixture1",
+  "postgres_server_version": "16.0",
+  "workloads": [
+   {
+    "workload": "notebook",
+    "processes": [
+     {
+      "program": "analysis.ipynb",
+      "executed": "analysis.executed.ipynb",
+      "exit_code": 0,
+      "job": "analysis.ipynb",
+      "kind": "notebook",
+      "events": 2,
+      "sink": "analysis.ipynb.jsonl"
+     }
+    ],
+    "score": {
+     "workload": "notebook",
+     "dcp": [
+      {
+       "label": "nodes",
+       "hits": 2,
+       "found": 2,
+       "expected": 2,
+       "notes": []
+      },
+      {
+       "label": "dataset edges",
+       "hits": 1,
+       "found": 1,
+       "expected": 1,
+       "notes": []
+      },
+      {
+       "label": "run edges",
+       "hits": 0,
+       "found": 0,
+       "expected": 0,
+       "notes": []
+      },
+      {
+       "label": "upstream(summary) run-level",
+       "hits": 1,
+       "found": 1,
+       "expected": 1,
+       "notes": []
+      },
+      {
+       "label": "upstream(summary) dataset-level baseline",
+       "hits": 1,
+       "found": 1,
+       "expected": 1,
+       "notes": []
+      }
+     ],
+     "openlineage": [
+      {
+       "label": "openlineage dataset edges",
+       "hits": 1,
+       "found": 1,
+       "expected": 1,
+       "notes": []
+      },
+      {
+       "label": "openlineage provenance(summary)",
+       "hits": 1,
+       "found": 1,
+       "expected": 1,
+       "notes": []
+      },
+      {
+       "label": "openlineage + dcp facet provenance(summary)",
+       "hits": 1,
+       "found": 1,
+       "expected": 1,
+       "notes": []
+      }
+     ]
+    }
+   }
+  ]
+ },
+ "adversarial": {
+  "cases": [
+   {
+    "case": 1,
+    "title": "Ad-hoc script",
+    "workload": "dark_zone",
+    "programs": [
+     "nightly_enrich.py",
+     "warehouse_loader.py"
+    ],
+    "dcp_perfect": true,
+    "openlineage_events_without_dcp": 0,
+    "status": "demonstrated live"
+   },
+   {
+    "case": 2,
+    "title": "Notebook",
+    "workload": "notebook",
+    "programs": [
+     "analysis.ipynb"
+    ],
+    "dcp_perfect": true,
+    "openlineage_events_without_dcp": 0,
+    "status": "demonstrated live"
+   },
+   {
+    "case": 3,
+    "title": "Shared topic, run-level precision",
+    "workload": "topic_fan_in",
+    "programs": [
+     "enrich_orders.py",
+     "enrich_refunds.py",
+     "revenue_loader.py"
+    ],
+    "dcp_perfect": true,
+    "dataset_level_over_approximates": true,
+    "consumer_checked_record": true,
+    "status": "demonstrated live"
+   }
+  ],
+  "baseline": {
+   "openlineage_python_version": "1.53.0",
+   "programs": [
+    {
+     "program": "nightly_enrich.py",
+     "exit_code": 0,
+     "workload": "dark_zone",
+     "job": "nightly_enrich.py",
+     "instrumented": false
+    },
+    {
+     "program": "warehouse_loader.py",
+     "exit_code": 0,
+     "workload": "dark_zone",
+     "job": "warehouse_loader.py",
+     "instrumented": false
+    },
+    {
+     "program": "analysis.ipynb",
+     "exit_code": 0,
+     "workload": "notebook",
+     "job": "analysis.ipynb",
+     "instrumented": false
+    }
+   ],
+   "events_received_uninstrumented": 0,
+   "requests_uninstrumented": [],
+   "control": {
+    "program": "manual_emission.py",
+    "exit_code": 0,
+    "stderr_tail": "",
+    "events_received": 2,
+    "event_types": [
+     "START",
+     "COMPLETE"
+    ]
+   }
+  }
+ },
+ "cpu": {
+  "pythons": [
+   {
+    "python": "3.12.3",
+    "implementation": "CPython",
+    "executable": "/synthetic/python",
+    "sqlglot": "30.21.0",
+    "warmup": 1000,
+    "timed": 10000,
+    "tiers": {
+     "T1": {
+      "label": "point read",
+      "capture_us": {
+       "p50": 297.666,
+       "p95": 440.62364999999994,
+       "p99": 526.2858800000007,
+       "p99.9": 903.4962570000026,
+       "max": 11104.899,
+       "n": 10000
+      },
+      "classify_us": {
+       "p50": 256.4675,
+       "p95": 421.43639999999994,
+       "p99": 546.3096800000002,
+       "p99.9": 1102.997706000015,
+       "max": 2812.041,
+       "n": 10000
+      }
+     },
+     "T5": {
+      "label": "analytical",
+      "capture_us": {
+       "p50": 2823.0665,
+       "p95": 4110.723549999993,
+       "p99": 5465.7037400000045,
+       "p99.9": 14906.544404000027,
+       "max": 25312.372,
+       "n": 10000
+      },
+      "classify_us": {
+       "p50": 2754.193,
+       "p95": 3464.8163999999965,
+       "p99": 5377.082500000001,
+       "p99.9": 15721.560746000036,
+       "max": 24534.123,
+       "n": 10000
+      }
+     }
+    }
+   },
+   {
+    "executable": "/synthetic/broken-python",
+    "error": "synthetic: dcp not installed"
+   }
+  ]
+ },
+ "overhead": {
+  "mode": {
+   "name": "quick",
+   "rounds": 5,
+   "calls": 300,
+   "warmup": 50,
+   "kafka_messages": 2000,
+   "kafka_warmup": 50,
+   "startup_reps": 10
+  },
+  "configs": [
+   "base",
+   "file",
+   "http",
+   "http-down",
+   "file+sqlcomment"
+  ],
+  "kafka_configs": [
+   "base",
+   "file",
+   "http"
+  ],
+  "targets": {
+   "added_p99_us": 1000.0,
+   "throughput_loss_pct": 2.0
+  },
+  "postgres": {
+   "tiers": {
+    "T1": {
+     "label": "point read",
+     "latency_us": {
+      "base": {
+       "p50": 118.8325,
+       "p95": 187.77994999999999,
+       "p99": 246.2242,
+       "p99.9": 480.2232329999973,
+       "max": 598.693,
+       "n": 1500
+      },
+      "file": {
+       "p50": 602.2335,
+       "p95": 866.1629999999999,
+       "p99": 1423.6392999999996,
+       "p99.9": 3249.628440999997,
+       "max": 5394.575,
+       "n": 1500
+      },
+      "http": {
+       "p50": 646.5855,
+       "p95": 1117.4563999999998,
+       "p99": 1506.68312,
+       "p99.9": 2399.255604,
+       "max": 2580.418,
+       "n": 1500
+      },
+      "http-down": {
+       "p50": 589.766,
+       "p95": 879.3118499999999,
+       "p99": 1179.7030300000001,
+       "p99.9": 3608.1721059999963,
+       "max": 4936.469,
+       "n": 1500
+      },
+      "file+sqlcomment": {
+       "p50": 642.6,
+       "p95": 862.3506499999999,
+       "p99": 1206.35837,
+       "p99.9": 2148.675651999987,
+       "max": 2448.583,
+       "n": 1500
+      }
+     },
+     "throughput_per_s": {
+      "base": {
+       "p50": 7535.363839265867,
+       "p95": 7960.532696706975,
+       "p99": 8010.7855800088355,
+       "p99.9": 8022.092478751754,
+       "max": 8023.3488008343,
+       "n": 5
+      },
+      "file": {
+       "p50": 1517.3630411301635,
+       "p95": 1614.6143432494198,
+       "p99": 1615.3068155870117,
+       "p99.9": 1615.4626218629696,
+       "max": 1615.4799336714095,
+       "n": 5
+      },
+      "http": {
+       "p50": 1431.4004962255185,
+       "p95": 1463.5577487623432,
+       "p99": 1464.2408913931035,
+       "p99.9": 1464.3945984850245,
+       "max": 1464.4116770507935,
+       "n": 5
+      },
+      "http-down": {
+       "p50": 1542.112921804702,
+       "p95": 1606.651463074164,
+       "p99": 1608.4452029840654,
+       "p99.9": 1608.8487944637932,
+       "max": 1608.8936379615407,
+       "n": 5
+      },
+      "file+sqlcomment": {
+       "p50": 1504.9601756685834,
+       "p95": 1573.0111381676168,
+       "p99": 1578.4271957954027,
+       "p99.9": 1579.6458087616547,
+       "max": 1579.7812102023493,
+       "n": 5
+      }
+     },
+     "versus_base": {
+      "file": {
+       "added_p50_us": {
+        "estimate": 486.2323,
+        "low": 475.16949999999997,
+        "high": 506.73229999999995,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 1246.3747259999986,
+        "low": 739.4576100000002,
+        "high": 1753.2918419999974,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -79.83226910418267,
+        "low": -80.7032997447105,
+        "high": -78.96123846365484,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      },
+      "http": {
+       "added_p50_us": {
+        "estimate": 529.9109000000001,
+        "low": 500.7943,
+        "high": 561.1156,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 1190.3721579999997,
+        "low": 980.036788,
+        "high": 1388.5109739999994,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -81.58986792657157,
+        "low": -82.679160994753,
+        "high": -80.60934403713962,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      },
+      "http-down": {
+       "added_p50_us": {
+        "estimate": 472.3674,
+        "low": 456.20920000000007,
+        "high": 492.08389999999997,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 1085.1954239999984,
+        "low": 811.7611959999989,
+        "high": 1372.0863899999977,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -79.69337945028145,
+        "low": -80.03110149639228,
+        "high": -79.37347817873327,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      },
+      "file+sqlcomment": {
+       "added_p50_us": {
+        "estimate": 529.8453000000001,
+        "low": 504.1184999999999,
+        "high": 555.5721000000001,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 934.2726119999995,
+        "low": 643.3403559999999,
+        "high": 1255.3179259999995,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -80.54578493462574,
+        "low": -81.88518337365775,
+        "high": -79.20638649559372,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      }
+     }
+    }
+   },
+   "delivery": {
+    "file": {
+     "expected_per_round": 2800,
+     "delivered_per_round": [
+      2800,
+      2800,
+      2800,
+      2800,
+      2800
+     ]
+    },
+    "http": {
+     "expected_per_round": 2800,
+     "delivered_per_round": [
+      2800,
+      2800,
+      2800,
+      2800,
+      2800
+     ]
+    },
+    "http-down": {
+     "expected_per_round": 2800,
+     "delivered_per_round": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ]
+    },
+    "file+sqlcomment": {
+     "expected_per_round": 2800,
+     "delivered_per_round": [
+      2800,
+      2800,
+      2800,
+      2800,
+      2800
+     ]
+    }
+   }
+  },
+  "kafka": {
+   "message_bytes": 1024,
+   "latency_us": {
+    "base": {
+     "p50": 1.081,
+     "p95": 4.491,
+     "p99": 8.055710000000015,
+     "p99.9": 43.947012,
+     "max": 87.333,
+     "n": 10000
+    },
+    "file": {
+     "p50": 33.2335,
+     "p95": 76.78689999999999,
+     "p99": 123.99712,
+     "p99.9": 246.27231200000475,
+     "max": 3158.268,
+     "n": 10000
+    },
+    "http": {
+     "p50": 48.3515,
+     "p95": 83.8931999999999,
+     "p99": 125.12552000000002,
+     "p99.9": 745.9554170000115,
+     "max": 4273.051,
+     "n": 10000
+    }
+   },
+   "throughput_per_s": {
+    "base": {
+     "p50": 110447.8594431705,
+     "p95": 130497.25932134873,
+     "p99": 133797.5576497918,
+     "p99.9": 134540.1247736915,
+     "max": 134622.63223190256,
+     "n": 5
+    },
+    "file": {
+     "p50": 23132.637500512967,
+     "p95": 27690.81026555777,
+     "p99": 27974.055309245225,
+     "p99.9": 28037.7854440749,
+     "max": 28044.866570167087,
+     "n": 5
+    },
+    "http": {
+     "p50": 18240.014772952763,
+     "p95": 21543.363898856103,
+     "p99": 21556.170863089097,
+     "p99.9": 21559.05243004152,
+     "max": 21559.372604147346,
+     "n": 5
+    }
+   },
+   "versus_base": {
+    "file": {
+     "added_p50_us": {
+      "estimate": 34.7892,
+      "low": 30.5416,
+      "high": 41.1846,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "added_p99_us": {
+      "estimate": 108.618724,
+      "low": 92.53649800000001,
+      "high": 126.44454599999999,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "throughput_change_pct": {
+      "estimate": -77.3920476673259,
+      "low": -80.7624676238252,
+      "high": -74.37725596189041,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "latency_verdict": "met",
+     "throughput_verdict": "not met"
+    },
+    "http": {
+     "added_p50_us": {
+      "estimate": 42.084199999999996,
+      "low": 33.620599999999996,
+      "high": 49.5914,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "added_p99_us": {
+      "estimate": 115.88344599999998,
+      "low": 106.59521399999998,
+      "high": 128.52909599999998,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "throughput_change_pct": {
+      "estimate": -81.67481517291552,
+      "low": -83.67402479911344,
+      "high": -79.67560554671758,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "latency_verdict": "met",
+     "throughput_verdict": "not met"
+    }
+   },
+   "delivery": {
+    "file": {
+     "expected_per_round": 2050,
+     "delivered_per_round": [
+      2050,
+      2050,
+      2050,
+      2050,
+      2050
+     ]
+    },
+    "http": {
+     "expected_per_round": 2050,
+     "delivered_per_round": [
+      2050,
+      2050,
+      2050,
+      2050,
+      2050
+     ]
+    }
+   }
+  },
+  "startup": {
+   "reps": 10,
+   "ms": {
+    "python": {
+     "p50": 16.097328,
+     "p95": 18.37494285,
+     "p99": 19.32769257,
+     "p99.9": 19.542061257,
+     "max": 19.56588,
+     "n": 10
+    },
+    "dcp-instrument python": {
+     "p50": 510.0480575,
+     "p95": 532.61090375,
+     "p99": 533.01235595,
+     "p99.9": 533.102682695,
+     "max": 533.112719,
+     "n": 10
+    },
+    "python with DCP's sitecustomize": {
+     "p50": 313.561994,
+     "p95": 334.80665905,
+     "p99": 338.88067501,
+     "p99.9": 339.797328601,
+     "max": 339.899179,
+     "n": 10
+    }
+   }
+  },
+  "backpressure": {
+   "queue_size": 8,
+   "calls": 300,
+   "events_emitted": 350,
+   "dropped": 350,
+   "latency_us": {
+    "p50": 604.704,
+    "p95": 779.6281500000002,
+    "p99": 970.1620699999991,
+    "p99.9": 1402.0059770000062,
+    "max": 1487.543,
+    "n": 300
+   },
+   "bound_ms": 50.0,
+   "bounded": true
+  }
+ }
+}
