@@ -9,8 +9,11 @@ query text. We parse with sqlglot — enough for table-level identity, not enoug
 for column-to-column mapping, which is explicitly out of v1 scope.
 """
 
+import collections
 import functools
 import logging
+import re
+import threading
 
 import sqlglot
 from sqlglot import exp
@@ -119,15 +122,119 @@ def _classify(query: str) -> tuple[list[str], list[str]]:
 TableParts = tuple[str | None, str, str]  # (catalog or None, schema, table)
 Classified = tuple[tuple[TableParts, ...], tuple[TableParts, ...]]  # (reads, writes)
 
-# The parse cache (P5 Stage 5). Classification is a pure function of the query
-# text, and a script sends the same parameterised text over and over, so the
-# result is cached, keyed on the exact text. Bounded twice: at most
-# CLASSIFY_CACHE_SIZE entries, and texts longer than CLASSIFY_CACHE_MAX_CHARS
-# (say, an INSERT with thousands of inlined rows) are parsed every time and
-# never held, so the cache stays within a few MiB. Results are tuples of
-# tuples, so no caller can change what the next one gets.
+# The parse cache (P5 Stage 5; literal-normalised in P5.1, O1). Classification
+# is a pure function of the query text, and which tables a statement touches
+# never depends on its literal values. So the cache has two levels:
+#
+# 1. the exact text, as in P5. A parameterised query repeats its text, so this
+#    is the hit path, and it costs what it cost in P5;
+# 2. on an exact miss, the text with every literal replaced by a placeholder
+#    (_cache_key). `... WHERE id = 7` and `... WHERE id = 8` share that key, so
+#    a script that inlines literals parses each statement shape once. On a miss
+#    here too, the ORIGINAL text is classified, and the result is stored under
+#    the normalised key only if it parsed: a text sqlglot cannot parse never
+#    decides what its siblings get.
+#
+# Both levels hold at most CLASSIFY_CACHE_SIZE entries; texts longer than
+# CLASSIFY_CACHE_MAX_CHARS (say, an INSERT with thousands of inlined rows) are
+# parsed every time and never held, so the caches stay within a few MiB.
+# Results are tuples of tuples, so no caller can change what the next one gets.
 CLASSIFY_CACHE_SIZE = 1024
 CLASSIFY_CACHE_MAX_CHARS = 16 * 1024
+
+# The normalisation pass: one left-to-right scan. At each position the
+# alternatives are tried in order: things to KEEP exactly (whole runs of
+# identifiers, keywords, positional parameters like $1, whitespace and
+# punctuation; comments; quoted identifiers) and LITERALS to replace (E''
+# strings, dollar-quoted strings, '' strings, numbers). Identifiers are matched
+# whole, so the digit in `t1` is never read as a number, and quoted
+# identifiers are kept byte for byte. A run stops before `E'`, so an E''
+# string, whose \' escape a plain string would misread, is always seen as one.
+# Anything the scan cannot read for certain (an unterminated quote, a stray
+# `$`, a nested block comment, which Postgres allows) makes the text its own
+# key: no normalisation, exactly P5's behaviour.
+_LITERAL = "\x00"  # libpq cannot send a NUL, so no real query text contains one
+_TOKENS = re.compile(
+    r"""
+      (?P<estring>(?<![\w$])[Ee]'(?:[^'\\]|\\.|'')*')
+    | (?P<run>(?:(?![Ee]')[A-Za-z_\x80-\U0010ffff][\w$\x80-\U0010ffff]*
+                |\$\d+|[^\w'"$.\-/]|\.(?!\d)|-(?!-)|/(?!\*))+)
+    | (?P<comment>--[^\n]*|/\*.*?\*/)
+    | (?P<quoted>"(?:[^"]|"")*")
+    | (?P<dollar>\$(?P<tag>(?:[A-Za-z_\x80-\U0010ffff][\w\x80-\U0010ffff]*)?)\$.*?\$(?P=tag)\$)
+    | (?P<string>'(?:[^']|'')*')
+    | (?P<number>(?<![\w$.])(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)
+    | (?P<bad>['"$]|/\*)
+    """,
+    re.VERBOSE | re.DOTALL,
+)
+# `IN (1, 2, -3)` and `VALUES (1, 2)` collapse to one placeholder each.
+_LISTS = re.compile(_LITERAL + r"(?:\s*,\s*[-+]?\s*" + _LITERAL + r")+")
+
+
+class _Unreadable(Exception):
+    """The normalisation pass cannot read this text for certain."""
+
+
+def _replace(match: re.Match) -> str:
+    kind = match.lastgroup
+    if kind in ("run", "quoted"):
+        return match.group()
+    if kind == "comment":
+        if "/*" in match.group()[2:]:
+            raise _Unreadable  # a nested block comment
+        return match.group()
+    if kind == "bad":
+        raise _Unreadable
+    return _LITERAL  # estring, dollar, string, number
+
+
+def _cache_key(query: str) -> str | None:
+    """The query with every literal replaced by a placeholder and lists of them
+    collapsed; None if the text cannot be normalised with certainty."""
+    try:
+        key = _TOKENS.sub(_replace, query)
+    except _Unreadable:
+        return None
+    return _LISTS.sub(_LITERAL, key)
+
+
+class _KeyCache:
+    """Level 2: a bounded LRU from normalised key to classification."""
+
+    def __init__(self, size: int):
+        self.size = size
+        self._entries: collections.OrderedDict = collections.OrderedDict()
+        self._lock = threading.Lock()
+        self.hits = self.misses = 0
+
+    def get(self, key: str):
+        with self._lock:
+            result = self._entries.get(key)
+            if result is None:
+                self.misses += 1
+            else:
+                self.hits += 1
+                self._entries.move_to_end(key)
+            return result
+
+    def put(self, key: str, result) -> None:
+        with self._lock:
+            self._entries[key] = result
+            self._entries.move_to_end(key)
+            while len(self._entries) > self.size:
+                self._entries.popitem(last=False)
+
+    def __len__(self) -> int:
+        return len(self._entries)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._entries.clear()
+            self.hits = self.misses = 0
+
+
+_normalised = _KeyCache(CLASSIFY_CACHE_SIZE)
 
 
 def _classify_parts(query: str) -> Classified:
@@ -139,11 +246,31 @@ def _classify_parts(query: str) -> Classified:
 
 @functools.lru_cache(maxsize=CLASSIFY_CACHE_SIZE)
 def _classify_parts_cached(query: str) -> Classified:
-    return _classify_parts_uncached(query)
+    """Level 1, the exact text; on a miss, level 2, the normalised key."""
+    key = _cache_key(query)
+    if key is None or key == query:  # unreadable, or no literal to share
+        return _classify_parts_uncached(query)
+    result = _normalised.get(key)
+    if result is None:
+        result, parsed = _parse_and_classify(query)
+        if parsed:
+            _normalised.put(key, result)
+    return result
+
+
+def clear_classify_cache() -> None:
+    """Empty both levels of the parse cache."""
+    _classify_parts_cached.cache_clear()
+    _normalised.clear()
 
 
 def _classify_parts_uncached(query: str) -> Classified:
-    """_classify, keeping each table's parts apart: (catalog, schema, table).
+    """_classify, keeping each table's parts apart: (catalog, schema, table)."""
+    return _parse_and_classify(query)[0]
+
+
+def _parse_and_classify(query: str) -> tuple[Classified, bool]:
+    """(_classify_parts_uncached's result, whether sqlglot parsed the text).
 
     Unquoted identifiers are folded to lower case, as Postgres folds them, so
     `FROM Orders` and `FROM orders` name one table. Quoted parts are kept
@@ -155,17 +282,17 @@ def _classify_parts_uncached(query: str) -> Classified:
         statement = sqlglot.parse_one(query, dialect="postgres")
     except Exception:  # noqa: BLE001 — unparseable SQL is expected, not fatal
         _log.debug("dcp could not parse query", exc_info=True)
-        return (), ()
+        return ((), ()), False
     if statement is None:
-        return (), ()
+        return ((), ()), False
 
     # Only statements that actually move data produce edges. A plain
     # CREATE/DROP/ALTER moves nothing; CTAS (CREATE ... AS SELECT) does.
     if isinstance(statement, exp.Create):
         if statement.expression is None:
-            return (), ()
+            return ((), ()), True
     elif not isinstance(statement, (exp.Select, exp.Union, exp.Insert, exp.Update, exp.Delete)):
-        return (), ()
+        return ((), ()), True
 
     writes: list[TableParts] = []
     write_nodes = set()
@@ -193,7 +320,7 @@ def _classify_parts_uncached(query: str) -> Classified:
         if id(table) not in write_nodes and not _is_cte_reference(table, ctes)
     ]
 
-    return tuple(_dedupe(reads)), tuple(_dedupe(writes))
+    return (tuple(_dedupe(reads)), tuple(_dedupe(writes))), True
 
 
 def _is_cte_reference(table: exp.Table, ctes: set[str]) -> bool:

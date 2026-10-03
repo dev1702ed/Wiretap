@@ -17,8 +17,11 @@ parenting, event construction. Serialising and delivering an event is the
 sink's cost, measured live in 4b.
 
 The L tiers (added in P5.1) send a different text on every call, warm-up
-included, so every call misses the parse cache: the texts are built before
-timing starts, and each timed call gets the next one.
+included, so every call misses the parse cache's exact-text level: the texts
+are built before timing starts, and each timed call gets the next one.
+
+Where the SDK has it (P5.1 O1 onwards), the literal-normalisation pass that
+builds the cache's second-level key is also timed on its own, per tier.
 """
 
 import argparse
@@ -104,7 +107,10 @@ def _timer_offset(tier, warmup: int, timed: int):
 
 def run(warmup: int = WARMUP, timed: int = TIMED) -> dict:
     from dcp import config
+    from dcp.interceptors import postgres
     from dcp.interceptors.postgres import _capture, _classify
+
+    cache_key = getattr(postgres, "_cache_key", None)  # P5.1 O1 onwards
 
     cursor = FakeCursor()
     point_read = TIERS[0].query
@@ -134,6 +140,10 @@ def run(warmup: int = WARMUP, timed: int = TIMED) -> dict:
                 "capture_us": summarize(capture, scale=1000),
                 "classify_us": summarize(classify, scale=1000),
             }
+            if cache_key is not None:  # P5.1 O1: the normalisation pass alone
+                tiers[tier.name]["normalize_us"] = summarize(
+                    timer(cache_key), scale=1000
+                )
     finally:
         config._emitter, config._job, config._propagate_sql = saved
     return {

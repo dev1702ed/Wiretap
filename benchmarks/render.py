@@ -42,6 +42,11 @@ P51_CONFIGS_NOTE = (
     "`1e6/throughput_instrumented − 1e6/throughput_base`, paired by round with a "
     "bootstrap interval: the fixed cost per call that the throughput change implies."
 )
+NORMALIZE_NOTE = (
+    "*normalise* (P5.1, O1): the literal-normalisation pass alone, which builds the "
+    "parse cache's second-level key on an exact-text miss. A parameterised tier pays "
+    "it only on its first call; a literal tier pays it on every call."
+)
 PROFILE_NOTE = (
     "One extra round per instrumented configuration, under `cProfile`, timed loop "
     "only; never used for any timing. Functions reached from DCP's psycopg wrapper "
@@ -502,6 +507,12 @@ def _cpu(results: dict) -> list[str]:
         for tier in py.get("tiers", {}).values()
     ):
         out += [P51_TIERS_NOTE, ""]
+    if any(
+        "normalize_us" in tier
+        for py in results["cpu"]["pythons"]
+        for tier in py.get("tiers", {}).values()
+    ):
+        out += [NORMALIZE_NOTE, ""]
     for py in results["cpu"]["pythons"]:
         if "error" in py:
             out += [
@@ -511,20 +522,23 @@ def _cpu(results: dict) -> list[str]:
                 "",
             ]
             continue
+        normalize = any("normalize_us" in tier for tier in py["tiers"].values())
         rows = []
         for name, tier in py["tiers"].items():
             c, k = tier["capture_us"], tier["classify_us"]
-            rows.append(
-                [
-                    f"{name} {tier['label']}",
-                    us(c["p50"]),
-                    us(c["p95"]),
-                    us(c["p99"]),
-                    us(c["p99.9"]),
-                    us(k["p50"]),
-                    us(k["p99"]),
-                ]
-            )
+            row = [
+                f"{name} {tier['label']}",
+                us(c["p50"]),
+                us(c["p95"]),
+                us(c["p99"]),
+                us(c["p99.9"]),
+                us(k["p50"]),
+                us(k["p99"]),
+            ]
+            if normalize:
+                n = tier.get("normalize_us") or {}
+                row += [us(n.get("p50")), us(n.get("p99"))]
+            rows.append(row)
         out += [
             (
                 f"### Python {py['python']} (sqlglot {py['sqlglot']}; {py['warmup']} warm-up, "
@@ -540,6 +554,7 @@ def _cpu(results: dict) -> list[str]:
                     "p99.9",
                     "classify p50",
                     "classify p99",
+                    *(["normalise p50", "normalise p99"] if normalize else []),
                 ],
                 rows,
             ),

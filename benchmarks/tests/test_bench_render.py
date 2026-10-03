@@ -176,3 +176,14 @@ def test_the_p5_fixture_renders_without_any_p51_section():
         "Pinned",
     ):
         assert marker not in text
+
+
+def test_the_normalisation_columns_appear_only_when_measured():
+    results = fixture_p51()
+    assert "normalise p50" not in render.render(results)
+    for py in results["cpu"]["pythons"]:
+        for tier in py["tiers"].values():
+            tier["normalize_us"] = {"p50": 2.5, "p99": 4.0}
+    text = render.render(results)
+    assert "| classify p99 | normalise p50 | normalise p99 |" in text
+    assert render.NORMALIZE_NOTE in text
