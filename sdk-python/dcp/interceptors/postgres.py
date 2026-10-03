@@ -15,7 +15,7 @@ import logging
 import sqlglot
 from sqlglot import exp
 
-from dcp.config import current_emitter, current_job, sql_propagation_enabled
+from dcp.config import capture_enabled, current_emitter, current_job, sql_propagation_enabled
 from dcp.context import ensure_trace, inbound, prior_reads, record_read
 from dcp.envelope import Dataset, DCPEvent, new_id
 from dcp.propagation import sqlcomment
@@ -36,6 +36,8 @@ def patch_psycopg() -> None:
     original_execute = psycopg.Cursor.execute
 
     def execute(self, query, params=None, **kwargs):
+        if not capture_enabled():  # the kill switch: call straight through
+            return original_execute(self, query, params, **kwargs)
         try:
             sent = _outbound(query)
         except Exception:  # noqa: BLE001 — monitor-only: never break the caller

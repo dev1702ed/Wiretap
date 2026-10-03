@@ -3,7 +3,8 @@
 dcp-instrument puts this file's directory first on PYTHONPATH, so Python's
 `site` module imports it at interpreter start-up, before any user import. It:
 
-1. calls dcp.init() from DCP_EMIT, DCP_JOB_NAME and DCP_PROPAGATE_SQL;
+1. calls dcp.init() from DCP_EMIT, DCP_JOB_NAME, DCP_PROPAGATE_SQL and
+   DCP_CAPTURE;
 2. patches psycopg, confluent-kafka and ThreadPoolExecutor, each only if its
    library is importable;
 3. runs the sitecustomize this one shadows, if there is one further along
@@ -41,6 +42,11 @@ def _job_name() -> str | None:
     return None
 
 
+def capture_off(value: str | None) -> bool:
+    """DCP_CAPTURE=off (or 0, false, no; any case) is the kill switch."""
+    return (value or "").strip().lower() in ("off", "0", "false", "no")
+
+
 def _start_dcp() -> None:
     import importlib.util
 
@@ -50,6 +56,7 @@ def _start_dcp() -> None:
         emit=os.environ.get("DCP_EMIT") or "console",
         job_name=_job_name(),
         propagate_sql=os.environ.get("DCP_PROPAGATE_SQL") == "1",
+        capture=not capture_off(os.environ.get("DCP_CAPTURE")),
     )
     for module, patch in (("psycopg", dcp.patch_psycopg), ("confluent_kafka", dcp.patch_kafka)):
         try:

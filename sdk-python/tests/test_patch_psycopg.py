@@ -53,6 +53,17 @@ def test_captures_the_query(cursor_cls, events):
     assert read["op"] == "read" and read["dataset"]["name"] == "dcp.public.orders"
 
 
+def test_kill_switch_calls_straight_through(cursor_cls, events, monkeypatch):
+    """capture=False (DCP_CAPTURE=off): the wrapper stays, captures nothing,
+    and sends the query untouched even with the SQL comment opted in."""
+    monkeypatch.setattr(config, "_capture", False)
+    monkeypatch.setattr(config, "_propagate_sql", True)
+    cur = cursor_cls()
+    assert cur.execute("SELECT id FROM orders") is cur
+    assert cur.sent == "SELECT id FROM orders"
+    assert events == []
+
+
 def test_capture_failure_never_reaches_the_caller(cursor_cls, events, monkeypatch):
     def boom(_):
         raise RuntimeError("parser exploded")

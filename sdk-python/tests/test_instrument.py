@@ -232,6 +232,37 @@ def test_propagate_sql_is_off_for_other_values(workdir):
     assert "dcp_trace" not in result.stdout
 
 
+@pytest.mark.parametrize("value", ["off", "OFF", "0", "false", "no"])
+def test_capture_off_keeps_the_patches_and_captures_nothing(workdir, value):
+    """The kill switch: wrappers installed, program unchanged, no events, no comment."""
+    (workdir / "job.py").write_text(
+        UNTOUCHED + 'print("patched:", Producer.__module__ != "confluent_kafka")\n'
+    )
+    sink, path = emit_to(workdir)
+    result = run(
+        workdir, sys.executable, "job.py", DCP_EMIT=sink, DCP_CAPTURE=value, DCP_PROPAGATE_SQL="1"
+    )
+    assert result.returncode == 0, result.stderr
+    assert "script finished" in result.stdout and "patched: True" in result.stdout
+    assert "sent: SELECT id, total FROM orders\n" in result.stdout  # no trace comment
+    assert not path.exists() or read_events(path) == []
+
+
+@pytest.mark.parametrize("value", ["", "on", "1", "offline"])
+def test_capture_stays_on_for_other_values(workdir, value):
+    sink, path = emit_to(workdir)
+    result = run(workdir, sys.executable, "job.py", DCP_EMIT=sink, DCP_CAPTURE=value)
+    assert result.returncode == 0, result.stderr
+    assert [e["op"] for e in read_events(path)] == ["read", "write"]
+
+
+def test_null_sink_runs_the_program_and_records_nothing(workdir):
+    result = run(workdir, sys.executable, "job.py", DCP_EMIT="null://")
+    assert result.returncode == 0, result.stderr
+    assert "script finished" in result.stdout
+    assert not [line for line in result.stdout.splitlines() if line.startswith("{")]
+
+
 def test_default_sink_is_the_console(workdir):
     result = run(workdir, sys.executable, "job.py")
     assert result.returncode == 0, result.stderr
