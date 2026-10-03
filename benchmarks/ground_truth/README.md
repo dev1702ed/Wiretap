@@ -15,12 +15,13 @@ measure a gap.
 | `dark_zone/` | A script reads `orders` and produces to Kafka; a second process consumes and writes `daily_revenue` | Capture, and propagation across a process boundary |
 | `topic_fan_in/` | Two producers write one topic; the consumer processes only producer A's record | What propagation adds: run-level precision |
 | `job_granularity/` | One job runs two independent `INSERT … SELECT` statements (written by the project owner, P4) | Statement-level precision inside one job, which OpenLineage's core run model (inputs × outputs) cannot express |
+| `notebook/` | A Jupyter kernel reads `orders` and writes `summary` through the application (written by the project owner, P5) | Adversarial case 2: a notebook, with no scheduler and no OpenLineage integration |
 
 ## Answer-key format (`expected_graph.json`)
 
 | Field | Meaning |
 |---|---|
-| `processes` | The workload itself: ordered steps per process (`sql`, `produce`, `consume`). Tests replay it through DCP's capture code with fakes; P5 replays it live |
+| `processes` | The workload itself: ordered steps per process (`sql`, `produce`, `consume`), and an optional `kind`: `script` (the default) or `notebook`. Tests replay it through DCP's capture code with fakes, treating both kinds the same; `benchmarks/live` runs it live, a `notebook` process as a real notebook |
 | `datasets` | Alias → `{namespace, name}`. Names follow the spec (`db.schema.table`) |
 | `dataset_edges` | `{from, to, job}` — dataset-level lineage, the unit comparable to OpenLineage |
 | `run_edges` | `{from_job, to_job, via}` — which producer run fed which consumer run |
@@ -79,4 +80,8 @@ headers cross between them), and returns the events.
   the `dcp` run facet. `bridges/openlineage/tests/test_bridge_roundtrip.py`
   pins those numbers. Results: `docs/results/P4.md`.
 
-These are replays, not live runs. Live replay against Postgres and Kafka is P5.
+These are replays, not live runs. Since P5, `benchmarks/live` also runs every key
+**live** (real Postgres and Kafka, each process a separate OS process under
+`dcp-instrument`) and scores it with the same row functions; `score.py`'s event
+source is pluggable (`score_all(events_for)`) and its replay output is pinned byte
+for byte by `backend/tests/test_backend_score.py`.

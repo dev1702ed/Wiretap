@@ -1,0 +1,9 @@
+# Build context is the repository root; send only what the demo image needs.
+# (BuildKit reads <Dockerfile>.dockerignore next to the Dockerfile.)
+*
+!sdk-python
+!bridges/openlineage
+!examples/dark-zone
+**/__pycache__
+**/*.egg-info
+**/tests

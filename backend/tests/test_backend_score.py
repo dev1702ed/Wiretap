@@ -37,3 +37,25 @@ def test_score_runs_and_covers_every_level():
         assert f"-- {key['workload']}: OpenLineage translation" in result.stdout
     for level in ("nodes", "dataset edges", "run edges", "openlineage dataset edges"):
         assert level in result.stdout
+
+
+def test_replay_output_is_pinned():
+    """score.py's replay output, byte for byte (P5).
+
+    The event source is pluggable (replay or live); the refactor that made it
+    so must not change a byte of the replay output. The expected file is
+    checked out without line-ending conversion (.gitattributes: -text), and
+    universal newlines on stdout make the comparison the same on Windows.
+    A new or changed answer key changes this output: regenerate the file from
+    score.py's stdout (UTF-8, LF line endings; Windows PowerShell 5.1's `>`
+    writes UTF-16, so don't use it) and review the diff.
+    """
+    result = subprocess.run(
+        [sys.executable, str(GROUND_TRUTH / "score.py")],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=120,
+    )
+    expected = (pathlib.Path(__file__).parent / "data" / "score_replay.txt").read_bytes()
+    assert result.stdout == expected.decode("utf-8")

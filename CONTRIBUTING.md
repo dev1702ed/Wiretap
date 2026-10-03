@@ -29,9 +29,35 @@ ruff format --check sdk-python backend benchmarks bridges
 pytest sdk-python/tests
 pytest backend/tests
 pytest bridges/openlineage/tests
+pytest benchmarks/tests
 ```
 
-CI runs these on Python 3.10, 3.12 and 3.14 (`.github/workflows/ci.yml`).
+CI runs these on Python 3.10, 3.12 and 3.14 (`.github/workflows/ci.yml`), and the
+four test suites on Windows with Python 3.14 (the `windows` job).
+
+## Running the benchmarks
+
+Every published number comes from one command, which writes raw JSON to
+`benchmarks/results/<label>/` (gitignored) and renders
+`docs/results/P5-<label>.md`:
+
+```bash
+pip install -r benchmarks/requirements.txt
+python -m ipykernel install --user --name python3   # once, for the notebook workload
+python benchmarks/run.py --label local              # full mode
+python benchmarks/run.py --label local --quick      # 5 x 300 instead of 10 x 2,000
+python benchmarks/run.py --label local --only replay,cpu   # no services needed
+```
+
+The `live`, `adversarial` and `overhead` stages need PostgreSQL on
+`localhost:5432` (database `dcp`, user `postgres`, password from
+`DCP_PG_PASSWORD`, default `dcp`) and Kafka on `localhost:9092`; without them
+they are skipped, with the reason. **They drop and re-create the benchmark
+tables in database `dcp` and the `enriched_orders` and `overhead_bench`
+topics.** `--cpu-python PATH` (repeatable) runs the CPU microbenchmark under
+other interpreters too; each needs the SDK installed. Never edit a generated
+results file by hand: re-run the command. The CI `live` job runs
+`--label ci --quick` on every PR and publishes the result as its job summary.
 
 ## Style
 

@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
@@ -30,3 +31,106 @@ jobs:
         run: pytest backend/tests -v
       - name: Bridge tests
         run: pytest bridges/openlineage/tests -v
+      - name: Benchmark tests
+        run: pytest benchmarks/tests -v
+
+  # Live results on every PR (P5): real Postgres and Kafka as service
+  # containers, every answer key replayed live, the adversarial suite, and
+  # quick-mode overhead. CI runners are shared VMs: these overhead numbers are
+  # noisy and not the authoritative source (that is docs/results/P5-local.md).
+  live:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: dcp
+          POSTGRES_DB: dcp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dcp"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      kafka:
+        # Default single-node KRaft config: listens and advertises localhost:9092.
+        image: apache/kafka:3.8.0
+        ports:
+          - 9092:9092
+        options: >-
+          --health-cmd "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"
+          --health-interval 10s
+          --health-timeout 20s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the three packages and the benchmark extras
+        run: |
+          pip install -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]"
+          pip install -r benchmarks/requirements.txt
+      - name: Register the Jupyter kernel
+        run: python -m ipykernel install --user --name python3
+      - name: Wait for Postgres and Kafka
+        run: |
+          python - <<'PY'
+          import socket, time
+          for host, port in (("localhost", 5432), ("localhost", 9092)):
+              deadline = time.monotonic() + 180
+              while True:
+                  try:
+                      socket.create_connection((host, port), timeout=3).close()
+                      print(f"{host}:{port} is up")
+                      break
+                  except OSError:
+                      if time.monotonic() > deadline:
+                          raise SystemExit(f"{host}:{port} did not come up")
+                      time.sleep(2)
+          PY
+      - name: Run the benchmarks (quick mode)
+        env:
+          DCP_PG_PASSWORD: dcp
+          DCP_BENCH_KAFKA_VERSION: 3.8.0
+        run: python benchmarks/run.py --label ci --quick
+      - name: Publish the results as the job summary
+        if: always()
+        run: |
+          if [ -f docs/results/P5-ci.md ]; then
+            cat docs/results/P5-ci.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "benchmarks/run.py produced no results file" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload the raw results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-ci
+          path: |
+            benchmarks/results/ci/
+            docs/results/P5-ci.md
+          if-no-files-found: warn
+
+  # The owner works on Windows. A default checkout converts line endings as Git
+  # for Windows does, so this job catches CRLF breakage (a byte-compared
+  # fixture, a hashed file) before the owner does. Fork tests skip here, as
+  # expected; any other skip or failure is a portability bug.
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Install SDK, backend and OpenLineage bridge
+        run: pip install -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]"
+      - name: SDK tests
+        run: pytest sdk-python/tests -v -rs
+      - name: Backend tests
+        run: pytest backend/tests -v -rs
+      - name: Bridge tests
+        run: pytest bridges/openlineage/tests -v -rs
+      - name: Benchmark tests
+        run: pytest benchmarks/tests -v -rs

@@ -17,7 +17,10 @@ output); `openlineage + dcp facet provenance` rebuilds the backend graph from
 the `dcp` run facets and asks it.
 
 The events come from harness.replay: DCP's real capture code with faked
-database and broker I/O. These are not live runs; live replay is P5.
+database and broker I/O. These are not live runs. The scoring is independent
+of where the events come from (`score_all(events_for)`): benchmarks/live runs
+the same keys against real Postgres and Kafka and scores them with these
+same functions.
 
 Needs both packages installed: pip install -e ./sdk-python -e ./backend
 The bridge has no dependencies; it is imported from bridges/openlineage when it
@@ -127,38 +130,74 @@ def openlineage_rows(key: dict, events: list[dict]):
         )
 
 
-def table(levels) -> None:
-    print(f"{'level':<52}{'precision':<16}{'recall':<16}notes")
+def measure(levels) -> list[dict]:
+    """The rows as data: label, hits, found and expected counts, and notes."""
+    out = []
     for label, found, expected, render in levels:
-        hits = len(found & expected)
         notes = [f"+{x}" for x in sorted(render(found - expected))]
         notes += [f"-{x}" for x in sorted(render(expected - found))]
-        line = (
-            f"{label:<52}{ratio(hits, len(found)):<16}"
-            f"{ratio(hits, len(expected)):<16}{' '.join(notes)}"
+        out.append(
+            {
+                "label": label,
+                "hits": len(found & expected),
+                "found": len(found),
+                "expected": len(expected),
+                "notes": notes,
+            }
         )
-        print(line.rstrip())
+    return out
+
+
+def format_table(measured: list[dict]) -> list[str]:
+    lines = [f"{'level':<52}{'precision':<16}{'recall':<16}notes"]
+    for row in measured:
+        line = (
+            f"{row['label']:<52}{ratio(row['hits'], row['found']):<16}"
+            f"{ratio(row['hits'], row['expected']):<16}{' '.join(row['notes'])}"
+        )
+        lines.append(line.rstrip())
+    return lines
+
+
+def score_workload(key: dict, events: list[dict]) -> dict:
+    """Every level of one workload, for DCP's graph and for the OpenLineage translation."""
+    return {
+        "workload": key["workload"],
+        "dcp": measure(rows(key, events)),
+        "openlineage": measure(openlineage_rows(key, events)),
+    }
+
+
+def score_all(events_for, names: list[str] | None = None) -> list[dict]:
+    """Score each workload, taking its events from `events_for(key)`: replay or live."""
+    results = []
+    for name in workloads() if names is None else names:
+        key = load(name)
+        results.append(score_workload(key, events_for(key)))
+    return results
+
+
+REPLAY_INTRO = "Replays DCP's real capture code with faked database and broker I/O; not a live run."
+
+
+def report_lines(results: list[dict], intro: str = REPLAY_INTRO) -> list[str]:
+    lines = [
+        "DCP ground-truth score",
+        intro,
+        "precision = |found & expected| / |found|    recall = |found & expected| / |expected|",
+    ]
+    for result in results:
+        workload = result["workload"]
+        lines += ["", f"== {workload}", *format_table(result["dcp"]), ""]
+        lines.append(
+            f"-- {workload}: OpenLineage translation (core run model, then with the dcp facet)"
+        )
+        lines += format_table(result["openlineage"])
+    return lines
 
 
 def main() -> int:
-    print("DCP ground-truth score")
-    print(
-        "Replays DCP's real capture code with faked database and broker I/O; not a live run."
-    )
-    print(
-        "precision = |found & expected| / |found|    recall = |found & expected| / |expected|"
-    )
-    for workload in workloads():
-        key = load(workload)
-        events = replay(key)
-        print()
-        print(f"== {workload}")
-        table(rows(key, events))
-        print()
-        print(
-            f"-- {workload}: OpenLineage translation (core run model, then with the dcp facet)"
-        )
-        table(openlineage_rows(key, events))
+    print("\n".join(report_lines(score_all(replay))))
     return 0
 
 

@@ -3,6 +3,20 @@
 Everything else in this repo is apparatus. These three artifacts are what the work
 actually produces.
 
+**Every number comes from one command** (P5):
+
+```bash
+python benchmarks/run.py --label <label> [--quick] [--only replay,live,adversarial,overhead,cpu]
+```
+
+It runs whatever stages the environment supports (the ground-truth replay, the live
+harness, the adversarial suite, live overhead, the CPU microbenchmark), skips the rest
+with a stated reason, writes raw JSON to `benchmarks/results/<label>/` (gitignored) and
+renders `docs/results/P5-<label>.md` with `render.py`, the only code that writes numbers
+into markdown. See `CONTRIBUTING.md` for set-up, `live/README.md` for the live harness,
+`adversarial/BASELINE.md` for the OpenLineage baseline, and `overhead/README.md` for the
+overhead method.
+
 ## The bar
 
 | | |
@@ -48,4 +62,5 @@ Target: < 1 ms p99, < 2% throughput. Achievable because DCP reads the control pa
 text, headers) and emits async — it never touches result payloads.
 
 Measure with the emitter under realistic backpressure, not an idle sink. An overhead number
-from an unloaded console emitter is not a real number.
+from an unloaded console emitter is not a real number. The method, configurations and
+statistics are in [`overhead/README.md`](overhead/README.md).

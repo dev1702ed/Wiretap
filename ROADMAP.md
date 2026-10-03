@@ -5,12 +5,12 @@ Three-week v1 sprint. Critical path is **P0 → P1 → P2 → P5**. P3 and P4 ma
 
 | Phase | Goal | Deliverable | Days | Status |
 |---|---|---|---|---|
-| **P0** | Lock the spec | `spec/` envelope + identity scheme + JSON Schema in CI; adversarial suite written as failing tests | 1–2 | ☑ (decision 6, zero-code auto-instrumentation, still open) |
+| **P0** | Lock the spec | `spec/` envelope + identity scheme + JSON Schema in CI; adversarial suite written as failing tests | 1–2 | ☑ (decision 6, zero-code auto-instrumentation, closed in P5: `dcp-instrument`) |
 | **P1** | Capture one protocol | `dcp.patch_psycopg()` emits schema-valid dataset events | 3–4 | ☑ |
 | **P2** | Prove multi-hop | Kafka interceptor + contextvars + header propagation; 2-hop flow links | 4–5 | ☑ |
 | **P3** | Queryable lineage | FastAPI ingest → networkx → `GET /downstream/{dataset}` | 2–3 | ☑ [results](docs/results/P3.md) |
 | **P4** | Interop | OpenLineage bridge → graph visible in Marquez | 1–2 | ☑ [results](docs/results/P4.md) (the Marquez view is written up but not yet run) |
-| **P5** | **The measurement** | Ground truth precision/recall, adversarial suite, overhead numbers | 4–5 | ☐ |
+| **P5** | **The measurement** | Ground truth precision/recall, adversarial suite, overhead numbers | 4–5 | ☑ [results](docs/results/P5.md) for the delivered instruments; owner's full-mode run pending |
 
 ## Why the adversarial suite is written at P0
 
@@ -22,8 +22,8 @@ single largest risk reducer for a three-week P0–P5.
 
 - [ ] `pip install dcp` + two lines instruments a Postgres+Kafka Python flow
 - [ ] `docker-compose up` gives a lineage graph in Marquez in under 5 minutes
-- [ ] The multi-hop trace context survives Postgres → Kafka → consumer
-- [ ] The adversarial demo shows an edge OpenLineage misses and DCP catches
+- [x] The multi-hop trace context survives Postgres → Kafka → consumer ([evidence](docs/results/P5.md#8-v1-definition-of-done))
+- [x] The adversarial demo shows an edge OpenLineage misses and DCP catches ([evidence](docs/results/P5.md#8-v1-definition-of-done))
 - [ ] Measured overhead < 1 ms p99, < 2% throughput
 - [ ] Spec, quickstart, and concepts docs published under Apache 2.0
 

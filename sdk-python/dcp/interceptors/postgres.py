@@ -9,6 +9,7 @@ query text. We parse with sqlglot — enough for table-level identity, not enoug
 for column-to-column mapping, which is explicitly out of v1 scope.
 """
 
+import functools
 import logging
 
 import sqlglot
@@ -114,9 +115,32 @@ def _classify(query: str) -> tuple[list[str], list[str]]:
 
 
 TableParts = tuple[str | None, str, str]  # (catalog or None, schema, table)
+Classified = tuple[tuple[TableParts, ...], tuple[TableParts, ...]]  # (reads, writes)
+
+# The parse cache (P5 Stage 5). Classification is a pure function of the query
+# text, and a script sends the same parameterised text over and over, so the
+# result is cached, keyed on the exact text. Bounded twice: at most
+# CLASSIFY_CACHE_SIZE entries, and texts longer than CLASSIFY_CACHE_MAX_CHARS
+# (say, an INSERT with thousands of inlined rows) are parsed every time and
+# never held, so the cache stays within a few MiB. Results are tuples of
+# tuples, so no caller can change what the next one gets.
+CLASSIFY_CACHE_SIZE = 1024
+CLASSIFY_CACHE_MAX_CHARS = 16 * 1024
 
 
-def _classify_parts(query: str) -> tuple[list[TableParts], list[TableParts]]:
+def _classify_parts(query: str) -> Classified:
+    """_classify, keeping each table's parts apart, through the parse cache."""
+    if len(query) > CLASSIFY_CACHE_MAX_CHARS:
+        return _classify_parts_uncached(query)
+    return _classify_parts_cached(query)
+
+
+@functools.lru_cache(maxsize=CLASSIFY_CACHE_SIZE)
+def _classify_parts_cached(query: str) -> Classified:
+    return _classify_parts_uncached(query)
+
+
+def _classify_parts_uncached(query: str) -> Classified:
     """_classify, keeping each table's parts apart: (catalog, schema, table).
 
     Unquoted identifiers are folded to lower case, as Postgres folds them, so
@@ -129,17 +153,17 @@ def _classify_parts(query: str) -> tuple[list[TableParts], list[TableParts]]:
         statement = sqlglot.parse_one(query, dialect="postgres")
     except Exception:  # noqa: BLE001 — unparseable SQL is expected, not fatal
         _log.debug("dcp could not parse query", exc_info=True)
-        return [], []
+        return (), ()
     if statement is None:
-        return [], []
+        return (), ()
 
     # Only statements that actually move data produce edges. A plain
     # CREATE/DROP/ALTER moves nothing; CTAS (CREATE ... AS SELECT) does.
     if isinstance(statement, exp.Create):
         if statement.expression is None:
-            return [], []
+            return (), ()
     elif not isinstance(statement, (exp.Select, exp.Union, exp.Insert, exp.Update, exp.Delete)):
-        return [], []
+        return (), ()
 
     writes: list[TableParts] = []
     write_nodes = set()
@@ -155,11 +179,24 @@ def _classify_parts(query: str) -> tuple[list[TableParts], list[TableParts]]:
                 writes.append(_qualify(target))
                 write_nodes.add(id(target))
 
+    # A CTE is a name inside the statement, not a table: `WITH x AS (...) ...
+    # FROM x` reads what x reads, and those tables are found inside x's body.
+    # An unqualified reference to a CTE's name is the CTE; `public.x` is still
+    # the table, as Postgres resolves it.
+    ctes = {_fold(cte.args["alias"].this) for cte in statement.find_all(exp.CTE)}
+
     reads = [
-        _qualify(table) for table in statement.find_all(exp.Table) if id(table) not in write_nodes
+        _qualify(table)
+        for table in statement.find_all(exp.Table)
+        if id(table) not in write_nodes and not _is_cte_reference(table, ctes)
     ]
 
-    return _dedupe(reads), _dedupe(writes)
+    return tuple(_dedupe(reads)), tuple(_dedupe(writes))
+
+
+def _is_cte_reference(table: exp.Table, ctes: set[str]) -> bool:
+    qualified = table.args.get("db") or table.args.get("catalog")
+    return not qualified and _fold(table.this) in ctes
 
 
 def _qualify(table: exp.Table) -> TableParts:

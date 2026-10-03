@@ -1,0 +1,116 @@
+# The dark-zone demo: `docker compose up` to a lineage graph in Marquez.
+# UNVERIFIED: written for the owner to run and time; see README.md.
+#
+# Postgres and Kafka for the workload, Marquez (API, web UI and its own
+# database) for the graph, and a one-shot `demo` service that seeds the data,
+# runs two plain scripts under dcp-instrument, and posts the lineage to Marquez
+# with the OpenLineage bridge.
+#
+# Only Marquez's web UI (3000) and API (5000) are published on the host: the
+# owner already runs Postgres on 5432 and Kafka on 9092, so inside this compose
+# network everything else is reached by service name. Running examples/marquez
+# at the same time clashes on 3000 and 5000.
+#
+# Image tags are pinned; all were confirmed to exist on Docker Hub. The
+# Marquez services are the ones examples/marquez uses (0.51.1).
+
+name: dcp-dark-zone
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: dcp
+      POSTGRES_DB: dcp
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U postgres -d dcp"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  kafka:
+    image: apache/kafka:3.8.0
+    environment:
+      # Setting any KAFKA_* variable replaces the image's default config, so
+      # this is the full single-node KRaft config, advertising kafka:9092.
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_NUM_PARTITIONS: "1"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null"]
+      interval: 5s
+      timeout: 20s
+      retries: 30
+
+  marquez-db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      MARQUEZ_DB: marquez
+      MARQUEZ_USER: marquez
+      MARQUEZ_PASSWORD: marquez
+    volumes:
+      - ../marquez/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U postgres -d marquez"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  marquez:
+    image: marquezproject/marquez:0.51.1
+    environment:
+      MARQUEZ_PORT: "5000"
+      MARQUEZ_ADMIN_PORT: "5001"
+      POSTGRES_HOST: marquez-db
+      POSTGRES_PORT: "5432"
+      SEARCH_ENABLED: "false"
+    ports:
+      - "5000:5000"   # lineage API
+    depends_on:
+      marquez-db:
+        condition: service_healthy
+
+  marquez-web:
+    image: marquezproject/marquez-web:0.51.1
+    environment:
+      MARQUEZ_HOST: marquez
+      MARQUEZ_PORT: "5000"
+      WEB_PORT: "3000"
+      REACT_APP_ADVANCED_SEARCH: "false"
+    ports:
+      - "3000:3000"   # web UI: http://localhost:3000
+    depends_on:
+      - marquez
+
+  demo:
+    build:
+      context: ../..
+      dockerfile: examples/dark-zone/Dockerfile
+    hostname: dark-zone-demo   # the OpenLineage job namespace becomes dcp://dark-zone-demo
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: dcp
+      PGDATABASE: dcp
+      KAFKA_BOOTSTRAP: kafka:9092
+      MARQUEZ_URL: http://marquez:5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      marquez:
+        condition: service_started
+    restart: "no"
