@@ -1,19 +1,30 @@
-# Live and benchmark extras (P5). Install alongside the three packages:
-#   pip install -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]"
-#   pip install -r benchmarks/requirements.txt
-# The SDK itself takes no new runtime dependency. Unit tests (benchmarks/tests)
-# need none of these; benchmarks/run.py skips any stage whose library is missing.
+# Live and benchmark extras (P5), pinned to exact versions in P5.1 (A1): the
+# versions the P5.1 sandbox runs measured with. Install everything, the three
+# packages included, in ONE command so the constraints apply to all of it:
+#
+#   pip install -c benchmarks/constraints.txt -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]" -r benchmarks/requirements.txt
+#
+# benchmarks/constraints.txt pins the transitive versions that affect
+# measurement (sqlglot, networkx, fastapi, ...). benchmarks/run.py compares what
+# is installed with both files and records any mismatch in its environment
+# table (a warning, never a failure). The SDK itself takes no new runtime
+# dependency. Unit tests (benchmarks/tests) need none of these; run.py skips any
+# stage whose library is missing.
+#
+# Python 3.10 cannot install ipykernel 7.4.0 (it needs 3.11+), so 3.10 gets the
+# newest release that supports it, exactly as pip resolved it in the sandbox.
 
 # Live harness: real Postgres, real Kafka, notebooks
-psycopg[binary]>=3.1
-confluent-kafka>=2.3
-nbclient>=0.10
-nbformat>=5.9
-ipykernel>=6.29
-jupyter_client>=8.6
+psycopg[binary]==3.3.6
+confluent-kafka==2.15.1
+nbclient==0.11.0
+nbformat==5.11.1
+ipykernel==7.4.0; python_version >= "3.11"
+ipykernel==7.3.0; python_version < "3.11"
+jupyter_client==8.10.0
 
 # Overhead: the live DCP backend for the http configuration
-uvicorn>=0.30
+uvicorn==0.54.0
 
 # Adversarial baseline check: the OpenLineage client at the tag P4 vendored
 openlineage-python==1.53.0

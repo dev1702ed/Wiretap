@@ -155,3 +155,83 @@ def test_a_python_that_cannot_run_the_cpu_stage_is_recorded(tmp_path):
 def test_labels_are_slugs(isolated):
     with pytest.raises(SystemExit):
         run.main(["--label", "../escape"])
+
+
+# A1: the pinned benchmark environment
+
+
+def test_marker_applies():
+    assert run.marker_applies(None, (3, 10, 4))
+    assert run.marker_applies('python_version < "3.11"', (3, 10, 4))
+    assert not run.marker_applies('python_version < "3.11"', (3, 11, 0))
+    assert run.marker_applies("python_version >= '3.11'", (3, 14, 8))
+    with pytest.raises(ValueError, match="unsupported environment marker"):
+        run.marker_applies('sys_platform == "win32"', (3, 12, 0))
+
+
+def test_read_pins_applies_markers_and_normalises_names(tmp_path):
+    req = tmp_path / "requirements.txt"
+    req.write_text(
+        '# comment\npsycopg[binary]==3.3.6\nipykernel==7.4.0; python_version >= "3.11"\n'
+        'ipykernel==7.3.0; python_version < "3.11"\nnot-pinned>=1\n',
+        encoding="utf-8",
+    )
+    con = tmp_path / "constraints.txt"
+    con.write_text(
+        "Jupyter_Client==8.10.0  # trailing comment\npsycopg==3.3.6\n", encoding="utf-8"
+    )
+    pins = run.read_pins([req, con], python=(3, 10, 20))
+    assert pins == {
+        "psycopg": "3.3.6",
+        "ipykernel": "7.3.0",
+        "jupyter-client": "8.10.0",
+    }
+    assert run.read_pins([req], python=(3, 12, 3))["ipykernel"] == "7.4.0"
+
+
+def test_read_pins_refuses_a_contradiction(tmp_path):
+    a, b = tmp_path / "a.txt", tmp_path / "b.txt"
+    a.write_text("sqlglot==1.0\n", encoding="utf-8")
+    b.write_text("sqlglot==2.0\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="two versions"):
+        run.read_pins([a, b])
+
+
+def test_pin_check_records_mismatches_without_failing():
+    installed = {"sqlglot": "30.21.0", "uvicorn": "0.53.0"}.get
+    result = run.pin_check(
+        {"sqlglot": "30.21.0", "uvicorn": "0.54.0", "nbclient": "0.11.0"}, installed
+    )
+    assert result["checked"] == 3
+    assert result["mismatches"] == [
+        {"package": "nbclient", "pinned": "0.11.0", "installed": None},
+        {"package": "uvicorn", "pinned": "0.54.0", "installed": "0.53.0"},
+    ]
+
+
+def test_the_committed_pin_files_parse_for_every_supported_python():
+    for python in ((3, 10, 0), (3, 12, 0), (3, 14, 0)):
+        pins = run.read_pins(python=python)
+        for name in ("sqlglot", "psycopg", "psycopg-binary", "confluent-kafka", "fastapi",
+                     "uvicorn", "networkx", "jsonschema", "nbclient", "ipykernel"):  # fmt: skip
+            assert name in pins, (python, name)
+
+
+def test_the_environment_table_shows_the_pin_check():
+    import render
+
+    env = {
+        "pins": {
+            "files": ["benchmarks/requirements.txt"],
+            "checked": 2,
+            "mismatches": [],
+        }
+    }
+    assert (
+        render._pins(env["pins"]) == "all 2 pins match (`benchmarks/requirements.txt`)"
+    )
+    env["pins"]["mismatches"] = [
+        {"package": "uvicorn", "pinned": "0.54.0", "installed": None}
+    ]
+    assert "1 of 2 differ" in render._pins(env["pins"])
+    assert "uvicorn not installed (pinned 0.54.0)" in render._pins(env["pins"])

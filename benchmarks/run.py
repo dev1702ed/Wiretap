@@ -76,6 +76,101 @@ PACKAGES = (
     "jsonschema",
 )
 LABEL = re.compile(r"[a-z0-9][a-z0-9-]*")
+PIN_FILES = (BENCHMARKS / "requirements.txt", BENCHMARKS / "constraints.txt")
+_PIN = re.compile(
+    r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)(\[[^\]]*\])?\s*==\s*([^\s;]+)\s*(?:;\s*(.+))?$"
+)
+_MARKER = re.compile(r'^python_version\s*(<=|>=|==|!=|<|>)\s*["\']([0-9.]+)["\']$')
+
+
+def normalize(name: str) -> str:
+    """A distribution name as PEP 503 compares it."""
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def _version_tuple(text: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in text.split(".") if part.isdigit())
+
+
+def marker_applies(marker: str | None, python: tuple[int, ...]) -> bool:
+    """Whether a pin's environment marker holds. Only `python_version OP "X.Y"`
+    is used in the pin files; anything else is reported, not guessed."""
+    if not marker:
+        return True
+    match = _MARKER.match(marker.strip())
+    if not match:
+        raise ValueError(f"unsupported environment marker in a pin file: {marker!r}")
+    op, version = match.groups()
+    have, want = python[: len(_version_tuple(version))], _version_tuple(version)
+    return {
+        "<": have < want,
+        "<=": have <= want,
+        ">": have > want,
+        ">=": have >= want,
+        "==": have == want,
+        "!=": have != want,
+    }[op]
+
+
+def read_pins(paths=PIN_FILES, python: tuple[int, ...] | None = None) -> dict[str, str]:
+    """name -> pinned version, from every `name==version` line that applies to
+    this Python. Later files win only where they agree (they must not disagree)."""
+    python = python or sys.version_info[:3]
+    pins: dict[str, str] = {}
+    for path in paths:
+        for line in pathlib.Path(path).read_text(encoding="utf-8").splitlines():
+            line = line.split("#", 1)[0].strip()
+            match = _PIN.match(line)
+            if not match:
+                continue
+            name, _extras, version, marker = match.groups()
+            if not marker_applies(marker, python):
+                continue
+            key = normalize(name)
+            if pins.get(key, version) != version:
+                raise ValueError(
+                    f"{name} is pinned to two versions: {pins[key]} and {version}"
+                )
+            pins[key] = version
+    return pins
+
+
+def pin_check(pins: dict[str, str], installed) -> dict:
+    """Compare installed versions with the pins: a warning, never a failure."""
+    mismatches = []
+    for name, pinned in sorted(pins.items()):
+        have = installed(name)
+        if have != pinned:
+            mismatches.append({"package": name, "pinned": pinned, "installed": have})
+    return {
+        "files": [
+            str(pathlib.Path(p).relative_to(ROOT)).replace(os.sep, "/")
+            for p in PIN_FILES
+        ],
+        "checked": len(pins),
+        "mismatches": mismatches,
+    }
+
+
+def _installed(name: str) -> str | None:
+    try:
+        return importlib.metadata.version(name)
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
+def pins_environment(log=None) -> dict:
+    try:
+        result = pin_check(read_pins(), _installed)
+    except (OSError, ValueError) as exc:
+        return {"error": f"{type(exc).__name__}: {exc}"}
+    if log is not None:
+        for m in result["mismatches"]:
+            log(
+                f"warning: {m['package']} is {m['installed'] or 'not installed'}, "
+                f"pinned {m['pinned']} (see benchmarks/requirements.txt)"
+            )
+    return result
 
 
 def parse_only(text: str | None) -> list[str] | None:
@@ -200,7 +295,7 @@ def postgres_version() -> str | None:
         return f"unavailable ({type(exc).__name__})"
 
 
-def environment(argv: list[str], probes: dict) -> dict:
+def environment(argv: list[str], probes: dict, log=None) -> dict:
     status = _git("status", "--porcelain")
     return {
         "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(
@@ -229,6 +324,7 @@ def environment(argv: list[str], probes: dict) -> dict:
             "propagate_sql": "off, except the file+sqlcomment configuration",
         },
         "probes": probes,
+        "pins": pins_environment(log),
     }
 
 
@@ -381,7 +477,7 @@ def main(argv: list[str] | None = None) -> int:
     results = {
         "label": args.label,
         "quick": args.quick,
-        "environment": environment(argv, probes),
+        "environment": environment(argv, probes, log),
         "stages": plan(only, probes),
     }
     failed = False

@@ -83,7 +83,24 @@ def _environment(results: dict) -> list[str]:
     ]
     packages = ", ".join(f"{k} {v}" for k, v in env["packages"].items() if v)
     rows.append(["Packages", packages])
+    if "pins" in env:
+        rows.append(["Pinned versions", _pins(env["pins"])])
     return ["## Environment", "", *table(["", ""], rows), ""]
+
+
+def _pins(pins: dict) -> str:
+    """The A1 check: installed versions against benchmarks/requirements.txt and
+    constraints.txt. A mismatch is recorded, never fatal."""
+    if "error" in pins:
+        return f"not checked ({pins['error']})"
+    files = " and ".join(f"`{f}`" for f in pins["files"])
+    if not pins["mismatches"]:
+        return f"all {pins['checked']} pins match ({files})"
+    shown = ", ".join(
+        f"{m['package']} {m['installed'] or 'not installed'} (pinned {m['pinned']})"
+        for m in pins["mismatches"]
+    )
+    return f"**{len(pins['mismatches'])} of {pins['checked']} differ from the pins** ({files}): {shown}"
 
 
 def _stages(results: dict) -> list[str]:
