@@ -5,7 +5,9 @@ and each `process` of the key as a real, separate OS process:
 
 1. seed.py resets the tables and the `enriched_orders` topic, in its own
    process with DCP stripped from the environment;
-2. generate.py writes each process as a plain program with no DCP code;
+2. generate.py writes each process as a plain program with no DCP code; a
+   consume step reads its named record by exact offset, from the run manifest
+   that produce steps write (P5.1);
 3. a `script` runs as `python -m dcp.instrument python <job>`, the
    dcp-instrument entry point, and a `notebook` runs in a Jupyter kernel
    (nbclient) whose environment carries the same PYTHONPATH and DCP_*
@@ -91,11 +93,14 @@ def clean_env() -> dict[str, str]:
     return env
 
 
-def seed(extra_topics=()) -> str:
-    """Run seed.py without DCP. Returns its output."""
+def seed(extra_topics=(), key_path=None) -> str:
+    """Run seed.py without DCP. Returns its output. With `key_path`, seed a
+    generated key's own tables and topics instead of the hand-written keys'."""
     command = [sys.executable, str(SEED)]
     for topic in extra_topics:
         command += ["--topic", topic]
+    if key_path is not None:
+        command += ["--key", str(key_path)]
     env = clean_env()
     env["DCP_PG_PASSWORD"] = env["PGPASSWORD"]
     result = subprocess.run(
@@ -219,12 +224,30 @@ def run_process(workload, process, group, run_dir, env, instrument=True) -> dict
     return runner(workload, process, group, run_dir, env, instrument)
 
 
+def read_manifest(run_dir: pathlib.Path) -> list[dict]:
+    """Where each produced record landed: the run manifest the programs write."""
+    path = run_dir / generate.MANIFEST
+    if not path.exists():
+        return []
+    return [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+
+
 def run_workload(
-    key: dict, run_dir: pathlib.Path, run_id: str
+    key: dict, run_dir: pathlib.Path, run_id: str, key_path=None
 ) -> tuple[dict, list[dict]]:
-    """Seed, then run each process of `key` live, in order. Returns (record, events)."""
+    """Seed, then run each process of `key` live, in order. Returns (record, events).
+
+    A generated key (`key_path` given) is seeded from its own tables and topics.
+    """
     run_dir.mkdir(parents=True, exist_ok=True)
-    seed()
+    manifest = run_dir / generate.MANIFEST
+    if manifest.exists():
+        manifest.unlink()  # a stale manifest would point consumers at old offsets
+    seed(key_path=key_path)
     workload = key["workload"]
     processes, events = [], []
     for index, process in enumerate(key["processes"]):
@@ -243,7 +266,11 @@ def run_workload(
         )
         processes.append(record)
         events += process_events
-    return {"workload": workload, "processes": processes}, events
+    return {
+        "workload": workload,
+        "processes": processes,
+        "manifest": read_manifest(run_dir),
+    }, events
 
 
 def run_all(out_dir: pathlib.Path, names: list[str] | None = None) -> dict:
