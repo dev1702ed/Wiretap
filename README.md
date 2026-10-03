@@ -62,7 +62,7 @@ On Windows PowerShell: `$env:DCP_EMIT = "file://dcp_events.jsonl"; dcp-instrumen
 
 | Variable | Meaning | Default |
 |---|---|---|
-| `DCP_EMIT` | Sink: `console`, `file://path` (written by a background thread; `file://path?sync=1` writes before each call returns), `http://host:port` (the DCP backend), or `null://` (a diagnostic: builds every event, records none) | `console` |
+| `DCP_EMIT` | Sink: `console`, `file://path` (written before each call returns; `file://path?sync=0` writes from a background thread), `http://host:port` (the DCP backend), or `null://` (a diagnostic: builds every event, records none) | `console` |
 | `DCP_JOB_NAME` | Job name | The script's basename |
 | `DCP_PROPAGATE_SQL` | `1` appends the trace comment to outbound SQL (spec §3) | Off |
 | `DCP_CAPTURE` | `off` is the kill switch: the patches stay installed but capture nothing | On |

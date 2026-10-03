@@ -41,8 +41,8 @@ def init(
 
     Args:
         emit: sink spec — "console"; "file://path" (JSONL, the event of record;
-              written by a background thread, or before emit() returns with
-              "file://path?sync=1");
+              written before emit() returns, or by a background thread with
+              "file://path?sync=0");
               "http://host:port" (the DCP backend). "marquez://host:port" raises
               NotImplementedError pointing at the batch OpenLineage bridge
               (bridges/openlineage); "null://" builds every event and discards
@@ -91,10 +91,10 @@ def _make_emitter(emit: str):
         from dcp.emitters.file import FileEmitter
 
         path = emit.removeprefix("file://")
-        # Only an exact trailing ?sync=1 (or ?sync=0) is an option: a path is
+        # Only an exact trailing ?sync=0 (or ?sync=1) is an option: a path is
         # never parsed as a URL, so Windows paths stay intact.
-        sync = path.endswith("?sync=1")
-        if sync or path.endswith("?sync=0"):
+        sync = not path.endswith("?sync=0")
+        if path.endswith(("?sync=0", "?sync=1")):
             path = path[: -len("?sync=1")]
         if not path:
             raise ValueError("file:// sink needs a path, e.g. file://events.jsonl")

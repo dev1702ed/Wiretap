@@ -44,11 +44,11 @@ def test_file(registered, tmp_path):
     emitter = config.current_emitter()
     assert isinstance(emitter, FileEmitter)
     assert emitter.path == str(path)
-    assert not emitter.sync  # asynchronous by default since P5.1
+    assert emitter.sync  # synchronous by default (P5.1 measured the asynchronous sink slower)
     assert registered == [config.shutdown]
 
 
-@pytest.mark.parametrize(("suffix", "sync"), [("?sync=1", True), ("?sync=0", False)])
+@pytest.mark.parametrize(("suffix", "sync"), [("?sync=1", True), ("?sync=0", False), ("", True)])
 def test_file_sync_option(registered, tmp_path, suffix, sync):
     path = tmp_path / "events.jsonl"
     config.init(f"file://{path}{suffix}")

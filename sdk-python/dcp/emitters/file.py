@@ -1,23 +1,28 @@
-"""JSONL file emitter. P3; asynchronous by default since P5.1 (O3). Used by
-the benchmarks as the event of record.
+"""JSONL file emitter. P3. Used by the benchmarks as the event of record.
 
-    file://events.jsonl          asynchronous (the default since P5.1)
-    file://events.jsonl?sync=1   synchronous: written before emit() returns
+    file://events.jsonl          synchronous: written before emit() returns (default)
+    file://events.jsonl?sync=0   asynchronous: written by a background thread (P5.1)
+    file://events.jsonl?sync=1   synchronous, explicitly
 
 One event per line, in emit() order, never interleaved.
 
-Asynchronous (default): emit() hands the event to a bounded queue; a
-background thread serialises, writes and flushes it. That keeps the write
-off the caller's thread, as emitters/__init__.py requires of every sink, and
-follows the HTTP emitter's pattern: a full queue drops the event and counts it
-(never blocks), the worker is re-armed after os.fork(), and dcp.init()
-registers shutdown() with atexit, which drains the queue. A process that exits
-normally, or dies of an uncaught exception, leaves every event in the file. A
-process killed outright (SIGKILL, os._exit) can lose the events still queued.
+Synchronous (default): each line is written and flushed to the OS before
+emit() returns, so a process killed outright still leaves every event it
+emitted in the file.
 
-Synchronous (`?sync=1`, P3's behaviour): each line is written and flushed to
-the OS before emit() returns, so a process killed outright still leaves every
-event it emitted in the file. For anyone who needs write-before-return.
+Asynchronous (`?sync=0`, P5.1 O3): emit() hands the event to a bounded queue;
+a background thread serialises, writes and flushes it, following the HTTP
+emitter's pattern: a full queue drops the event and counts it (never blocks),
+the worker is re-armed after os.fork(), and dcp.init() registers shutdown()
+with atexit, which drains the queue. A process that exits normally, or dies of
+an uncaught exception, leaves every event in the file; one killed outright
+(SIGKILL, os._exit) can lose the events still queued.
+
+Why synchronous stays the default (measured, P5.1): under CPython's GIL a
+background writer cannot take serialisation off the caller's critical path,
+it only adds a thread hand-off per event. docs/results/P5-p51-comparison.md
+shows the asynchronous sink adding cost per call, not removing it, on this
+workload; see docs/results/P5.1.md.
 
 No fsync in either mode: that guards against a machine crash, not a process
 crash, and costs far more.
@@ -35,7 +40,7 @@ BATCH_SIZE = 500
 
 
 class FileEmitter(Emitter):
-    def __init__(self, path: str, sync: bool = False, queue_size: int = QUEUE_SIZE):
+    def __init__(self, path: str, sync: bool = True, queue_size: int = QUEUE_SIZE):
         if queue_size < 1:
             raise ValueError("queue_size must be at least 1")  # 0 would be unbounded
         self.path = path

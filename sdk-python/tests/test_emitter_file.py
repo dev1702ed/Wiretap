@@ -1,8 +1,8 @@
 """FileEmitter: JSONL, one event per line. The benchmarks' event of record.
 
-Since P5.1 (O3) the default is asynchronous (a background thread writes);
-`sync=True` (file://path?sync=1) keeps P3's write-before-return behaviour.
-Every property that holds for both is tested for both.
+Synchronous (write before emit() returns) is the default; P5.1 (O3) added an
+asynchronous mode, `sync=False` (file://path?sync=0), where a background thread
+writes. Every property that holds for both is tested for both.
 """
 
 import json
@@ -64,9 +64,10 @@ def test_round_trip(tmp_path, sync):
 
 
 def test_sync_puts_every_line_on_disk_before_emit_returns(tmp_path):
-    """sync=True: a script killed outright still leaves what it emitted."""
+    """The default: a script killed outright still leaves what it emitted."""
     path = tmp_path / "events.jsonl"
-    emitter = FileEmitter(str(path), sync=True)
+    emitter = FileEmitter(str(path))
+    assert emitter.sync
     emitter.emit(make_event())
     assert len(read_jsonl(path)) == 1
     emitter.close()
@@ -74,7 +75,7 @@ def test_sync_puts_every_line_on_disk_before_emit_returns(tmp_path):
 
 def test_async_writes_on_its_own_thread_and_flush_waits_for_it(tmp_path):
     path = tmp_path / "events.jsonl"
-    emitter = FileEmitter(str(path))
+    emitter = FileEmitter(str(path), sync=False)
     assert not emitter.sync
     emitter._lock.acquire()  # hold the writer: emit() must still return at once
     try:
@@ -92,7 +93,7 @@ def test_async_writes_on_its_own_thread_and_flush_waits_for_it(tmp_path):
 
 def test_async_keeps_emit_order(tmp_path):
     path = tmp_path / "events.jsonl"
-    emitter = FileEmitter(str(path))
+    emitter = FileEmitter(str(path), sync=False)
     sent = [make_event() for _ in range(2000)]
     for event in sent:
         emitter.emit(event)
@@ -101,7 +102,7 @@ def test_async_keeps_emit_order(tmp_path):
 
 
 def test_async_full_queue_drops_and_counts_never_blocks(tmp_path):
-    emitter = FileEmitter(str(tmp_path / "events.jsonl"), queue_size=2)
+    emitter = FileEmitter(str(tmp_path / "events.jsonl"), sync=False, queue_size=2)
     emitter._lock.acquire()  # the worker takes at most one batch, then waits
     try:
         for _ in range(20):
@@ -115,7 +116,7 @@ def test_async_full_queue_drops_and_counts_never_blocks(tmp_path):
 
 def test_queue_size_must_be_bounded(tmp_path):
     with pytest.raises(ValueError, match="at least 1"):
-        FileEmitter(str(tmp_path / "events.jsonl"), queue_size=0)
+        FileEmitter(str(tmp_path / "events.jsonl"), sync=False, queue_size=0)
 
 
 @pytest.mark.parametrize("ending", ["normally", "by an uncaught exception", "by sys.exit(3)"])
@@ -133,7 +134,7 @@ import dcp
 from dcp import config
 from dcp.envelope import Dataset, DCPEvent, new_id
 
-dcp.init(emit="file://" + sys.argv[1], job_name="ends.py")
+dcp.init(emit="file://" + sys.argv[1] + "?sync=0", job_name="ends.py")
 for _ in range(500):
     config.current_emitter().emit(DCPEvent(
         trace_id=new_id(), edge_id=new_id(), op="read",
