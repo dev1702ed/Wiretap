@@ -14,6 +14,7 @@ import functools
 import logging
 import re
 import threading
+import weakref
 
 import sqlglot
 from sqlglot import exp
@@ -64,10 +65,10 @@ def _capture(cursor, query) -> None:
     if not read_parts and not write_parts:
         return
 
-    namespace = _namespace(cursor)
+    namespace, dbname = _identity(cursor)
     # Dedupe again: `orders` and `dcp.public.orders` are one table once qualified.
-    reads = _dedupe([_with_database(cursor, parts) for parts in read_parts])
-    writes = _dedupe([_with_database(cursor, parts) for parts in write_parts])
+    reads = _dedupe([_with_database(dbname, parts) for parts in read_parts])
+    writes = _dedupe([_with_database(dbname, parts) for parts in write_parts])
     trace_id = ensure_trace()
     emitter = current_emitter()
     job = current_job()
@@ -357,20 +358,43 @@ def _dedupe(items: list) -> list:
     return out
 
 
-def _with_database(cursor, parts: TableParts) -> str:
+def _with_database(dbname: str, parts: TableParts) -> str:
     """db.schema.table, as the spec names Postgres datasets.
 
     Query text rarely names the database, so it comes from the live
     connection; a query that named the catalog keeps the catalog it named.
     """
     catalog, schema, table = parts
-    return f"{catalog or cursor.connection.info.dbname}.{schema}.{table}"
+    return f"{catalog or dbname}.{schema}.{table}"
+
+
+# (namespace, dbname) per connection (P5.1, O2). Reading connection.info goes
+# into libpq for each attribute, on every event; a psycopg connection's host,
+# port and database never change for its lifetime, so they are read once per
+# connection. Weakly keyed: caching a connection never keeps it alive.
+_identities: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
+
+
+def _identity(cursor) -> tuple[str, str]:
+    """(postgres://host:port, database) of the cursor's live connection."""
+    conn = cursor.connection
+    try:
+        cached = _identities.get(conn)
+    except TypeError:  # not weakly referenceable (or unhashable): read every time
+        return _read_identity(conn)
+    if cached is None:
+        cached = _identities[conn] = _read_identity(conn)
+    return cached
+
+
+def _read_identity(conn) -> tuple[str, str]:
+    info = conn.info
+    return f"postgres://{info.host}:{info.port}", info.dbname
 
 
 def _namespace(cursor) -> str:
     """postgres://host:port, from the live connection."""
-    info = cursor.connection.info
-    return f"postgres://{info.host}:{info.port}"
+    return _identity(cursor)[0]
 
 
 def _sql_text(cursor, query) -> str:
