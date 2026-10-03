@@ -187,3 +187,13 @@ def test_the_normalisation_columns_appear_only_when_measured():
     text = render.render(results)
     assert "| classify p99 | normalise p50 | normalise p99 |" in text
     assert render.NORMALIZE_NOTE in text
+
+
+def test_the_fixed_cost_table_is_computed_from_the_implied_cost():
+    assert render.loss_pct(20.0, 980.0) == pytest.approx(2.0)
+    before = fixture_p51()
+    text = render.render_comparison(before, after_p51(before), "t")
+    assert "### The fixed cost per call and the < 2% throughput target (after)" in text
+    t1 = after_p51(before)["overhead"]["postgres"]["tiers"]["T1"]["versus_base"]["file"]
+    cost = t1["implied_added_us"]["estimate"]
+    assert f"| {render.us(cost * 49)} |" in text

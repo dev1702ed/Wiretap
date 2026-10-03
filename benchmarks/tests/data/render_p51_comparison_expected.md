@@ -203,6 +203,43 @@ Not in the after run.
 | enqueue (http, live backend) | `http − capture-null` | +37.9 [+26.0, +56.2] | +37.9 [+26.0, +56.2] | +36.9 [+24.8, +57.7] | +36.9 [+24.8, +57.7] |
 | synchronous file write | `file − capture-null` | +13.7 [+8.8, +22.6] | +13.7 [+8.8, +22.6] | +17.2 [+9.8, +29.1] | +17.2 [+9.8, +29.1] |
 
+### The fixed cost per call and the < 2% throughput target (after)
+
+From the after run's implied added µs per call (point estimate). A fixed cost c per call takes c / (q + c) of the throughput of a query whose own latency is q, so the loss is under 2% once q > 49 × c. The last columns apply each cost to representative query latencies.
+
+| Tier | Config | Implied µs/call [95% CI] | Loss < 2% for queries slower than (µs) | Loss at a 1 ms query | Loss at a 10 ms query | Loss at a 100 ms query |
+|---|---|---|---|---|---|---|
+| T1 point read | file | +33.8 [+26.0, +44.3] | 1654.3 | 3.27% | 0.34% | 0.03% |
+| T1 point read | http | +58.3 [+33.8, +86.3] | 2858.9 | 5.51% | 0.58% | 0.06% |
+| T1 point read | http-down | +34.2 [+27.1, +41.3] | 1675.7 | 3.31% | 0.34% | 0.03% |
+| T1 point read | file+sqlcomment | +49.6 [+35.6, +69.2] | 2429.8 | 4.72% | 0.49% | 0.05% |
+| T3 insert values | file | +61.0 [+35.5, +81.9] | 2989.4 | 5.75% | 0.61% | 0.06% |
+| T3 insert values | http | +55.5 [+21.6, +77.7] | 2720.3 | 5.26% | 0.55% | 0.06% |
+| T3 insert values | http-down | +57.5 [+27.2, +92.9] | 2816.9 | 5.44% | 0.57% | 0.06% |
+| T3 insert values | file+sqlcomment | +84.2 [+17.1, +134.6] | 4127.5 | 7.77% | 0.84% | 0.08% |
+| T4 insert-select | file | +85.1 [+67.6, +102.7] | 4171.6 | 7.85% | 0.84% | 0.09% |
+| T4 insert-select | http | +64.2 [+56.9, +72.0] | 3147.8 | 6.04% | 0.64% | 0.06% |
+| T4 insert-select | http-down | +59.4 [+42.2, +75.2] | 2912.2 | 5.61% | 0.59% | 0.06% |
+| T4 insert-select | file+sqlcomment | +98.0 [+52.5, +140.0] | 4800.8 | 8.92% | 0.97% | 0.10% |
+| T5 analytical | file | +56.2 [+49.7, +62.7] | 2752.0 | 5.32% | 0.56% | 0.06% |
+| T5 analytical | http | +52.3 [+32.7, +73.1] | 2564.2 | 4.97% | 0.52% | 0.05% |
+| T5 analytical | http-down | +34.2 [+19.3, +52.1] | 1675.3 | 3.31% | 0.34% | 0.03% |
+| T5 analytical | file+sqlcomment | +71.9 [+62.2, +81.6] | 3524.2 | 6.71% | 0.71% | 0.07% |
+| L1 point read, literal (added in P5.1) | file | +236.1 [+208.1, +276.4] | 11568.5 | 19.10% | 2.31% | 0.24% |
+| L1 point read, literal (added in P5.1) | http | +240.2 [+213.3, +268.4] | 11769.5 | 19.37% | 2.35% | 0.24% |
+| L1 point read, literal (added in P5.1) | http-down | +275.5 [+264.3, +291.3] | 13497.1 | 21.60% | 2.68% | 0.27% |
+| L1 point read, literal (added in P5.1) | file+sqlcomment | +237.4 [+206.2, +272.2] | 11631.8 | 19.18% | 2.32% | 0.24% |
+| L3 insert values, literal (added in P5.1) | file | +277.8 [+248.7, +313.4] | 13610.4 | 21.74% | 2.70% | 0.28% |
+| L3 insert values, literal (added in P5.1) | http | +281.9 [+239.8, +321.4] | 13812.0 | 21.99% | 2.74% | 0.28% |
+| L3 insert values, literal (added in P5.1) | http-down | +237.6 [+223.2, +253.8] | 11643.7 | 19.20% | 2.32% | 0.24% |
+| L3 insert values, literal (added in P5.1) | file+sqlcomment | +246.0 [+188.8, +298.7] | 12052.8 | 19.74% | 2.40% | 0.25% |
+| L5 analytical, literal (added in P5.1) | file | +1830.7 [+1667.4, +2048.7] | 89703.3 | 64.67% | 15.47% | 1.80% |
+| L5 analytical, literal (added in P5.1) | http | +2029.9 [+1889.3, +2150.5] | 99466.0 | 67.00% | 16.87% | 1.99% |
+| L5 analytical, literal (added in P5.1) | http-down | +1836.8 [+1731.0, +1940.9] | 90004.3 | 64.75% | 15.52% | 1.80% |
+| L5 analytical, literal (added in P5.1) | file+sqlcomment | +1645.9 [+1563.6, +1728.2] | 80650.2 | 62.21% | 14.13% | 1.62% |
+| Kafka `produce()` | file | +29.2 [+20.9, +41.6] | 1430.1 | 2.84% | 0.29% | 0.03% |
+| Kafka `produce()` | http | +48.9 [+35.8, +70.1] | 2398.2 | 4.67% | 0.49% | 0.05% |
+
 ### Process start-up (ms)
 
 | Command | p50 before | after | p95 before | after |

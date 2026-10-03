@@ -36,8 +36,11 @@ jobs:
 
   # Live results on every PR (P5): real Postgres and Kafka as service
   # containers, every answer key replayed live, the adversarial suite, and
-  # quick-mode overhead. CI runners are shared VMs: these overhead numbers are
-  # noisy and not the authoritative source (that is docs/results/P5-local.md).
+  # quick-mode overhead. Since P5.1 quick mode also runs the L tiers, the
+  # wrap-only and capture-null configurations and the profiling round, and the
+  # scale stage: every generated key replayed, scale_s01 alone live. CI runners
+  # are shared VMs: these overhead numbers are noisy and not the authoritative
+  # source (that is docs/results/P5-local.md).
   live:
     runs-on: ubuntu-latest
     services:
@@ -68,10 +71,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install the three packages and the benchmark extras
-        run: |
-          pip install -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]"
-          pip install -r benchmarks/requirements.txt
+      - name: Install the three packages and the pinned benchmark environment
+        run: pip install -c benchmarks/constraints.txt -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]" -r benchmarks/requirements.txt
       - name: Register the Jupyter kernel
         run: python -m ipykernel install --user --name python3
       - name: Wait for Postgres and Kafka

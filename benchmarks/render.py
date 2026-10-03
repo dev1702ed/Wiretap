@@ -1132,6 +1132,7 @@ def _compare_rows_p51(before: dict, after: dict) -> list[str]:
                 ),
                 "",
             ]
+    out += _fixed_cost(after)
     sb = before.get("overhead", {}).get("startup")
     sa = after.get("overhead", {}).get("startup")
     if sb and sa:
@@ -1150,6 +1151,65 @@ def _compare_rows_p51(before: dict, after: dict) -> list[str]:
             "",
         ]
     return out
+
+
+REPRESENTATIVE_QUERY_MS = (1, 10, 100)
+THROUGHPUT_TARGET = 0.02
+
+
+def loss_pct(cost_us: float, query_us: float) -> float:
+    """Throughput lost to a fixed cost per call: c / (query + c)."""
+    return 100 * cost_us / (query_us + cost_us)
+
+
+def _fixed_cost(results: dict) -> list[str]:
+    """What the implied fixed cost per call means for the < 2% target."""
+    tiers = results.get("overhead", {}).get("postgres", {}).get("tiers", {})
+    sections = [(f"{n} {tier['label']}", tier) for n, tier in tiers.items()]
+    kafka = results.get("overhead", {}).get("kafka")
+    if kafka:
+        sections.append(("Kafka `produce()`", kafka))
+    rows = []
+    for title, tier in sections:
+        for config, v in tier["versus_base"].items():
+            implied = v.get("implied_added_us")
+            if implied is None or config in ("wrap-only", "capture-null"):
+                continue
+            cost = implied["estimate"]
+            row = [title, config, ci(implied)]
+            row.append(
+                us(cost * (1 - THROUGHPUT_TARGET) / THROUGHPUT_TARGET)
+                if cost > 0
+                else "any"
+            )
+            row += [
+                f"{loss_pct(cost, ms * 1000):.2f}%" for ms in REPRESENTATIVE_QUERY_MS
+            ]
+            rows.append(row)
+    if not rows:
+        return []
+    return [
+        "### The fixed cost per call and the < 2% throughput target (after)",
+        "",
+        (
+            "From the after run's implied added µs per call (point estimate). A fixed cost "
+            "c per call takes c / (q + c) of the throughput of a query whose own latency is "
+            "q, so the loss is under 2% once q > 49 × c. The last columns apply each cost to "
+            "representative query latencies."
+        ),
+        "",
+        *table(
+            [
+                "Tier",
+                "Config",
+                "Implied µs/call [95% CI]",
+                "Loss < 2% for queries slower than (µs)",
+                *[f"Loss at a {ms} ms query" for ms in REPRESENTATIVE_QUERY_MS],
+            ],
+            rows,
+        ),
+        "",
+    ]
 
 
 COMPARISON_TITLE = "P5 Stage 5: parse cache"
