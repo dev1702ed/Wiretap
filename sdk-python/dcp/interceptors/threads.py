@@ -16,7 +16,6 @@ not parented to them. Pinned as an xfail in tests/test_threads.py.
 """
 
 import contextvars
-from concurrent.futures import ThreadPoolExecutor
 
 from dcp.context import ensure_trace
 
@@ -28,6 +27,8 @@ def patch_threadpool() -> None:
     global _patched
     if _patched:
         return
+
+    from concurrent.futures import ThreadPoolExecutor  # imported only when patching
 
     original_submit = ThreadPoolExecutor.submit
 

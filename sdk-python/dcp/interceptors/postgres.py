@@ -15,14 +15,18 @@ import logging
 import re
 import threading
 import weakref
-
-import sqlglot
-from sqlglot import exp
+from typing import TYPE_CHECKING
 
 from dcp.config import capture_enabled, current_emitter, current_job, sql_propagation_enabled
 from dcp.context import ensure_trace, inbound, prior_reads, record_read
 from dcp.envelope import Dataset, DCPEvent, new_id
 from dcp.propagation import sqlcomment
+
+if TYPE_CHECKING:
+    from sqlglot import exp
+
+# sqlglot is imported on the first classification, not with this module
+# (P5.1, A5): a program that never runs a query never pays for it.
 
 _log = logging.getLogger("dcp")
 
@@ -155,8 +159,7 @@ CLASSIFY_CACHE_MAX_CHARS = 16 * 1024
 # `$`, a nested block comment, which Postgres allows) makes the text its own
 # key: no normalisation, exactly P5's behaviour.
 _LITERAL = "\x00"  # libpq cannot send a NUL, so no real query text contains one
-_TOKENS = re.compile(
-    r"""
+_TOKEN_PATTERN = r"""
       (?P<estring>(?<![\w$])[Ee]'(?:[^'\\]|\\.|'')*')
     | (?P<run>(?:(?![Ee]')[A-Za-z_\x80-\U0010ffff][\w$\x80-\U0010ffff]*
                 |\$\d+|[^\w'"$.\-/]|\.(?!\d)|-(?!-)|/(?!\*))+)
@@ -166,11 +169,17 @@ _TOKENS = re.compile(
     | (?P<string>'(?:[^']|'')*')
     | (?P<number>(?<![\w$.])(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)
     | (?P<bad>['"$]|/\*)
-    """,
-    re.VERBOSE | re.DOTALL,
-)
-# `IN (1, 2, -3)` and `VALUES (1, 2)` collapse to one placeholder each.
-_LISTS = re.compile(_LITERAL + r"(?:\s*,\s*[-+]?\s*" + _LITERAL + r")+")
+    """
+_LIST_PATTERN = _LITERAL + r"(?:\s*,\s*[-+]?\s*" + _LITERAL + r")+"
+
+
+@functools.cache
+def _patterns() -> tuple[re.Pattern, re.Pattern]:
+    """The compiled pass, on the first exact-text miss rather than at import:
+    a program that never sends a query never compiles it."""
+    tokens = re.compile(_TOKEN_PATTERN, re.VERBOSE | re.DOTALL)
+    # `IN (1, 2, -3)` and `VALUES (1, 2)` collapse to one placeholder each.
+    return tokens, re.compile(_LIST_PATTERN)
 
 
 class _Unreadable(Exception):
@@ -193,11 +202,12 @@ def _replace(match: re.Match) -> str:
 def _cache_key(query: str) -> str | None:
     """The query with every literal replaced by a placeholder and lists of them
     collapsed; None if the text cannot be normalised with certainty."""
+    tokens, lists = _patterns()
     try:
-        key = _TOKENS.sub(_replace, query)
+        key = tokens.sub(_replace, query)
     except _Unreadable:
         return None
-    return _LISTS.sub(_LITERAL, key)
+    return lists.sub(_LITERAL, key)
 
 
 class _KeyCache:
@@ -279,6 +289,9 @@ def _parse_and_classify(query: str) -> tuple[Classified, bool]:
     structure (was a catalog named?) rather than by counting dots, which a
     quoted name like "a.b" would defeat.
     """
+    import sqlglot  # lazily, on the first parse; free after that
+    from sqlglot import exp
+
     try:
         statement = sqlglot.parse_one(query, dialect="postgres")
     except Exception:  # noqa: BLE001 — unparseable SQL is expected, not fatal
@@ -324,12 +337,12 @@ def _parse_and_classify(query: str) -> tuple[Classified, bool]:
     return (tuple(_dedupe(reads)), tuple(_dedupe(writes))), True
 
 
-def _is_cte_reference(table: exp.Table, ctes: set[str]) -> bool:
+def _is_cte_reference(table: "exp.Table", ctes: set[str]) -> bool:
     qualified = table.args.get("db") or table.args.get("catalog")
     return not qualified and _fold(table.this) in ctes
 
 
-def _qualify(table: exp.Table) -> TableParts:
+def _qualify(table: "exp.Table") -> TableParts:
     """(catalog, schema, table), case-folded, defaulting the schema to public."""
     catalog = _fold(table.args.get("catalog"))
     schema = _fold(table.args.get("db")) or "public"
@@ -340,6 +353,8 @@ def _fold(identifier) -> str:
     """An identifier as Postgres resolves it: lower case unless quoted."""
     if identifier is None:
         return ""
+    from sqlglot import exp
+
     if isinstance(identifier, exp.Identifier):
         return identifier.this if identifier.quoted else identifier.this.lower()
     return identifier.name
