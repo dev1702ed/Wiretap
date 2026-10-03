@@ -196,11 +196,18 @@ def _run_notebook(workload, process, group, run_dir, env, instrument=True) -> di
         nb, km=manager, kernel_name=KERNEL_NAME, timeout=PROCESS_TIMEOUT_S
     )
     try:
+        # cleanup_kc: nbclient shuts down only kernels whose manager it created;
+        # this one is ours, so ask explicitly. No kernel outlives its notebook.
         client.execute(
-            env=instrumented_env(env) if instrument else env, cwd=str(run_dir)
+            env=instrumented_env(env) if instrument else env,
+            cwd=str(run_dir),
+            cleanup_kc=True,
         )
     except CellExecutionError as exc:
         raise LiveRunError(f"{workload}/{job} failed in a cell:\n{exc}") from exc
+    finally:
+        if manager.has_kernel:
+            manager.shutdown_kernel(now=True)
     executed = run_dir / (pathlib.Path(job).stem + ".executed.ipynb")
     nbformat.write(nb, executed)
     return {"program": path.name, "executed": executed.name, "exit_code": 0}
