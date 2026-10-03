@@ -1,1 +1,2 @@
 bridges/openlineage/schema/OpenLineage.json -text
+*.sh text eol=lf
