@@ -38,12 +38,16 @@ OpenLineage graph is empty by construction.
 
 ### What decision 6 changes
 
-Cases 1 and 2 currently need two lines in the script (`dcp.init()` and a
-`dcp.patch_*()` call). The honest claim is therefore *declared vs. attested*:
-those lines are generic and say nothing about which datasets the script touches,
-whereas manual OpenLineage emission requires naming them. Zero-code
-auto-instrumentation (decision 6) would leave the script literally untouched
-and strengthen the claim to "no code changes at all."
+Decision 6 is closed (P5): `dcp-instrument python script.py` captures a script
+that contains **no DCP code at all**. DCP's `sitecustomize` initialises and
+patches at interpreter start-up, configured by environment variables, so the
+script is literally untouched. Cases 1 and 2 are therefore claimed as
+**"no code changes"**: DCP attests lineage the author never declared, whereas
+manual OpenLineage emission requires the author to name every dataset.
+
+The explicit two-line form (`dcp.init()` plus `dcp.patch_*()`) remains, and for
+it the earlier framing still holds: those lines are generic and say nothing
+about which datasets the script touches.
 
 ## Known limitations — NOT adversarial cases
 
@@ -60,7 +64,7 @@ them.
 | Reads inside `ThreadPoolExecutor` workers | The trace follows the work, but the context copy is one-way, so worker reads don't parent writes made after the pool returns |
 | Kafka writes | Attested at `produce()`, not at broker acknowledgement |
 | `SerializingProducer` / `DeserializingConsumer` | Bind the original C types at import; not covered |
-| Import order | `patch_kafka()` must run before `from confluent_kafka import Producer` |
+| Import order (explicit calls only) | `patch_kafka()` must run before `from confluent_kafka import Producer`. `dcp-instrument` removes this hazard: it patches before any user import |
 
 ## Honest test for each case
 

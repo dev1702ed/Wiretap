@@ -50,6 +50,29 @@ Why Python first: the dark zones application-layer tools miss — ad-hoc scripts
 glue jobs — are overwhelmingly Python. That is precisely the gap being measured.
 
 ## Quickstart
+
+No code changes: run the script under `dcp-instrument`.
+
+```bash
+pip install -e "./sdk-python[postgres,kafka]"
+DCP_EMIT=file://dcp_events.jsonl dcp-instrument python my_script.py
+```
+
+On Windows PowerShell: `$env:DCP_EMIT = "file://dcp_events.jsonl"; dcp-instrument python my_script.py`.
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `DCP_EMIT` | Sink: `console`, `file://path` or `http://host:port` (the DCP backend) | `console` |
+| `DCP_JOB_NAME` | Job name | The script's basename |
+| `DCP_PROPAGATE_SQL` | `1` appends the trace comment to outbound SQL (spec §3) | Off |
+
+`dcp-instrument` runs the command as a subprocess with DCP's `sitecustomize` first on
+`PYTHONPATH`, so DCP initialises and patches psycopg, confluent-kafka and
+`ThreadPoolExecutor` before the script imports anything, and any existing
+`sitecustomize` still runs. If DCP cannot start, the script runs uninstrumented.
+
+The explicit form still works, for code that prefers it:
+
 ```python
 import dcp
 dcp.init(emit="console")

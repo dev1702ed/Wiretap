@@ -3,7 +3,7 @@
 The envelope, the dataset identity scheme, and the propagation rules. This is the layer
 everything else depends on — and the most durable artifact in the repo.
 
-Status: **DRAFT v0.1.** Decisions 1–5 are closed (§4); decision 6 is open.
+Status: **DRAFT v0.1.** Decisions 1–6 are closed (§4).
 
 ---
 
@@ -81,7 +81,7 @@ graph degrades to disconnected-but-attested edges. This is a stated limitation, 
 | 3 | Kafka namespace | `kafka://broker:port` vs cluster ID | **`kafka://broker:port`** — consistent with Postgres |
 | 4 | `job` capture | At `init()` vs per-event | **At `init()`** — `os.getpid()`, `socket.gethostname()` once, reused |
 | 5 | Schema draft | draft-07 vs 2020-12 | **Draft 2020-12** |
-| 6 | Zero-code auto-instrumentation | Explicit `dcp.init()` + `dcp.patch_*()` calls vs. instrumenting a script without editing it | **Open.** Would remove the `patch_kafka()` import-order hazard and strengthen adversarial cases 1–2 from "declared vs. attested" to "no code changes at all" |
+| 6 | Zero-code auto-instrumentation | Explicit `dcp.init()` + `dcp.patch_*()` calls vs. instrumenting a script without editing it | **Closed: yes, via `dcp-instrument`** (P5). `dcp-instrument python script.py` runs the script with DCP's `sitecustomize` first on `PYTHONPATH`; it initialises DCP from `DCP_EMIT`, `DCP_JOB_NAME` and `DCP_PROPAGATE_SQL` and patches before any user import, then chains to any `sitecustomize` it shadows. This removes the `patch_kafka()` import-order hazard and makes adversarial cases 1–2 "no code changes at all". The explicit calls remain supported |
 
 ## 5. Compatibility
 
