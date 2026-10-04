@@ -5,12 +5,14 @@
 **Windows PowerShell** (5.1 or 7), from the repository root. Every step gives the exact
 commands, what you should see, and what to check if you see something else.
 
-Steps 1-6 and 8 were rehearsed on Linux in the P5.2 sandbox, in a fresh virtualenv
-with only shell and path syntax adapted (the log is in
-[`docs/results/P5.2.md`](results/P5.2.md#2-verification-log), item 9). Step 7's logic
-(the timing, the Marquez API check and the record it writes) is tested in
-`benchmarks/tests/test_bench_demo_timing.py`; steps 9-11 are account actions on Zenodo,
-GitHub and PyPI that no sandbox can take.
+Every step was rehearsed on Linux in the P5.2 sandbox, in PowerShell 7, from a fresh
+clone and a fresh virtualenv, with only shell and path syntax adapted (the log is in
+[`docs/results/P5.2.md`](results/P5.2.md#2-verification-log), item 9): steps 1-6 as
+written (step 4 in quick mode under a throw-away label), step 7's warm run with Docker,
+step 8 as a dry run, and steps 9-11 up to the account actions (Zenodo, the tag and
+release, the uploads), which no sandbox can take. Step 7's logic (the timing, the
+Marquez API check and the record it writes) is also tested in
+`benchmarks/tests/test_bench_demo_timing.py`.
 
 **Before you start.** You need: Git for Windows; Python 3.14 (`py -3.14 --version`);
 Docker Desktop, running; about 5 GB of free disk; and roughly 90 minutes, most of it
@@ -132,7 +134,7 @@ $env:DCP_BENCH_KAFKA_VERSION = "3.8.0"
 python benchmarks/run.py --label local-final
 $LASTEXITCODE
 python benchmarks/render.py --fixed-cost benchmarks/results/local-final/results.json docs/results/P5-local-final-fixed-cost.md
-Select-String -Path docs/results/P5-local-final.md -Pattern '^\| (replay|live|adversarial|scale|overhead|cpu) \|'
+Select-String -CaseSensitive -Path docs/results/P5-local-final.md -Pattern '^\| (replay|live|adversarial|scale|overhead|cpu) \|'
 Select-String -Path docs/results/P5-local-final.md -Pattern 'Unexplained|agrees with replay' -Context 0,20 | Select-Object -First 3
 ```
 
@@ -276,11 +278,11 @@ git commit -m "v1: the owner's final run, demo timing, evidence pack and figures
 git push
 ```
 
-**Expect:** `git status` lists exactly those files under *Changes to be committed* and
-nothing under *Changes not staged* except, possibly, nothing at all. (With the step 4
+**Expect:** `git status` lists exactly those files under *Changes to be committed*, and
+nothing under *Changes not staged* or *Untracked files* (`.venv-v1` and
+`benchmarks/results/` are ignored by git). (With the step 4
 alternative, add `docs/results/P5-local-p51-fixed-cost.md` and
-`docs/results/data/local-p51/results.json` as well.) `benchmarks\results\` is ignored by
-git and stays local.
+`docs/results/data/local-p51/results.json` as well.)
 
 **If not:** an unexpected modified file means something wrote where it should not: look
 at `git diff` before committing. `rejected ... fetch first` on push: `git pull` first.

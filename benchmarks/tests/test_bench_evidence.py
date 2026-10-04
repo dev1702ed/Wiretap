@@ -142,8 +142,9 @@ def repo(tmp_path):
     results.mkdir()
 
     def write(name, lines):
-        (results / name).write_text(
-            "\n".join([f"# {name}", "", *lines]) + "\n", encoding="utf-8"
+        # LF bytes on every platform (write_text would write CRLF on Windows)
+        (results / name).write_bytes(
+            ("\n".join([f"# {name}", "", *lines]) + "\n").encode()
         )
 
     write(
@@ -275,6 +276,7 @@ def test_crlf_records_extract_the_same(repo):
     _tmp, results, _readme = repo
     before = evidence.render(evidence.load(results))
     for path in results.glob("*.md"):
+        assert b"\r" not in path.read_bytes()
         path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
     assert evidence.render(evidence.load(results)) == before
 

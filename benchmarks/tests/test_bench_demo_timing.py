@@ -205,3 +205,36 @@ def test_the_powershell_wrapper_runs_the_helper_and_writes_the_record():
     )
     assert "[switch]$SkipCold" in ps1 and '"--skip-cold"' in ps1
     assert "exit $LASTEXITCODE" in ps1
+
+
+def test_a_failed_compose_up_is_not_waited_for_and_is_recorded(monkeypatch):
+    def fake_run(command, check=True):
+        if command[-3:] == ["up", "-d", "--build"]:
+            return subprocess.CompletedProcess(
+                command, 1, "", "toomanyrequests: rate limit"
+            )
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    def never(*args, **kwargs):
+        raise AssertionError("must not poll when compose up failed")
+
+    monkeypatch.setattr(time_demo, "run", fake_run)
+    monkeypatch.setattr(time_demo, "wait_until_linked", never)
+    monkeypatch.setattr(time_demo, "check_marquez", lambda base: {"jobs": [], "producer_outputs": [],
+                        "consumer_inputs": [], "linked": False})  # fmt: skip
+    monkeypatch.setattr(time_demo, "demo_exit_code", lambda: "not found")
+    monkeypatch.setattr(time_demo.time, "sleep", lambda s: None)
+    result = time_demo.timed_run("warm", "x", 900)
+    assert result["seconds"] is None and result["up_exit_code"] == 1
+    assert "toomanyrequests" in result["up_error"]
+    env = {"timestamp_utc": "t", "git_commit": "c", "git_dirty": False, "os": "o", "docker": "d",
+           "compose": "v"}  # fmt: skip
+    text = time_demo.render_record(env, [], [result])
+    assert (
+        "## `docker compose up` failed" in text
+        and "toomanyrequests: rate limit" in text
+    )
+    assert (
+        "| warm | every image present; containers and volumes removed first | not reached |"
+        in text
+    )

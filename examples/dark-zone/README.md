@@ -1,11 +1,15 @@
 # The dark-zone demo (P5)
 
-> **UNVERIFIED.** Written without Docker; nothing here has been run, and CI does
-> not run it. Its parts are tested elsewhere: `dcp-instrument`
+> **Run end to end once (P5.2), not yet timed by the owner.** In the P5.2 sandbox
+> (Docker 29.6, Compose 5.3), `time-demo.ps1`'s warm run brought the stack up and
+> Marquez's API showed `nightly_enrich.py` writing `enriched_orders` and
+> `warehouse_loader.py` reading it (`docs/results/P5.2.md`, the runbook rehearsal).
+> That sandbox needed its proxy's CA added to the image build, which is not part
+> of the repository; CI does not run the demo. Its parts are tested elsewhere: `dcp-instrument`
 > (`sdk-python/tests/test_instrument.py`), the same flow live
 > (`benchmarks/live`, the `dark_zone` answer key) and the bridge
 > (`bridges/openlineage/tests`). **Time-to-first-graph is measured by the owner**
-> with the steps below. If a step fails, note which one.
+> with `time-demo.ps1` (`docs/RUNBOOK.md`, step 7), which writes its own record.
 
 The scenario the whole project exists to show:
 

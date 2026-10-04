@@ -160,7 +160,14 @@ def timed_run(kind: str, base: str, timeout_s: float) -> dict:
     present_before = [image for image in images() if present(image)]
     start = time.monotonic()
     up = run(compose("up", "-d", "--build"), check=False)
-    waited, last = wait_until_linked(base, timeout_s)
+    if up.returncode == 0:
+        waited, last = wait_until_linked(base, timeout_s)
+    else:  # nothing will come up: say why instead of polling until the timeout
+        waited, last = 0.0, check_marquez(base)
+        print(
+            f"   docker compose up failed ({up.returncode}):\n{up.stderr[-2000:]}",
+            flush=True,
+        )
     seconds = time.monotonic() - start if up.returncode == 0 else None
     # The demo container exits after posting; give it a moment to finish.
     for _ in range(30):
@@ -175,6 +182,9 @@ def timed_run(kind: str, base: str, timeout_s: float) -> dict:
         else None,
         "waited": round(waited, 1),
         "up_exit_code": up.returncode,
+        "up_error": ""
+        if up.returncode == 0
+        else (up.stderr or up.stdout).strip()[-300:],
         "demo_exit_code": demo_exit_code(),
         "check": last,
         "removed_images": removed,
@@ -262,6 +272,18 @@ def render_record(env: dict, image_rows: list[dict], runs: list[dict]) -> str:
             f"| {r['kind']} | {cached(r)} | {seconds} | {yes(under)} | {r['demo_exit_code']} "
             f"| {yes(r['check']['linked'])} |"
         )
+    failed = [r for r in runs if r.get("up_exit_code", 0) != 0]
+    if failed:
+        lines += ["", "## `docker compose up` failed", ""]
+        for r in failed:
+            lines += [
+                f"**{r['kind']}**: exit code {r['up_exit_code']}; the end of its output:",
+                "",
+                "```",
+                r.get("up_error", ""),
+                "```",
+                "",
+            ]
     lines += ["", "## Marquez API check", ""]
     for r in runs:
         c = r["check"]

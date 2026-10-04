@@ -229,7 +229,7 @@ follow-up below is open.
 ## 6. Owner steps still open (not limitations of the code)
 
 These are in [`docs/RUNBOOK.md`](RUNBOOK.md), with exact commands: the full-mode overhead
-run on the final code (step 4); the dark-zone demo's timing and the Marquez check, never
-run in any sandbox (step 7); the owner's name in `CITATION.cff` (step 9); the release and
+run on the final code (step 4); the dark-zone demo's timing and the Marquez check (step 7; the demo itself ran
+end to end once in the P5.2 sandbox, untimed); the owner's name in `CITATION.cff` (step 9); the release and
 its DOI (step 10); publishing, optional, under a different distribution name because
 `dcp` is taken on PyPI (step 11; [`V1.md`](results/V1.md#packaging-c2)).
