@@ -38,4 +38,4 @@ def test_broken_files_and_headings_are_found(tmp_path, monkeypatch):
 
 
 def test_every_link_in_the_v1_documents_resolves():
-    assert check_links.main() == 0
+    assert check_links.main([]) == 0
