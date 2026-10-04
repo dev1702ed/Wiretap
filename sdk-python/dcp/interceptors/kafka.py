@@ -28,7 +28,7 @@ Known gaps, stated plainly:
 
 import logging
 
-from dcp.config import current_emitter, current_job
+from dcp.config import capture_enabled, current_emitter, current_job
 from dcp.context import ensure_trace, inbound, prior_reads, record_read, set_trace
 from dcp.envelope import Dataset, DCPEvent, new_id
 from dcp.propagation import kafka_header
@@ -59,6 +59,8 @@ def patch_kafka() -> None:
             self._dcp_namespace = _namespace(args, kwargs)
 
         def produce(self, topic, *args, **kwargs):
+            if not capture_enabled():  # the kill switch: call straight through
+                return super().produce(topic, *args, **kwargs)
             try:
                 headers = _on_produce(self._dcp_namespace, topic, kwargs.get("headers"))
                 # Only set headers by keyword if the caller didn't pass them
@@ -76,13 +78,15 @@ def patch_kafka() -> None:
 
         def poll(self, *args, **kwargs):
             msg = super().poll(*args, **kwargs)
-            _safe_on_consume(self._dcp_namespace, msg)
+            if capture_enabled():
+                _safe_on_consume(self._dcp_namespace, msg)
             return msg
 
         def consume(self, *args, **kwargs):
             msgs = super().consume(*args, **kwargs)
-            for msg in msgs or ():
-                _safe_on_consume(self._dcp_namespace, msg)
+            if capture_enabled():
+                for msg in msgs or ():
+                    _safe_on_consume(self._dcp_namespace, msg)
             return msgs
 
     confluent_kafka.Producer = Producer

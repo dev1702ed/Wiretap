@@ -42,7 +42,9 @@ Every published number comes from one command, which writes raw JSON to
 `docs/results/P5-<label>.md`:
 
 ```bash
-pip install -r benchmarks/requirements.txt
+# The pinned benchmark environment (P5.1): one pip command, so the constraints
+# apply to the three packages too
+pip install -c benchmarks/constraints.txt -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]" -r benchmarks/requirements.txt
 python -m ipykernel install --user --name python3   # once, for the notebook workload
 python benchmarks/run.py --label local              # full mode
 python benchmarks/run.py --label local --quick      # 5 x 300 instead of 10 x 2,000
@@ -54,7 +56,10 @@ The `live`, `adversarial` and `overhead` stages need PostgreSQL on
 `DCP_PG_PASSWORD`, default `dcp`) and Kafka on `localhost:9092`; without them
 they are skipped, with the reason. **They drop and re-create the benchmark
 tables in database `dcp` and the `enriched_orders` and `overhead_bench`
-topics.** `--cpu-python PATH` (repeatable) runs the CPU microbenchmark under
+topics.** `benchmarks/requirements.txt` and `benchmarks/constraints.txt` pin every
+version that affects measurement; `run.py` compares the installed versions
+with them and records any mismatch in the result's environment table (a
+warning, not a failure). `--cpu-python PATH` (repeatable) runs the CPU microbenchmark under
 other interpreters too; each needs the SDK installed. Never edit a generated
 results file by hand: re-run the command. The CI `live` job runs
 `--label ci --quick` on every PR and publishes the result as its job summary.

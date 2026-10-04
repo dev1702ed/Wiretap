@@ -232,6 +232,37 @@ def test_propagate_sql_is_off_for_other_values(workdir):
     assert "dcp_trace" not in result.stdout
 
 
+@pytest.mark.parametrize("value", ["off", "OFF", "0", "false", "no"])
+def test_capture_off_keeps_the_patches_and_captures_nothing(workdir, value):
+    """The kill switch: wrappers installed, program unchanged, no events, no comment."""
+    (workdir / "job.py").write_text(
+        UNTOUCHED + 'print("patched:", Producer.__module__ != "confluent_kafka")\n'
+    )
+    sink, path = emit_to(workdir)
+    result = run(
+        workdir, sys.executable, "job.py", DCP_EMIT=sink, DCP_CAPTURE=value, DCP_PROPAGATE_SQL="1"
+    )
+    assert result.returncode == 0, result.stderr
+    assert "script finished" in result.stdout and "patched: True" in result.stdout
+    assert "sent: SELECT id, total FROM orders\n" in result.stdout  # no trace comment
+    assert not path.exists() or read_events(path) == []
+
+
+@pytest.mark.parametrize("value", ["", "on", "1", "offline"])
+def test_capture_stays_on_for_other_values(workdir, value):
+    sink, path = emit_to(workdir)
+    result = run(workdir, sys.executable, "job.py", DCP_EMIT=sink, DCP_CAPTURE=value)
+    assert result.returncode == 0, result.stderr
+    assert [e["op"] for e in read_events(path)] == ["read", "write"]
+
+
+def test_null_sink_runs_the_program_and_records_nothing(workdir):
+    result = run(workdir, sys.executable, "job.py", DCP_EMIT="null://")
+    assert result.returncode == 0, result.stderr
+    assert "script finished" in result.stdout
+    assert not [line for line in result.stdout.splitlines() if line.startswith("{")]
+
+
 def test_default_sink_is_the_console(workdir):
     result = run(workdir, sys.executable, "job.py")
     assert result.returncode == 0, result.stderr
@@ -281,3 +312,134 @@ def test_the_fakes_really_are_imported_first(workdir):
     )
     result = run(workdir, sys.executable, "job.py")
     assert "patched: True" in result.stdout, result.stderr
+
+
+# P5.1 (A5): post-import hooks instead of eager imports
+
+
+def test_a_program_that_never_imports_the_libraries_never_loads_them(workdir):
+    """Neither psycopg, confluent_kafka nor sqlglot (DCP's own parser) is loaded."""
+    (workdir / "plain.py").write_text(
+        "import sys\n"
+        "names = ('psycopg', 'confluent_kafka', 'sqlglot', 'concurrent.futures.thread')\n"
+        "print('loaded:', sorted(n for n in names if n in sys.modules))\n"
+        "print('dcp:', 'dcp' in sys.modules)\n"
+    )
+    sink, _ = emit_to(workdir)
+    result = run(workdir, sys.executable, "plain.py", DCP_EMIT=sink)
+    assert result.returncode == 0, result.stderr
+    assert "loaded: []" in result.stdout
+    assert "dcp: True" in result.stdout  # instrumented all the same
+
+
+def test_from_confluent_kafka_import_producer_binds_the_patched_class(workdir):
+    (workdir / "job.py").write_text(
+        "from confluent_kafka import Consumer, Producer\n"
+        "import confluent_kafka\n"
+        "print('patched:', Producer is confluent_kafka.Producer, Producer.__module__)\n"
+        "print('consumer:', Consumer is confluent_kafka.Consumer, Consumer.__module__)\n"
+    )
+    result = run(workdir, sys.executable, "job.py")
+    assert result.returncode == 0, result.stderr
+    assert "patched: True dcp.interceptors.kafka" in result.stdout
+    assert "consumer: True dcp.interceptors.kafka" in result.stdout
+
+
+def test_a_library_imported_inside_a_function_is_still_captured(workdir):
+    (workdir / "job.py").write_text(
+        textwrap.dedent(
+            """
+            def main():
+                import psycopg
+
+                psycopg.Cursor().execute("SELECT id, total FROM orders")
+                from confluent_kafka import Producer
+
+                Producer({"bootstrap.servers": "localhost:9092"}).produce("enriched_orders", b"x")
+
+            if __name__ == "__main__":
+                main()
+            """
+        )
+    )
+    sink, path = emit_to(workdir)
+    result = run(workdir, sys.executable, "job.py", DCP_EMIT=sink)
+    assert result.returncode == 0, result.stderr
+    read, write = read_events(path)
+    assert (read["op"], read["dataset"]["name"]) == ("read", "dcp.public.orders")
+    assert (write["op"], write["dataset"]["name"], write["parent"]) == (
+        "write",
+        "enriched_orders",
+        [read["edge_id"]],
+    )
+
+
+def test_the_hooked_module_keeps_its_real_loader(workdir):
+    (workdir / "job.py").write_text(
+        "import psycopg, sys\n"
+        "print('loader:', type(psycopg.__loader__).__name__, type(psycopg.__spec__.loader).__name__)\n"
+        "print('finders:', [type(f).__name__ for f in sys.meta_path].count('PostImportFinder'))\n"
+    )
+    result = run(workdir, sys.executable, "job.py")
+    assert result.returncode == 0, result.stderr
+    assert "loader: SourceFileLoader SourceFileLoader" in result.stdout
+    assert "finders: 1" in result.stdout  # still waiting for confluent_kafka
+
+
+def test_a_patch_that_fails_never_breaks_the_import(workdir):
+    (workdir / "fakes" / "psycopg.py").write_text("VALUE = 42\n")  # no Cursor to patch
+    (workdir / "job.py").write_text("import psycopg\nprint('value:', psycopg.VALUE)\n")
+    result = run(workdir, sys.executable, "job.py")
+    assert result.returncode == 0, result.stderr
+    assert "value: 42" in result.stdout
+    assert "Traceback" not in result.stderr
+
+
+def test_a_library_already_imported_at_start_up_is_patched_at_once(workdir):
+    """A .pth file can import a library before sitecustomize runs: it is
+    patched at once instead of hooked."""
+    (workdir / "fakes" / "early.pth").write_text("import psycopg\n")
+    (workdir / "job.py").write_text(
+        "import psycopg\nprint('wrapped:', psycopg.Cursor.execute.__module__)\n"
+    )
+    hook = os.path.join(instrument.AUTOINSTRUMENT_DIR, "sitecustomize.py")
+    script = textwrap.dedent(
+        f"""
+        import importlib.util, runpy, site, sys
+        site.addsitedir({str(workdir / "fakes")!r})  # runs early.pth: psycopg is imported
+        assert "psycopg" in sys.modules
+        spec = importlib.util.spec_from_file_location("dcp_site", {hook!r})
+        spec.loader.exec_module(importlib.util.module_from_spec(spec))  # DCP's start-up
+        runpy.run_path("job.py", run_name="__main__")
+        """
+    )
+    env = {k: v for k, v in os.environ.items() if not k.startswith("DCP_")}
+    env.pop("PYTHONPATH", None)
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=workdir,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "wrapped: dcp.interceptors.postgres" in result.stdout
+
+
+def test_import_dcp_loads_only_what_is_used():
+    """P5.1 (A5): the package's names resolve on first use."""
+    code = (
+        "import sys, dcp\n"
+        "heavy = ('dcp.config', 'dcp.interceptors.postgres', 'dcp.interceptors.kafka', 'sqlglot')\n"
+        "print('before:', sorted(m for m in heavy if m in sys.modules))\n"
+        "print('names:', all(callable(getattr(dcp, n)) for n in dcp.__all__))\n"
+        "print('sqlglot:', 'sqlglot' in sys.modules)\n"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, timeout=60, check=True
+    ).stdout
+    assert "before: []" in out
+    assert "names: True" in out
+    assert "sqlglot: False" in out  # still not parsed anything

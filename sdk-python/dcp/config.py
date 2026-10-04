@@ -28,28 +28,44 @@ class JobIdentity:
 _job: JobIdentity | None = None
 _emitter = None
 _propagate_sql = False
+_capture = True
 
 
-def init(emit: str = "console", job_name: str | None = None, propagate_sql: bool = False) -> None:
+def init(
+    emit: str = "console",
+    job_name: str | None = None,
+    propagate_sql: bool = False,
+    capture: bool = True,
+) -> None:
     """Initialise DCP for this process.
 
     Args:
-        emit: sink spec — "console"; "file://path" (JSONL, the event of record);
+        emit: sink spec — "console"; "file://path" (JSONL, the event of record;
+              written before emit() returns, or by a background thread with
+              "file://path?sync=0");
               "http://host:port" (the DCP backend). "marquez://host:port" raises
               NotImplementedError pointing at the batch OpenLineage bridge
-              (bridges/openlineage); anything else raises ValueError.
+              (bridges/openlineage); "null://" builds every event and discards
+              it, a diagnostic that records nothing (emitters/null.py);
+              anything else raises ValueError.
         job_name: override the inferred script name.
         propagate_sql: append a trace comment to outbound SQL (spec §3). Off by
               default: it is DCP's one modification of traffic.
+        capture: False installs nothing new but makes every patched call skip
+              capture entirely (no parsing, no events, no SQL comment): the
+              wrappers stay in place and call straight through. An operational
+              kill switch, and the benchmark's `wrap-only` measurement
+              (dcp-instrument reads it from DCP_CAPTURE=off).
 
     The file and HTTP sinks buffer, so shutdown() is registered with atexit: a
     script that never calls dcp.shutdown() still delivers its events.
     """
-    global _job, _emitter, _propagate_sql
+    global _job, _emitter, _propagate_sql, _capture
     emitter = _make_emitter(emit)  # first, so a bad spec changes nothing
     previous = _emitter
     _emitter = emitter
     _propagate_sql = propagate_sql
+    _capture = bool(capture)
     _job = JobIdentity(
         name=job_name or os.path.basename(sys.argv[0]) or "<interactive>",
         host=socket.gethostname(),
@@ -58,7 +74,7 @@ def init(emit: str = "console", job_name: str | None = None, propagate_sql: bool
     close = getattr(previous, "close", None)
     if close is not None:
         close()  # re-init: deliver what the old sink holds, release its thread/file
-    if emit != "console":
+    if emit not in ("console", "null://"):
         _register_shutdown()
 
 
@@ -67,13 +83,22 @@ def _make_emitter(emit: str):
         from dcp.emitters.console import ConsoleEmitter
 
         return ConsoleEmitter()
+    if emit == "null://":
+        from dcp.emitters.null import NullEmitter
+
+        return NullEmitter()
     if emit.startswith("file://"):
         from dcp.emitters.file import FileEmitter
 
         path = emit.removeprefix("file://")
+        # Only an exact trailing ?sync=0 (or ?sync=1) is an option: a path is
+        # never parsed as a URL, so Windows paths stay intact.
+        sync = not path.endswith("?sync=0")
+        if path.endswith(("?sync=0", "?sync=1")):
+            path = path[: -len("?sync=1")]
         if not path:
             raise ValueError("file:// sink needs a path, e.g. file://events.jsonl")
-        return FileEmitter(path)
+        return FileEmitter(path, sync=sync)
     if emit.startswith("http://"):
         from dcp.emitters.http import HTTPEmitter
 
@@ -89,7 +114,7 @@ def _make_emitter(emit: str):
             "--post http://localhost:5000 (see bridges/openlineage)"
         )
     raise ValueError(
-        f"unknown emitter sink {emit!r}: expected console, file://path or http://host:port"
+        f"unknown emitter sink {emit!r}: expected console, file://path, http://host:port or null://"
     )
 
 
@@ -124,3 +149,8 @@ def current_job() -> JobIdentity:
 def sql_propagation_enabled() -> bool:
     """Whether outbound SQL carries a trace comment. Off unless init() opts in."""
     return _propagate_sql
+
+
+def capture_enabled() -> bool:
+    """Whether patched calls capture. True unless init(capture=False): the kill switch."""
+    return _capture

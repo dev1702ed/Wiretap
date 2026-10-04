@@ -1,0 +1,41 @@
+# Transitive versions that affect measurement (P5.1, A1). Use with -c, in the
+# same pip command as benchmarks/requirements.txt (see its header). These are
+# the versions the P5.1 sandbox runs measured with.
+#
+# Not pip-visible: librdkafka is bundled inside the confluent-kafka wheel
+# (2.15.1 ships librdkafka 2.15.1); run.py records the version it reports.
+
+# Capture: the SDK's parser
+sqlglot==30.21.0
+
+# The Postgres and Kafka clients
+psycopg==3.3.6
+psycopg-binary==3.3.6
+confluent-kafka==2.15.1
+
+# The live backend (http configuration) and the graph
+fastapi==0.142.2
+starlette==1.7.0
+pydantic==2.13.5
+pydantic_core==2.46.5
+uvicorn==0.54.0
+h11==0.16.0
+networkx==3.7; python_version >= "3.11"
+networkx==3.4.2; python_version < "3.11"
+jsonschema==4.26.0
+
+# Notebooks (the live notebook workload)
+nbclient==0.11.0
+nbformat==5.11.1
+ipykernel==7.4.0; python_version >= "3.11"
+ipykernel==7.3.0; python_version < "3.11"
+ipython==9.17.1; python_version >= "3.11"
+ipython==8.39.0; python_version < "3.11"
+jupyter_client==8.10.0
+jupyter_core==5.9.1
+pyzmq==27.2.0
+tornado==6.5.10
+traitlets==5.16.1
+
+# The baseline check
+openlineage-python==1.53.0
