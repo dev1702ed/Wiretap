@@ -491,6 +491,221 @@ def _scale(results: dict) -> list[str]:
     return out
 
 
+STRESS_NOTE = (
+    "**The stress set, added in P5.2** (`benchmarks/ground_truth/stress/`): keys "
+    "generated with the generator's two failure-mode job kinds switched on, "
+    "**multi-record consumers** (2-3 records from one topic, from different "
+    "producers, all of them feeding the write) and **store-mediated reads** (a job "
+    "reads a table an earlier job wrote; chains of length 1 and 2). Both are "
+    "documented v1 limitations of DCP, so DCP's recall is expected to drop here. "
+    "Reported **on its own, never pooled** with the hand-written or the `scale_*` "
+    "keys. Precision and recall are micro-averaged as for the scale keys."
+)
+STRESS_EXPLAIN_NOTE = (
+    "Every item DCP's own graph found beyond the truth, checked against the "
+    "generator's distractor reads; and every expected item any method missed, "
+    "checked against a named cause, by code: for DCP and the facet reader, "
+    "*multi-record consumer: earlier record's parent dropped (job-level keeps the "
+    "latest read per dataset)* or *store-mediated: Postgres read carries no "
+    "parents*, each predicted from the key alone; for OpenLineage core "
+    "(trace-process), a *split run*, on the dataset's writer or, through a store "
+    "read, further upstream. Any miss of the dataset-level baseline or of "
+    "OpenLineage core per process is unexplained. Anything unexplained is a bug."
+)
+
+
+def _cause_counts(m: dict, method: str) -> list[int]:
+    from scale import CAUSES
+
+    cell = m["by_method"].get(method, {})
+    return [cell.get(cause, 0) for cause in CAUSES]
+
+
+def _stress_summary(summary: dict) -> list[str]:
+    from scale import CAUSE_MULTI, CAUSE_SPLIT, CAUSE_STORE
+
+    out = []
+    if summary["seeds"]["names"]:
+        names = summary["seeds"]["names"]
+        out += [
+            f"#### {names[0]} … {names[-1]} ({len(names)} keys), micro-averaged",
+            "",
+            *_scale_table(summary["seeds"]["aggregate"], per_key=True),
+            "",
+        ]
+    for name, rows in summary["others"].items():
+        out += [f"#### {name}, on its own", "", *_scale_table(rows, per_key=False), ""]
+    rows = []
+    for name, e in summary["extras"].items():
+        m = summary["misses"][name]
+        explained = m["misses"] - len(m["unexplained"])
+        rows.append(
+            [
+                name,
+                e["extras"],
+                e["explained_by_distractors"],
+                "; ".join(e["unexplained"]) or "none",
+                m["misses"],
+                explained,
+                "; ".join(m["unexplained"]) or "none",
+            ]
+        )
+    out += [
+        STRESS_EXPLAIN_NOTE,
+        "",
+        *table(
+            [
+                "Key",
+                "DCP extras",
+                "Explained by a distractor read",
+                "Unexplained extras",
+                "Missed items",
+                "Explained by a named cause",
+                "Unexplained misses",
+            ],
+            rows,
+        ),
+        "",
+    ]
+    cause_rows, seed_total = [], None
+    for name, m in summary["misses"].items():
+        dcp = _cause_counts(m, "DCP run-level")
+        facet = _cause_counts(m, "OpenLineage + dcp facet")
+        core = _cause_counts(m, "OpenLineage core")
+        row = [
+            sum(dcp[:2]),
+            dcp[0],
+            dcp[1],
+            sum(facet[:2]),
+            core[2],
+            len(m["unexplained"]),
+        ]
+        cause_rows.append([name, *row])
+        if name in summary["seeds"]["names"]:
+            seed_total = (
+                row if seed_total is None else [a + b for a, b in zip(seed_total, row)]
+            )
+    if seed_total is not None and len(summary["seeds"]["names"]) > 1:
+        names = summary["seeds"]["names"]
+        cause_rows.append([f"**{names[0]} … {names[-1]}, total**", *seed_total])
+    out += [
+        (
+            "**Misses per cause, per key** (counted by the check above). DCP's own "
+            "misses are all provenance items; the facet reader rebuilds DCP's graph, "
+            "so its misses are DCP's."
+        ),
+        "",
+        *table(
+            [
+                "Key",
+                "DCP run-level misses",
+                f"DCP: {CAUSE_MULTI}",
+                f"DCP: {CAUSE_STORE}",
+                "OpenLineage + dcp facet misses (same causes)",
+                f"OpenLineage core (trace-process): {CAUSE_SPLIT}",
+                "Unexplained",
+            ],
+            cause_rows,
+        ),
+        "",
+    ]
+    return out
+
+
+def _stress(results: dict) -> list[str]:
+    stress = results.get("scale", {}).get("stress")
+    if not stress:
+        return []
+    rows = [
+        [
+            k["workload"],
+            k["seed"],
+            k["jobs"],
+            ", ".join(f"{n} {kind}" for kind, n in sorted(k["kinds"].items())),
+            k["parameters"]["p_multi_record"],
+            k["parameters"]["p_store_read"],
+            f"{k['multi_record_consumers']} ({k['records_consumed_by_them']} records)",
+            k["store_read_jobs"],
+            k["store_chains_of_two"],
+            k["jobs_with_distractors"],
+            k["split_jobs"],
+            k["datasets"],
+            k["provenance_entries"],
+        ]
+        for k in stress["replay"]["summary"]["keys"]
+    ]
+    out = [
+        "## Ground truth: the stress set, DCP's known failure modes (added in P5.2)",
+        "",
+        STRESS_NOTE,
+        "",
+        f"Generator version {stress['generator_version']}.",
+        "",
+        *table(
+            [
+                "Key",
+                "Seed",
+                "Jobs",
+                "Job kinds",
+                "p_multi_record",
+                "p_store_read",
+                "Multi-record consumers (records they consume)",
+                "Store-read jobs",
+                "Of which chains of length 2",
+                "Jobs with a distractor read",
+                "Jobs on two traces (split runs)",
+                "Datasets",
+                "Provenance entries",
+            ],
+            rows,
+        ),
+        "",
+        "### Stress set: replay",
+        "",
+        "DCP's real capture code with faked I/O, as for the hand-written keys.",
+        "",
+        *_stress_summary(stress["replay"]["summary"]),
+    ]
+    live = stress.get("live", {})
+    out += ["### Stress set: live", ""]
+    if "skipped" in live:
+        return out + [f"Skipped: {live['skipped']}", ""]
+    rows = [
+        [
+            name,
+            r["processes"],
+            ", ".join(map(str, r["exit_codes"])),
+            r["events"],
+            r["manifest_records"],
+            "yes" if r["agrees_with_replay"] else "**NO**",
+        ]
+        for name, r in live["records"].items()
+    ]
+    out += [
+        (
+            f"Real PostgreSQL and Kafka, every process a separate OS process under "
+            f"`dcp-instrument`, consumers reading their named records by exact offset, "
+            f"each store read after the write it depends on (run id `{live['run_id']}`; "
+            f"{live['mode']})."
+        ),
+        "",
+        *table(
+            [
+                "Key",
+                "Processes",
+                "Exit codes",
+                "DCP events",
+                "Records in the run manifest",
+                "Every row agrees with replay",
+            ],
+            rows,
+        ),
+        "",
+        *_stress_summary(live["summary"]),
+    ]
+    return out
+
+
 def stage5_trigger(results: dict) -> list[str]:
     """Which of Stage 5's trigger conditions fire, from the numbers."""
     fired = []
@@ -917,6 +1132,7 @@ def render(results: dict) -> str:
         *_live(results),
         *_adversarial(results),
         *_scale(results),
+        *_stress(results),
         *_cpu(results),
         *_overhead(results),
         *_trigger(results),

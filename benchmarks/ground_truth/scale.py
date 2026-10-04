@@ -280,3 +280,194 @@ def per_process_misses(scored: dict) -> list[str]:
         for note in row["notes"]
         if note.startswith("-")
     ]
+
+
+# --- P5.2 (B4): the stress set -------------------------------------------------
+#
+# The stress keys (generate.STRESS_KEYS, in stress/) exercise DCP's two known
+# failure modes. They are summarised here, apart from every other key, and
+# every miss is checked against a named cause, mechanically.
+
+CAUSE_SPLIT = "split run"
+CAUSE_MULTI = (
+    "multi-record consumer: earlier record's parent dropped "
+    "(job-level keeps the latest read per dataset)"
+)
+CAUSE_STORE = "store-mediated: Postgres read carries no parents"
+CAUSES = (CAUSE_MULTI, CAUSE_STORE, CAUSE_SPLIT)
+# The methods whose graph is DCP's own events: DCP, and the facet reader.
+DCP_GRAPH_METHODS = ("DCP run-level", "OpenLineage + dcp facet")
+
+
+def _provenance_label_target(label: str) -> str:
+    """The dataset alias a provenance row is about, from its label."""
+    return label[label.index("(") + 1 : label.rindex(")")]
+
+
+def predicted_losses(key: dict) -> dict[str, dict[str, set]]:
+    """written dataset -> {cause: the upstream items DCP is predicted to lose}.
+
+    Derived from the key alone (its truth and its `generated` block), never
+    from DCP's output:
+
+    - a multi-record consumer's write: DCP parents it to the latest read of
+      the topic only, so it loses every input of the earlier records'
+      producers that the last record's producer did not also use;
+    - a store-read job's write: the Postgres read of the table carries no
+      parents, so DCP loses everything upstream of the table.
+    """
+    g = key.get("generated", {})
+    prov = {p["dataset"]: set(p["upstream"]) for p in key["provenance"]}
+    writer = {e["to"]: e["job"] for e in key["dataset_edges"]}
+    producer: dict[str, tuple[str, str]] = {}  # record -> (job, topic)
+    for process in key["processes"]:
+        for step in process["steps"]:
+            if "produce" in step:
+                producer[step["record"]] = (process["job"], step["produce"])
+    used: dict[tuple[str, str], set] = {}  # (job, topic) -> the job's inputs to it
+    for edge in key["dataset_edges"]:
+        used.setdefault((edge["job"], edge["to"]), set()).add(edge["from"])
+
+    def record_inputs(record: str) -> set:
+        found = set(used.get(producer[record], set()))
+        for upstream in list(found):
+            found |= prov.get(upstream, set())
+        return found
+
+    out: dict[str, dict[str, set]] = {}
+    for dataset, job in writer.items():
+        if job in g.get("multi_record", {}):
+            records = g["multi_record"][job]
+            earlier = set().union(*(record_inputs(r) for r in records[:-1]))
+            out.setdefault(dataset, {})[CAUSE_MULTI] = earlier - record_inputs(
+                records[-1]
+            )
+        if job in g.get("store_reads", {}):
+            lost = set().union(*(prov.get(t, set()) for t in g["store_reads"][job]))
+            out.setdefault(dataset, {})[CAUSE_STORE] = lost
+    return out
+
+
+def split_losses(key: dict, split: list[str]) -> dict[str, set]:
+    """written dataset -> the upstream items a split run can cost OpenLineage's
+    core model (trace-process mapping) on it.
+
+    A split job J loses the link from an input in one of its runs to an output
+    in another, so reachability can lose anything upstream of a dataset Y that
+    J writes, and so of every dataset downstream of Y. For a dataset D, every Y
+    in D and its truth provenance written by a split job contributes Y's
+    provenance. P5.1's rule (explain_misses) looks at D's own writer only; on
+    the stress set a store read can put the split job further upstream.
+    """
+    split = set(split)
+    prov = {p["dataset"]: set(p["upstream"]) for p in key["provenance"]}
+    writers: dict[str, set] = {}
+    for edge in key["dataset_edges"]:
+        writers.setdefault(edge["to"], set()).add(edge["job"])
+    out = {}
+    for dataset, upstream in prov.items():
+        lost: set = set()
+        for y in {dataset} | upstream:
+            if writers.get(y, set()) & split:
+                lost |= prov.get(y, set())
+        out[dataset] = lost
+    return out
+
+
+def explain_stress_misses(key: dict, scored: dict, split: list[str]) -> dict:
+    """Every expected item any method missed on a stress key, with its cause.
+
+    - OpenLineage core (trace-process): a split run. A dataset edge `a->b
+      (job)` if `job` is split; a provenance item if `split_losses` names it;
+    - DCP run-level and OpenLineage + dcp facet, provenance: the cause
+      `predicted_losses` names for that dataset and item;
+    - anything else, including any miss of the dataset-level baseline or of
+      OpenLineage core per process, is unexplained: a bug to investigate.
+    """
+    predicted = predicted_losses(key)
+    by_split = split_losses(key, split)
+    total = 0
+    by_method: dict[str, dict[str, int]] = {}
+    unexplained = []
+    for row in all_rows(scored):
+        method, level = method_level(row["label"])
+        for note in row["notes"]:
+            if not note.startswith("-"):
+                continue
+            total += 1
+            item, cause = note[1:], None
+            if (
+                method == "OpenLineage core"
+                and level == "dataset edges"
+                and " (" in item
+            ):
+                if item.rsplit(" (", 1)[1].rstrip(")") in split:
+                    cause = CAUSE_SPLIT
+            elif method == "OpenLineage core" and level == "provenance":
+                if item in by_split.get(_provenance_label_target(row["label"]), set()):
+                    cause = CAUSE_SPLIT
+            elif method in DCP_GRAPH_METHODS and level == "provenance":
+                losses = predicted.get(_provenance_label_target(row["label"]), {})
+                cause = next((c for c in CAUSES if item in losses.get(c, set())), None)
+            if cause is None:
+                unexplained.append(f"{row['label']}: {note}")
+                continue
+            cell = by_method.setdefault(method, dict.fromkeys(CAUSES, 0))
+            cell[cause] += 1
+    return {"misses": total, "by_method": by_method, "unexplained": unexplained}
+
+
+def describe_stress(key: dict, split: list[str]) -> dict:
+    """What a stress key contains, for the report."""
+    g = key.get("generated", {})
+    store = g.get("store_reads", {})
+    writer = {e["to"]: e["job"] for e in key["dataset_edges"]}
+    chain2 = sum(
+        1 for tables in store.values() if any(writer.get(t) in store for t in tables)
+    )
+    base = describe(key)
+    kinds = dict(base["kinds"])
+    # describe() counts a store-read job (SELECT, then INSERT ... VALUES) as
+    # multi-statement; name it.
+    kinds["multi-statement"] = kinds.get("multi-statement", 0) - len(store)
+    kinds = {k: n for k, n in kinds.items() if n}
+    kinds["store-read"] = len(store)
+    return dict(
+        base,
+        kinds=kinds,
+        parameters={
+            k: g.get("parameters", {}).get(k)
+            for k in ("p_multi_record", "p_store_read")
+        },
+        multi_record_consumers=len(g.get("multi_record", {})),
+        records_consumed_by_them=sum(
+            len(r) for r in g.get("multi_record", {}).values()
+        ),
+        store_read_jobs=len(store),
+        store_chains_of_two=chain2,
+        split_jobs=len(split),
+    )
+
+
+def is_stress_seed(name: str) -> bool:
+    """The ~30-job stress keys stress_s01..s05, as opposed to stress_large."""
+    return name.startswith("stress_s")
+
+
+def summarize_stress(
+    keys: dict[str, dict], scored: dict[str, dict], split: dict[str, list]
+) -> dict:
+    """The stress group, reported on its own: the seeds micro-averaged,
+    stress_large on its own, every extra and miss explained, and how many
+    misses each cause produced per key and method."""
+    seeds = [n for n in scored if is_stress_seed(n)]
+    others = [n for n in scored if not is_stress_seed(n)]
+    return {
+        "keys": [describe_stress(keys[n], split[n]) for n in scored],
+        "seeds": {"names": seeds, "aggregate": aggregate([scored[n] for n in seeds])},
+        "others": {n: aggregate([scored[n]]) for n in others},
+        "extras": {n: explain_extras(keys[n], scored[n]) for n in scored},
+        "misses": {
+            n: explain_stress_misses(keys[n], scored[n], split[n]) for n in scored
+        },
+    }

@@ -10,7 +10,10 @@ Stages, in order:
     adversarial  cases 1-3 from the live runs, and the OpenLineage baseline check
     scale        P5.1: the GENERATED keys (ground_truth/generated/), replayed, and
                  live where the services are (--quick: one small seed live);
-                 scored apart from the hand-written keys
+                 scored apart from the hand-written keys. P5.2: also the
+                 STRESS set (ground_truth/stress/), DCP's known failure modes,
+                 replayed and live (--quick: one stress key live), reported in
+                 its own section
     overhead     4b: live per-call latency and throughput, Kafka, start-up,
                  backpressure (--quick: 5 rounds x 300 calls, else 10 x 2,000)
     cpu          4a: capture's CPU cost with no database, once per Python
@@ -23,7 +26,7 @@ that writes numbers into markdown. Exits non-zero if any stage failed.
 
 WARNING: the live, adversarial, scale and overhead stages DROP and re-create
 the benchmark tables in database `dcp` on localhost:5432 (and, for scale, the
-generated keys' `gen_*` tables) and the Kafka topics `enriched_orders`,
+generated and stress keys' `gen_*` tables) and the Kafka topics `enriched_orders`,
 `overhead_bench` and `gen_topic_*` on localhost:9092.
 """
 
@@ -443,6 +446,7 @@ def run_adversarial(results: dict, out_dir: pathlib.Path, log) -> dict:
 
 
 QUICK_SCALE_LIVE = ("scale_s01",)  # B4: CI's quick mode runs one small seed live
+QUICK_STRESS_LIVE = ("stress_s01",)  # P5.2 B5: and one stress key
 
 
 def _rows_agree(a: dict, b: dict) -> bool:
@@ -455,35 +459,25 @@ def _rows_agree(a: dict, b: dict) -> bool:
     return all(key(a.get(s, [])) == key(b.get(s, [])) for s in sections)
 
 
-def run_scale(out_dir: pathlib.Path, quick: bool, probes: dict, log) -> dict:
-    """P5.1 (B3): every generated key replayed, and live where the services are
-    (in quick mode, one small seed). Scored apart from the hand-written keys."""
+def _replay_group(names: list[str], keys: dict) -> tuple[dict, dict]:
+    """Replay and score each key: (scores, split jobs)."""
+    import scale
+
+    scored, split = {}, {}
+    for name in names:
+        events = replay(keys[name])
+        scored[name] = score_workload(keys[name], events)
+        split[name] = scale.split_jobs(events)
+    return scored, split
+
+
+def _live_group(names, keys, replayed, out_dir, run_id, log):
+    """Run each key live and score it: (scores, records, split jobs)."""
     import generate as generator
     import scale
 
-    names = generator.generated_names()
-    keys = {name: generator.load_generated(name) for name in names}
-    log(f"  scale: replaying {len(names)} generated keys")
-    replayed, split = {}, {}
+    scored, records, split = {}, {}, {}
     for name in names:
-        events = replay(keys[name])
-        replayed[name] = score_workload(keys[name], events)
-        split[name] = scale.split_jobs(events)
-    out = {
-        "generator_version": generator.VERSION,
-        "replay": {
-            "scores": replayed,
-            "summary": scale.summarize(keys, replayed, split),
-        },
-    }
-    reason = probes.get("live")
-    if reason:
-        out["live"] = {"skipped": reason}
-        return out
-    live_names = [n for n in names if n in QUICK_SCALE_LIVE] if quick else names
-    run_id = uuid.uuid4().hex[:8]
-    scored, records, live_split = {}, {}, {}
-    for name in live_names:
         log(f"  scale: {name} live ({len(keys[name]['processes'])} processes)")
         record, events = run_live.run_workload(
             keys[name],
@@ -492,7 +486,7 @@ def run_scale(out_dir: pathlib.Path, quick: bool, probes: dict, log) -> dict:
             key_path=generator.path_for(name),
         )
         scored[name] = score_workload(keys[name], events)
-        live_split[name] = scale.split_jobs(events)
+        split[name] = scale.split_jobs(events)
         records[name] = {
             "processes": len(record["processes"]),
             "exit_codes": sorted({p["exit_code"] for p in record["processes"]}),
@@ -500,6 +494,51 @@ def run_scale(out_dir: pathlib.Path, quick: bool, probes: dict, log) -> dict:
             "manifest_records": len(record["manifest"]),
             "agrees_with_replay": _rows_agree(scored[name], replayed[name]),
         }
+    return scored, records, split
+
+
+def run_scale(out_dir: pathlib.Path, quick: bool, probes: dict, log) -> dict:
+    """P5.1 (B3): every generated key replayed, and live where the services are
+    (in quick mode, one small seed). Scored apart from the hand-written keys.
+    P5.2 (B4): the stress set, replayed and live the same way, scored apart
+    from both (`stress`)."""
+    import generate as generator
+    import scale
+
+    names = generator.generated_names()
+    keys = {name: generator.load_generated(name) for name in names}
+    log(f"  scale: replaying {len(names)} generated keys")
+    replayed, split = _replay_group(names, keys)
+    out = {
+        "generator_version": generator.VERSION,
+        "replay": {
+            "scores": replayed,
+            "summary": scale.summarize(keys, replayed, split),
+        },
+    }
+    stress_names = generator.stress_names()
+    stress_keys = {name: generator.load_generated(name) for name in stress_names}
+    if stress_names:
+        log(f"  scale: replaying {len(stress_names)} stress keys")
+        s_replayed, s_split = _replay_group(stress_names, stress_keys)
+        out["stress"] = {
+            "generator_version": generator.GENERATOR_VERSION,
+            "replay": {
+                "scores": s_replayed,
+                "summary": scale.summarize_stress(stress_keys, s_replayed, s_split),
+            },
+        }
+    reason = probes.get("live")
+    if reason:
+        out["live"] = {"skipped": reason}
+        if "stress" in out:
+            out["stress"]["live"] = {"skipped": reason}
+        return out
+    live_names = [n for n in names if n in QUICK_SCALE_LIVE] if quick else names
+    run_id = uuid.uuid4().hex[:8]
+    scored, records, live_split = _live_group(
+        live_names, keys, replayed, out_dir, run_id, log
+    )
     out["live"] = {
         "run_id": run_id,
         "mode": "quick: one small seed" if quick else "full: every generated key",
@@ -507,6 +546,31 @@ def run_scale(out_dir: pathlib.Path, quick: bool, probes: dict, log) -> dict:
         "scores": scored,
         "summary": scale.summarize({n: keys[n] for n in scored}, scored, live_split),
     }
+    if "stress" in out:
+        live_stress = (
+            [n for n in stress_names if n in QUICK_STRESS_LIVE]
+            if quick
+            else stress_names
+        )
+        scored, records, live_split = _live_group(
+            live_stress,
+            stress_keys,
+            out["stress"]["replay"]["scores"],
+            out_dir,
+            run_id,
+            log,
+        )
+        out["stress"]["live"] = {
+            "run_id": run_id,
+            "mode": "quick: one small stress key"
+            if quick
+            else "full: every stress key",
+            "records": records,
+            "scores": scored,
+            "summary": scale.summarize_stress(
+                {n: stress_keys[n] for n in scored}, scored, live_split
+            ),
+        }
     return out
 
 
