@@ -5,7 +5,7 @@ lands in the catalogs people already run (Marquez, DataHub) instead of
 replacing them. Stdlib only.
 """
 
-__version__ = "0.1.0.dev0"
+__version__ = "0.1.0"
 
 # The vendored spec's $id (schema/OpenLineage.json, release tag 1.53.0).
 OPENLINEAGE_SCHEMA_URL = "https://openlineage.io/spec/2-0-2/OpenLineage.json"

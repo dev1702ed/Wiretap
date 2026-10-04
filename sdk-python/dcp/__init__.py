@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from dcp.interceptors.threads import patch_threadpool
 
 __all__ = ["init", "patch_kafka", "patch_psycopg", "patch_threadpool", "shutdown"]
-__version__ = "0.1.0.dev0"
+__version__ = "0.1.0"
 
 _EXPORTS = {
     "init": "dcp.config",

@@ -19,11 +19,12 @@
 
 ## Dev setup
 
-From the repository root, install every package the way CI does, then run
+From the repository root, install every package in the pinned environment (one pip
+command, so `benchmarks/constraints.txt` applies to the three packages too), then run
 every CI step:
 
 ```bash
-pip install -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]"
+pip install -c benchmarks/constraints.txt -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]" -r benchmarks/requirements.txt
 ruff check sdk-python backend benchmarks bridges
 ruff format --check sdk-python backend benchmarks bridges
 pytest sdk-python/tests
@@ -33,7 +34,12 @@ pytest benchmarks/tests
 ```
 
 CI runs these on Python 3.10, 3.12 and 3.14 (`.github/workflows/ci.yml`), and the
-four test suites on Windows with Python 3.14 (the `windows` job).
+four test suites on Windows with Python 3.14 (the `windows` job). The unit jobs install
+the three packages and the pinned `matplotlib` only (`pip install -c
+benchmarks/constraints.txt matplotlib`, for the figure tests); the `live` job installs
+the whole pinned environment. Two tests are opt-in because they touch real services:
+`DCP_TEST_PG` (a libpq connection string) runs the SQL-comment semantics test, and
+`DCP_TEST_LIVE=1` runs a tiny stress key live (it drops and re-creates `gen_*` tables).
 
 ## Running the benchmarks
 
@@ -63,6 +69,24 @@ warning, not a failure). `--cpu-python PATH` (repeatable) runs the CPU microbenc
 other interpreters too; each needs the SDK installed. Never edit a generated
 results file by hand: re-run the command. The CI `live` job runs
 `--label ci --quick` on every PR and publishes the result as its job summary.
+
+## The evidence pack and the figures (P5.2)
+
+The paper is written from two generated outputs, never from hand-typed numbers:
+
+```bash
+python benchmarks/evidence.py          # docs/paper/evidence.md and the README's results block
+python benchmarks/evidence.py --check  # exit 1 if either is out of date (a test runs this)
+python benchmarks/figures.py           # docs/paper/figures/F1..F5, PDF and PNG
+python benchmarks/render.py --fixed-cost benchmarks/results/<label>/results.json docs/results/P5-<label>-fixed-cost.md
+```
+
+`evidence.py` copies tables verbatim from the committed records (`docs/results/P5-*.md`),
+taking for each claim the newest record that has it (the owner's `P5-local*.md` when it
+is newer). `figures.py` reads raw results JSON committed under `docs/results/data/<label>/`.
+Both are deterministic: run them twice, get the same bytes. After committing a new record,
+re-run both and commit their output with it. The owner's full procedure is
+[`docs/RUNBOOK.md`](docs/RUNBOOK.md).
 
 ## Style
 

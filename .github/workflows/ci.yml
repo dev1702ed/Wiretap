@@ -19,6 +19,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install SDK, backend and OpenLineage bridge
         run: pip install -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]"
+      - name: Install the pinned figure library (benchmarks/tests/test_bench_figures.py)
+        run: pip install -c benchmarks/constraints.txt matplotlib
       - name: Lint
         run: ruff check sdk-python backend benchmarks bridges
       - name: Format
@@ -117,7 +119,8 @@ jobs:
   # The owner works on Windows. A default checkout converts line endings as Git
   # for Windows does, so this job catches CRLF breakage (a byte-compared
   # fixture, a hashed file) before the owner does. Fork tests skip here, as
-  # expected; any other skip or failure is a portability bug.
+  # expected, as is the opt-in live stress test (DCP_TEST_LIVE); any other skip
+  # or failure is a portability bug.
   windows:
     runs-on: windows-latest
     steps:
@@ -127,6 +130,8 @@ jobs:
           python-version: "3.14"
       - name: Install SDK, backend and OpenLineage bridge
         run: pip install -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]"
+      - name: Install the pinned figure library (benchmarks/tests/test_bench_figures.py)
+        run: pip install -c benchmarks/constraints.txt matplotlib
       - name: SDK tests
         run: pytest sdk-python/tests -v -rs
       - name: Backend tests

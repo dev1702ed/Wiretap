@@ -20,6 +20,12 @@ openlineage provenance(daily_revenue)               2/2 = 1.000     2/2 = 1.000
 openlineage + dcp facet provenance(enriched_orders) 1/1 = 1.000     1/1 = 1.000
 openlineage + dcp facet provenance(daily_revenue)   2/2 = 1.000     2/2 = 1.000
 
+-- dark_zone: OpenLineage translation, one run per process (core run model; added in P5.2)
+level                                                 precision       recall          notes
+openlineage (per process) dataset edges               2/2 = 1.000     2/2 = 1.000
+openlineage (per process) provenance(enriched_orders) 1/1 = 1.000     1/1 = 1.000
+openlineage (per process) provenance(daily_revenue)   2/2 = 1.000     2/2 = 1.000
+
 == job_granularity
 level                                               precision       recall          notes
 nodes                                               4/4 = 1.000     4/4 = 1.000
@@ -38,6 +44,12 @@ openlineage provenance(refund_summary)              1/2 = 0.500     1/1 = 1.000 
 openlineage + dcp facet provenance(summary)         1/1 = 1.000     1/1 = 1.000
 openlineage + dcp facet provenance(refund_summary)  1/1 = 1.000     1/1 = 1.000
 
+-- job_granularity: OpenLineage translation, one run per process (core run model; added in P5.2)
+level                                                precision       recall          notes
+openlineage (per process) dataset edges              2/4 = 0.500     2/2 = 1.000     +orders->refund_summary (split_loader.py) +refunds->summary (split_loader.py)
+openlineage (per process) provenance(summary)        1/2 = 0.500     1/1 = 1.000     +refunds
+openlineage (per process) provenance(refund_summary) 1/2 = 0.500     1/1 = 1.000     +orders
+
 == notebook
 level                                               precision       recall          notes
 nodes                                               2/2 = 1.000     2/2 = 1.000
@@ -51,6 +63,11 @@ level                                               precision       recall      
 openlineage dataset edges                           1/1 = 1.000     1/1 = 1.000
 openlineage provenance(summary)                     1/1 = 1.000     1/1 = 1.000
 openlineage + dcp facet provenance(summary)         1/1 = 1.000     1/1 = 1.000
+
+-- notebook: OpenLineage translation, one run per process (core run model; added in P5.2)
+level                                               precision       recall          notes
+openlineage (per process) dataset edges             1/1 = 1.000     1/1 = 1.000
+openlineage (per process) provenance(summary)       1/1 = 1.000     1/1 = 1.000
 
 == topic_fan_in
 level                                               precision       recall          notes
@@ -69,3 +86,9 @@ openlineage provenance(enriched_orders)             2/2 = 1.000     2/2 = 1.000
 openlineage provenance(daily_revenue)               2/3 = 0.667     2/2 = 1.000     +refunds
 openlineage + dcp facet provenance(enriched_orders) 2/2 = 1.000     2/2 = 1.000
 openlineage + dcp facet provenance(daily_revenue)   2/2 = 1.000     2/2 = 1.000
+
+-- topic_fan_in: OpenLineage translation, one run per process (core run model; added in P5.2)
+level                                                 precision       recall          notes
+openlineage (per process) dataset edges               3/3 = 1.000     3/3 = 1.000
+openlineage (per process) provenance(enriched_orders) 2/2 = 1.000     2/2 = 1.000
+openlineage (per process) provenance(daily_revenue)   2/3 = 0.667     2/2 = 1.000     +refunds

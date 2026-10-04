@@ -68,6 +68,16 @@ about which datasets the script touches.
 Movements DCP v1 also misses, or captures imprecisely. Listed so nobody claims
 them.
 
+**Two of them are now measured** (P5.2): store-mediated reads (a write, then a later
+read through a Postgres table) and a consumer that reads several records from one topic
+(the batch-`consume()` row below has the same cause: only the latest read of a dataset
+parents later writes). The stress set (`benchmarks/ground_truth/stress/`) generates both,
+and every DCP miss on it is counted by cause:
+[`docs/results/P5.2.md`, §4](../../docs/results/P5.2.md#4-the-stress-set) and
+[`docs/LIMITATIONS.md`](../../docs/LIMITATIONS.md#11-store-mediated-lineage-is-not-inferred).
+Every other limitation of v1, with its product follow-up, is in
+[`docs/LIMITATIONS.md`](../../docs/LIMITATIONS.md).
+
 | Limitation | Why |
 |---|---|
 | `psql` / CLI `COPY` | C binary; an in-process Python interceptor cannot see it (a sidecar or eBPF could) |

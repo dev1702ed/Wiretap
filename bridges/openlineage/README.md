@@ -12,6 +12,7 @@ pip install -e ./bridges/openlineage
 # in the instrumented script:  dcp.init(emit="file://dcp_events.jsonl")
 python -m dcp_openlineage --events dcp_events.jsonl --out openlineage.jsonl
 python -m dcp_openlineage --events dcp_events.jsonl --post http://localhost:5000
+python -m dcp_openlineage --events dcp_events.jsonl --run-scope process --out openlineage.jsonl
 ```
 
 `--db PATH` reads the DCP backend's SQLite event log instead of (or as well as) a
@@ -27,6 +28,13 @@ One OpenLineage **run** per process per trace: (`trace_id`, `job.host`, `job.pid
 the DCP job name, and dataset namespace and name are copied verbatim. Each run is a
 `START` at its first DCP event and a `COMPLETE` at its last; `COMPLETE` means the end
 of the observed window, not that the process exited.
+
+`--run-scope process` (P5.2) maps **one run per process** instead: (`job.host`,
+`job.pid`, `job.name`), with every input and output of the process, as a real
+OpenLineage integration reports it. Its `dcp` facet adds `trace_ids` and a `trace_id`
+per event, because one process can join several traces. Two processes with the same
+name and pid on one host (pid reuse) merge into one run in that scope. The default,
+`trace-process`, is unchanged.
 
 The earlier leaning here was "trace → run". It was rejected because a DCP trace spans
 processes (a producer and its consumer share one), while an OpenLineage run belongs to

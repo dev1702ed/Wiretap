@@ -3,13 +3,16 @@
 Answer keys for known workloads. DCP's output is graded against them; DCP
 never generates them. An instrument that grades itself measures nothing.
 
-There are two kinds, always scored and reported **apart, never pooled**:
+There are three kinds, always scored and reported **apart, never pooled**:
 
 - **Hand-written keys** (one directory each, below): four small workloads,
   each built to discriminate one property. Read-only.
 - **Generated keys** (`generated/`, P5.1): larger workloads produced by
   `generate.py` from fixed seeds, with the truth derived from the generator's
   own construction. See [Generated keys](#generated-keys-p51).
+- **The stress set** (`stress/`, P5.2): generated keys that exercise DCP's two
+  known failure modes, where its recall is expected to drop. See
+  [The stress set](#the-stress-set-p52).
 
 Order matters: precision and recall here must land before the adversarial
 results mean anything. An instrument not shown to be accurate cannot be used to
@@ -124,11 +127,11 @@ produce, DCP's job-level parenting credits the distractor too, so DCP's
 precision drops below 1.0 there. That measures a known limitation; the
 generator is never configured to avoid it.
 
-**Not generated, by design:** a job never reads a table another generated job
-wrote (store-mediated lineage is out of v1 scope; Postgres reads carry no
-parents), and a consumer never reads two records from one topic (job-level
-parenting keeps the latest read per dataset). Both are documented v1
-limitations, not something the scaled benchmark should rediscover.
+**Not generated in these keys:** a job never reads a table another generated
+job wrote (Postgres reads carry no parents), and a consumer never reads two
+records from one topic (job-level parenting keeps the latest read per dataset).
+Both are documented v1 limitations; since P5.2 they are generated, and measured,
+in their own set: [the stress set](#the-stress-set-p52).
 
 **Format additions,** ignored by replay and scoring: a `generated` block
 (generator path, version, seed, parameters, `hand_written: false`, and each
@@ -152,3 +155,45 @@ is reported on its own. Every item DCP finds beyond the truth is checked
 against the generator's distractor reads, and any recall below 1.0 is listed.
 Replay covers every key; live covers every key in full mode and `scale_s01`
 only in quick mode (CI).
+
+**Two OpenLineage baselines (P5.2).** OpenLineage's core model is scored under both
+of the bridge's run mappings: `OpenLineage core` (one run per trace and process, the
+bridge's default) and `OpenLineage core (per process)` (one run per process, as an
+OpenLineage integration reports it; [`docs/decisions/openlineage-mapping.md`](../../docs/decisions/openlineage-mapping.md#run-scope-p52)).
+The per-process rows are appended after every existing row, so every line scored before
+P5.2 is unchanged. A miss of the per-process mapping can never be put down to a split
+run, so any one is unexplained.
+
+## The stress set (P5.2)
+
+Generator **1.1** adds two job kinds, each behind a parameter that **defaults to off**:
+
+| Parameter | Generates | What DCP does with it |
+|---|---|---|
+| `p_multi_record` | A consumer that consumes 2-3 named records from **one topic**, each from a different producer (so different traces), and writes the sum of all of them | Parents the write to the latest read of the topic only, so the earlier records' producers' inputs drop out of provenance |
+| `p_store_read` | A job that reads a table an **earlier job of the workload wrote**, then writes; chains of length 1 and 2 (A writes T1; B reads T1, writes T2; C reads T2, writes T3) | Postgres reads carry no parents, so provenance stops at the table |
+
+The truth is real data flow, transitive through the store: a store-read job's write
+derives from the table it read **and everything upstream of that table's writer**. Process
+order puts every store read after the write it depends on, live as in replay; only the
+source tables are seeded. With both parameters off the generator draws the same random
+numbers and writes the same bytes as 1.0, so every key in `generated/` regenerates byte
+for byte and still records version `1.0`; a key with either parameter on records `1.1`
+and lists its store reads and multi-record consumers in its `generated` block.
+
+| Key | Seed | Jobs | Parameters |
+|---|---|---|---|
+| `stress/stress_s01.json` … `stress_s05.json` | 201 … 205 | 30 each | `p_multi_record` 0.15, `p_store_read` 0.25, the rest default |
+| `stress/stress_large.json` | 300 | 100 | the same |
+
+The parameters were fixed before any of these keys was scored. The `scale` stage replays
+them (and runs them live) and reports them **in their own section**, with the methods of
+the scale tables. Every DCP miss must carry one of two causes, predicted from the key
+alone, never from DCP's output: *multi-record consumer: earlier record's parent dropped
+(job-level keeps the latest read per dataset)* or *store-mediated: Postgres read carries no
+parents*; every extra item must still be a distractor read. A per-cause table counts the
+misses per key: the table the paper's limitations section cites. Tests:
+`benchmarks/tests/test_bench_stress_generate.py` (the case matrix, with hand-written truth
+on tiny plans) and `test_bench_stress_score.py` (the causes). Results:
+[`docs/results/P5-p52-stress.md`](../../docs/results/P5-p52-stress.md), read in
+[`docs/results/P5.2.md`](../../docs/results/P5.2.md#4-the-stress-set).
