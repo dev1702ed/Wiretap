@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/dev1702ed/Wiretap/blob/main/bridges/openlineage/facets/DcpRunFacet.json",
   "title": "DcpRunFacet",
-  "description": "The DCP events behind one OpenLineage run: one process's share of one DCP trace. Carries the attested edges (each event's parents) that OpenLineage's core inputs/outputs model cannot express, and enough of each envelope to rebuild it exactly.",
+  "description": "The DCP events behind one OpenLineage run: one process's share of one DCP trace (run scope trace-process, the default), or every event of one process (run scope process, which may span several traces). Carries the attested edges (each event's parents) that OpenLineage's core inputs/outputs model cannot express, and enough of each envelope to rebuild it exactly.",
   "type": "object",
   "required": ["_producer", "_schemaURL", "dcp_version", "trace_id", "job", "events"],
   "properties": {
@@ -10,6 +10,13 @@
     "_schemaURL": { "type": "string", "format": "uri" },
     "dcp_version": { "type": "string", "const": "0.1" },
     "trace_id": { "type": "string" },
+    "trace_ids": {
+      "description": "Run scope process only (added in P5.2; optional, so older facets stay valid): every trace the run's events belong to, sorted. trace_id is the first of them.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string" }
+    },
     "job": {
       "description": "The DCP job identity of the run, copied verbatim from the envelope.",
       "type": "object",
@@ -43,7 +50,11 @@
           },
           "parent": { "type": "array", "items": { "type": "string" } },
           "ts": { "type": "string" },
-          "columns": { "type": "array", "items": { "type": "string" } }
+          "columns": { "type": "array", "items": { "type": "string" } },
+          "trace_id": {
+            "description": "Run scope process only (added in P5.2; optional): this event's own trace. Absent, the event belongs to the facet's trace_id.",
+            "type": "string"
+          }
         }
       }
     }

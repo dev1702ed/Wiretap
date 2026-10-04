@@ -9,6 +9,10 @@ Two readings, measured against each other in benchmarks/ground_truth/score.py:
 - What a DCP-aware reader recovers from the `dcp` run facet: the original
   DCP events (`dcp_events`), from which the backend graph can be rebuilt
   exactly.
+
+Both run scopes of translate.py read back the same way: a run is whatever
+shares a runId, and a facet entry's own `trace_id` (run scope "process")
+overrides the facet's.
 """
 
 import json
@@ -60,7 +64,7 @@ def dcp_events(ol_events) -> list[dict]:
         for entry in facet["events"]:
             envelope = {
                 "dcp_version": facet["dcp_version"],
-                "trace_id": facet["trace_id"],
+                "trace_id": entry.get("trace_id", facet["trace_id"]),
                 "edge_id": entry["edge_id"],
                 "parent": list(entry["parent"]),
                 "op": entry["op"],

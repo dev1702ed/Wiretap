@@ -1,9 +1,13 @@
-"""python -m dcp_openlineage --events FILE.jsonl [--db PATH] (--out FILE.jsonl | --post URL)
+"""python -m dcp_openlineage --events FILE.jsonl [--db PATH] [--run-scope SCOPE]
+                            (--out FILE.jsonl | --post URL)
 
 Reads recorded DCP events (a FileEmitter JSONL file and/or the backend's
 SQLite event log), translates them to OpenLineage, and writes them to a JSONL
 file or POSTs them to a lineage API such as Marquez. Exits non-zero on any
 failure: this is a batch tool, not the monitor-only capture path.
+
+--run-scope is "trace-process" (the default: one run per process per trace) or
+"process" (one run per process); see translate.py.
 """
 
 import argparse
@@ -11,7 +15,7 @@ import json
 import os
 import sys
 
-from dcp_openlineage.translate import to_openlineage
+from dcp_openlineage.translate import DEFAULT_RUN_SCOPE, RUN_SCOPES, to_openlineage
 from dcp_openlineage.transport import TransportError, post_events
 
 
@@ -21,6 +25,12 @@ def main(argv=None) -> int:
     )
     parser.add_argument("--events", help="DCP events, one JSON object per line")
     parser.add_argument("--db", help="the DCP backend's SQLite event log (needs the backend)")
+    parser.add_argument(
+        "--run-scope",
+        choices=RUN_SCOPES,
+        default=DEFAULT_RUN_SCOPE,
+        help="one run per process per trace (default) or one run per process",
+    )
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument("--out", help="write OpenLineage events here, one per line")
     target.add_argument("--post", metavar="URL", help="POST each event to URL/api/v1/lineage")
@@ -34,7 +44,7 @@ def main(argv=None) -> int:
             events += read_jsonl(args.events)
         if args.db:
             events += read_store(args.db)
-        ol_events = to_openlineage(events)
+        ol_events = to_openlineage(events, run_scope=args.run_scope)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"error: could not read DCP events: {exc!r}", file=sys.stderr)
         return 1
