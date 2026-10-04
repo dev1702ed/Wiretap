@@ -56,8 +56,9 @@ def test_the_citation_file_is_cff_1_2_with_only_the_owner_name_placeholder():
     assert fields["title"].startswith('"DCP')
     authors = text.split("authors:", 1)[1]
     assert "family-names:" in authors and "given-names:" in authors
+    # The one placeholder allowed; the owner fills it (docs/RUNBOOK.md, step 9).
     placeholders = set(re.findall(r"REPLACE_[A-Z_]+", text))
-    assert placeholders == {"REPLACE_WITH_OWNER_NAME"}
+    assert placeholders <= {"REPLACE_WITH_OWNER_NAME"}
 
 
 def test_figures_are_committed_as_binary():
