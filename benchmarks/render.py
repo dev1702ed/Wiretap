@@ -2,6 +2,7 @@
 
     python benchmarks/render.py benchmarks/results/<label>/results.json OUT.md
     python benchmarks/render.py --compare BEFORE.json AFTER.json OUT.md
+    python benchmarks/render.py --fixed-cost RESULTS.json OUT.md     (P5.2)
 
 The ONLY code that writes numbers into markdown. Pure and deterministic: the
 output depends on the JSON alone, so a results file always re-renders to the
@@ -1402,8 +1403,10 @@ def loss_pct(cost_us: float, query_us: float) -> float:
     return 100 * cost_us / (query_us + cost_us)
 
 
-def _fixed_cost(results: dict) -> list[str]:
-    """What the implied fixed cost per call means for the < 2% target."""
+def _fixed_cost(results: dict, which: str = "after") -> list[str]:
+    """What the implied fixed cost per call means for the < 2% target.
+    `which` names the run in the text: "after" in a comparison; a single run's
+    fixed-cost record (P5.2) passes ""."""
     tiers = results.get("overhead", {}).get("postgres", {}).get("tiers", {})
     sections = [(f"{n} {tier['label']}", tier) for n, tier in tiers.items()]
     kafka = results.get("overhead", {}).get("kafka")
@@ -1429,10 +1432,12 @@ def _fixed_cost(results: dict) -> list[str]:
     if not rows:
         return []
     return [
-        "### The fixed cost per call and the < 2% throughput target (after)",
+        "### The fixed cost per call and the < 2% throughput target"
+        + (f" ({which})" if which else ""),
         "",
         (
-            "From the after run's implied added µs per call (point estimate). A fixed cost "
+            f"From the {which + ' ' if which else ''}run's implied added µs per call "
+            "(point estimate). A fixed cost "
             "c per call takes c / (q + c) of the throughput of a query whose own latency is "
             "q, so the loss is under 2% once q > 49 × c. The last columns apply each cost to "
             "representative query latencies."
@@ -1450,6 +1455,44 @@ def _fixed_cost(results: dict) -> list[str]:
         ),
         "",
     ]
+
+
+def render_fixed_cost(results: dict) -> str:
+    """P5.2: the fixed-cost table of ONE run, as its own record, so a single run
+    (the owner's) gets the table a comparison renders for its after run."""
+    env = results["environment"]
+    lines = [
+        f"# Fixed cost per call: `{results['label']}`",
+        "",
+        (
+            "Rendered by `benchmarks/render.py --fixed-cost` from the run's results JSON. "
+            "Do not edit by hand."
+        ),
+        "",
+        *table(
+            ["", ""],
+            [
+                [
+                    "Label",
+                    f"`{results['label']}`"
+                    + (" (quick mode)" if results["quick"] else ""),
+                ],
+                ["Command", f"`{env['command']}`"],
+                ["Started (UTC)", env["timestamp_utc"]],
+                ["Git commit", f"`{env['git_commit']}`"],
+                ["Working tree dirty", env["git_dirty"]],
+                ["OS", env["os"]],
+                ["CPU", f"{env['cpu_model']}, {env['cpu_count']} logical cores"],
+            ],
+        ),
+        "",
+    ]
+    body = _fixed_cost(results, which="")
+    lines += body or [
+        "No implied cost per call in these results (no `overhead` stage).",
+        "",
+    ]
+    return "\n".join(lines).rstrip("\n") + "\n"
 
 
 COMPARISON_TITLE = "P5 Stage 5: parse cache"
@@ -1504,6 +1547,11 @@ def main(argv=None) -> int:
     parser.add_argument(
         "--title", default=COMPARISON_TITLE, help="the comparison's title"
     )
+    parser.add_argument(
+        "--fixed-cost",
+        action="store_true",
+        help="RESULTS.json OUT.md: one run's fixed-cost table",
+    )
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args(argv)
 
@@ -1514,6 +1562,9 @@ def main(argv=None) -> int:
     if args.compare:
         before, after, out = args.paths
         text = render_comparison(load(before), load(after), args.title)
+    elif args.fixed_cost:
+        source, out = args.paths
+        text = render_fixed_cost(load(source))
     else:
         source, out = args.paths
         text = render(load(source))
