@@ -28,3 +28,8 @@ uvicorn==0.54.0
 
 # Adversarial baseline check: the OpenLineage client at the tag P4 vendored
 openlineage-python==1.53.0
+
+# Figures (P5.2, C5): benchmarks/figures.py. matplotlib 3.11 needs Python 3.11+,
+# so 3.10 gets 3.10.9, as pip resolves it there.
+matplotlib==3.11.2; python_version >= "3.11"
+matplotlib==3.10.9; python_version < "3.11"
