@@ -1,0 +1,1785 @@
+{
+ "workload": "stress_s04",
+ "description": "GENERATED, not hand-written, by benchmarks/ground_truth/generate.py: script, consumer, multi-statement and notebook jobs over seeded tables and fan-in topics, with distractor reads. The truth credits only the inputs each written value came from. Never edit by hand: regenerate from the seed. STRESS SET (P5.2): also multi-record consumers and store-mediated reads, DCP's two known failure modes; the truth is transitive through the store.",
+ "generated": {
+  "generator": "benchmarks/ground_truth/generate.py",
+  "version": "1.1",
+  "seed": 204,
+  "parameters": {
+   "jobs": 30,
+   "p_distractor": 0.3,
+   "rows_per_table": 3,
+   "mix": {
+    "script": 0.4,
+    "consumer": 0.25,
+    "multi": 0.25,
+    "notebook": 0.1
+   },
+   "p_script_insert": 0.5,
+   "p_multi_record": 0.15,
+   "p_store_read": 0.25
+  },
+  "hand_written": false,
+  "distractors": {
+   "gen_job_005.py": [
+    "gen_src_09"
+   ],
+   "gen_job_013.py": [
+    "gen_src_01"
+   ],
+   "gen_job_015.py": [
+    "gen_src_01"
+   ],
+   "gen_job_021.py": [
+    "gen_src_07"
+   ],
+   "gen_job_029.py": [
+    "gen_src_07"
+   ]
+  },
+  "store_reads": {
+   "gen_job_015.py": [
+    "gen_out_012"
+   ],
+   "gen_job_023.py": [
+    "gen_out_022"
+   ],
+   "gen_job_027.py": [
+    "gen_out_001"
+   ],
+   "gen_job_028.py": [
+    "gen_out_019"
+   ]
+  },
+  "multi_record": {}
+ },
+ "processes": [
+  {
+   "job": "gen_job_001.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "INSERT INTO gen_out_001 SELECT id, v FROM gen_src_08"
+    },
+    {
+     "sql": "INSERT INTO gen_out_002 SELECT id, v FROM gen_src_08"
+    },
+    {
+     "sql": "INSERT INTO gen_out_003 SELECT a.id, a.v + b.v FROM gen_src_07 AS a JOIN gen_src_06 AS b ON b.id = a.id"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_002.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "INSERT INTO gen_out_004 SELECT a.id, a.v + b.v FROM gen_src_04 AS a JOIN gen_src_02 AS b ON b.id = a.id"
+    },
+    {
+     "sql": "INSERT INTO gen_out_005 SELECT id, v FROM gen_src_09"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_003.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "INSERT INTO gen_out_006 SELECT id, v FROM gen_src_08"
+    },
+    {
+     "sql": "INSERT INTO gen_out_007 SELECT a.id, a.v + b.v FROM gen_src_06 AS a JOIN gen_src_05 AS b ON b.id = a.id"
+    },
+    {
+     "sql": "INSERT INTO gen_out_008 SELECT a.id, a.v + b.v FROM gen_src_02 AS a JOIN gen_src_07 AS b ON b.id = a.id"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_004.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "INSERT INTO gen_out_009 SELECT a.id, a.v + b.v FROM gen_src_04 AS a JOIN gen_src_03 AS b ON b.id = a.id"
+    },
+    {
+     "sql": "INSERT INTO gen_out_010 SELECT a.id, a.v + b.v FROM gen_src_04 AS a JOIN gen_src_03 AS b ON b.id = a.id"
+    },
+    {
+     "sql": "INSERT INTO gen_out_011 SELECT a.id, a.v + b.v FROM gen_src_09 AS a JOIN gen_src_03 AS b ON b.id = a.id"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_005.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_04"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_09"
+    },
+    {
+     "produce": "gen_topic_01",
+     "record": "r001=184"
+    },
+    {
+     "produce": "gen_topic_03",
+     "record": "r002=184"
+    },
+    {
+     "sql": "INSERT INTO gen_out_012 VALUES (1, 184)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_006.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_04"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_05"
+    },
+    {
+     "produce": "gen_topic_03",
+     "record": "r003=289"
+    },
+    {
+     "produce": "gen_topic_02",
+     "record": "r004=289"
+    },
+    {
+     "sql": "INSERT INTO gen_out_013 VALUES (1, 289)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_007.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "INSERT INTO gen_out_014 SELECT a.id, a.v + b.v FROM gen_src_03 AS a JOIN gen_src_04 AS b ON b.id = a.id"
+    },
+    {
+     "sql": "INSERT INTO gen_out_015 SELECT a.id, a.v + b.v FROM gen_src_01 AS a JOIN gen_src_02 AS b ON b.id = a.id"
+    },
+    {
+     "sql": "INSERT INTO gen_out_016 SELECT id, v FROM gen_src_03"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_008.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_02"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_05"
+    },
+    {
+     "produce": "gen_topic_03",
+     "record": "r005=202"
+    }
+   ]
+  },
+  {
+   "job": "gen_nb_009.ipynb",
+   "kind": "notebook",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_04"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_09"
+    },
+    {
+     "sql": "INSERT INTO gen_out_017 VALUES (1, 280)"
+    }
+   ]
+  },
+  {
+   "job": "gen_nb_010.ipynb",
+   "kind": "notebook",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_06"
+    },
+    {
+     "sql": "INSERT INTO gen_out_018 VALUES (1, 125)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_011.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_03"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_06"
+    },
+    {
+     "produce": "gen_topic_02",
+     "record": "r006=244"
+    },
+    {
+     "produce": "gen_topic_03",
+     "record": "r007=244"
+    },
+    {
+     "sql": "INSERT INTO gen_out_019 VALUES (1, 244)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_012.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "INSERT INTO gen_out_020 SELECT a.id, a.v + b.v FROM gen_src_09 AS a JOIN gen_src_02 AS b ON b.id = a.id"
+    },
+    {
+     "sql": "INSERT INTO gen_out_021 SELECT a.id, a.v + b.v FROM gen_src_04 AS a JOIN gen_src_02 AS b ON b.id = a.id"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_013.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_02"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_10"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_01"
+    },
+    {
+     "produce": "gen_topic_01",
+     "record": "r008=216"
+    },
+    {
+     "produce": "gen_topic_03",
+     "record": "r009=216"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_014.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_02"
+    },
+    {
+     "produce": "gen_topic_02",
+     "record": "r010=97"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_015.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_out_012"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_01"
+    },
+    {
+     "sql": "INSERT INTO gen_out_022 VALUES (1, 184)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_016.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_08"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_03"
+    },
+    {
+     "produce": "gen_topic_03",
+     "record": "r011=195"
+    }
+   ]
+  },
+  {
+   "job": "gen_nb_017.ipynb",
+   "kind": "notebook",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_01"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_04"
+    },
+    {
+     "sql": "INSERT INTO gen_out_023 VALUES (1, 321)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_018.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_04"
+    },
+    {
+     "produce": "gen_topic_03",
+     "record": "r012=184"
+    },
+    {
+     "produce": "gen_topic_02",
+     "record": "r013=184"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_019.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_08"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_04"
+    },
+    {
+     "produce": "gen_topic_01",
+     "record": "r014=260"
+    },
+    {
+     "produce": "gen_topic_01",
+     "record": "r015=260"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_020.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_10"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_09"
+    },
+    {
+     "produce": "gen_topic_03",
+     "record": "r016=215"
+    },
+    {
+     "produce": "gen_topic_01",
+     "record": "r017=215"
+    },
+    {
+     "sql": "INSERT INTO gen_out_024 VALUES (1, 215)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_021.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_src_07"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_10"
+    },
+    {
+     "produce": "gen_topic_03",
+     "record": "r018=119"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_022.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "INSERT INTO gen_out_025 SELECT id, v FROM gen_src_02"
+    },
+    {
+     "sql": "INSERT INTO gen_out_026 SELECT id, v FROM gen_src_07"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_023.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_out_022"
+    },
+    {
+     "sql": "INSERT INTO gen_out_027 VALUES (1, 184)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_024.py",
+   "kind": "script",
+   "steps": [
+    {
+     "consume": "gen_topic_01",
+     "record": "r017=215"
+    },
+    {
+     "consume": "gen_topic_03",
+     "record": "r003=289"
+    },
+    {
+     "sql": "INSERT INTO gen_out_028 VALUES (1, 504)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_025.py",
+   "kind": "script",
+   "steps": [
+    {
+     "consume": "gen_topic_02",
+     "record": "r010=97"
+    },
+    {
+     "consume": "gen_topic_03",
+     "record": "r016=215"
+    },
+    {
+     "sql": "INSERT INTO gen_out_029 VALUES (1, 312)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_026.py",
+   "kind": "script",
+   "steps": [
+    {
+     "consume": "gen_topic_02",
+     "record": "r006=244"
+    },
+    {
+     "sql": "INSERT INTO gen_out_030 VALUES (1, 244)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_027.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_out_001"
+    },
+    {
+     "sql": "INSERT INTO gen_out_031 VALUES (1, 76)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_028.py",
+   "kind": "script",
+   "steps": [
+    {
+     "sql": "SELECT id, v FROM gen_out_019"
+    },
+    {
+     "sql": "INSERT INTO gen_out_032 VALUES (1, 244)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_029.py",
+   "kind": "script",
+   "steps": [
+    {
+     "consume": "gen_topic_02",
+     "record": "r013=184"
+    },
+    {
+     "consume": "gen_topic_01",
+     "record": "r001=184"
+    },
+    {
+     "sql": "SELECT id, v FROM gen_src_07"
+    },
+    {
+     "sql": "INSERT INTO gen_out_033 VALUES (1, 368)"
+    }
+   ]
+  },
+  {
+   "job": "gen_job_030.py",
+   "kind": "script",
+   "steps": [
+    {
+     "consume": "gen_topic_03",
+     "record": "r009=216"
+    },
+    {
+     "consume": "gen_topic_02",
+     "record": "r004=289"
+    },
+    {
+     "sql": "INSERT INTO gen_out_034 VALUES (1, 505)"
+    }
+   ]
+  }
+ ],
+ "datasets": {
+  "gen_out_001": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_001"
+  },
+  "gen_out_002": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_002"
+  },
+  "gen_out_003": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_003"
+  },
+  "gen_out_004": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_004"
+  },
+  "gen_out_005": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_005"
+  },
+  "gen_out_006": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_006"
+  },
+  "gen_out_007": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_007"
+  },
+  "gen_out_008": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_008"
+  },
+  "gen_out_009": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_009"
+  },
+  "gen_out_010": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_010"
+  },
+  "gen_out_011": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_011"
+  },
+  "gen_out_012": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_012"
+  },
+  "gen_out_013": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_013"
+  },
+  "gen_out_014": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_014"
+  },
+  "gen_out_015": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_015"
+  },
+  "gen_out_016": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_016"
+  },
+  "gen_out_017": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_017"
+  },
+  "gen_out_018": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_018"
+  },
+  "gen_out_019": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_019"
+  },
+  "gen_out_020": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_020"
+  },
+  "gen_out_021": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_021"
+  },
+  "gen_out_022": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_022"
+  },
+  "gen_out_023": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_023"
+  },
+  "gen_out_024": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_024"
+  },
+  "gen_out_025": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_025"
+  },
+  "gen_out_026": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_026"
+  },
+  "gen_out_027": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_027"
+  },
+  "gen_out_028": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_028"
+  },
+  "gen_out_029": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_029"
+  },
+  "gen_out_030": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_030"
+  },
+  "gen_out_031": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_031"
+  },
+  "gen_out_032": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_032"
+  },
+  "gen_out_033": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_033"
+  },
+  "gen_out_034": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_out_034"
+  },
+  "gen_src_01": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_src_01"
+  },
+  "gen_src_02": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_src_02"
+  },
+  "gen_src_03": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_src_03"
+  },
+  "gen_src_04": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_src_04"
+  },
+  "gen_src_05": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_src_05"
+  },
+  "gen_src_06": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_src_06"
+  },
+  "gen_src_07": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_src_07"
+  },
+  "gen_src_08": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_src_08"
+  },
+  "gen_src_09": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_src_09"
+  },
+  "gen_src_10": {
+   "namespace": "postgres://localhost:5432",
+   "name": "dcp.public.gen_src_10"
+  },
+  "gen_topic_01": {
+   "namespace": "kafka://localhost:9092",
+   "name": "gen_topic_01"
+  },
+  "gen_topic_02": {
+   "namespace": "kafka://localhost:9092",
+   "name": "gen_topic_02"
+  },
+  "gen_topic_03": {
+   "namespace": "kafka://localhost:9092",
+   "name": "gen_topic_03"
+  }
+ },
+ "dataset_edges": [
+  {
+   "from": "gen_out_001",
+   "to": "gen_out_031",
+   "job": "gen_job_027.py"
+  },
+  {
+   "from": "gen_out_012",
+   "to": "gen_out_022",
+   "job": "gen_job_015.py"
+  },
+  {
+   "from": "gen_out_019",
+   "to": "gen_out_032",
+   "job": "gen_job_028.py"
+  },
+  {
+   "from": "gen_out_022",
+   "to": "gen_out_027",
+   "job": "gen_job_023.py"
+  },
+  {
+   "from": "gen_src_01",
+   "to": "gen_out_015",
+   "job": "gen_job_007.py"
+  },
+  {
+   "from": "gen_src_01",
+   "to": "gen_out_023",
+   "job": "gen_nb_017.ipynb"
+  },
+  {
+   "from": "gen_src_02",
+   "to": "gen_out_004",
+   "job": "gen_job_002.py"
+  },
+  {
+   "from": "gen_src_02",
+   "to": "gen_out_008",
+   "job": "gen_job_003.py"
+  },
+  {
+   "from": "gen_src_02",
+   "to": "gen_out_015",
+   "job": "gen_job_007.py"
+  },
+  {
+   "from": "gen_src_02",
+   "to": "gen_out_020",
+   "job": "gen_job_012.py"
+  },
+  {
+   "from": "gen_src_02",
+   "to": "gen_out_021",
+   "job": "gen_job_012.py"
+  },
+  {
+   "from": "gen_src_02",
+   "to": "gen_out_025",
+   "job": "gen_job_022.py"
+  },
+  {
+   "from": "gen_src_02",
+   "to": "gen_topic_01",
+   "job": "gen_job_013.py"
+  },
+  {
+   "from": "gen_src_02",
+   "to": "gen_topic_02",
+   "job": "gen_job_014.py"
+  },
+  {
+   "from": "gen_src_02",
+   "to": "gen_topic_03",
+   "job": "gen_job_008.py"
+  },
+  {
+   "from": "gen_src_02",
+   "to": "gen_topic_03",
+   "job": "gen_job_013.py"
+  },
+  {
+   "from": "gen_src_03",
+   "to": "gen_out_009",
+   "job": "gen_job_004.py"
+  },
+  {
+   "from": "gen_src_03",
+   "to": "gen_out_010",
+   "job": "gen_job_004.py"
+  },
+  {
+   "from": "gen_src_03",
+   "to": "gen_out_011",
+   "job": "gen_job_004.py"
+  },
+  {
+   "from": "gen_src_03",
+   "to": "gen_out_014",
+   "job": "gen_job_007.py"
+  },
+  {
+   "from": "gen_src_03",
+   "to": "gen_out_016",
+   "job": "gen_job_007.py"
+  },
+  {
+   "from": "gen_src_03",
+   "to": "gen_out_019",
+   "job": "gen_job_011.py"
+  },
+  {
+   "from": "gen_src_03",
+   "to": "gen_topic_02",
+   "job": "gen_job_011.py"
+  },
+  {
+   "from": "gen_src_03",
+   "to": "gen_topic_03",
+   "job": "gen_job_011.py"
+  },
+  {
+   "from": "gen_src_03",
+   "to": "gen_topic_03",
+   "job": "gen_job_016.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_out_004",
+   "job": "gen_job_002.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_out_009",
+   "job": "gen_job_004.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_out_010",
+   "job": "gen_job_004.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_out_012",
+   "job": "gen_job_005.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_out_013",
+   "job": "gen_job_006.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_out_014",
+   "job": "gen_job_007.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_out_017",
+   "job": "gen_nb_009.ipynb"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_out_021",
+   "job": "gen_job_012.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_out_023",
+   "job": "gen_nb_017.ipynb"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_topic_01",
+   "job": "gen_job_005.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_topic_01",
+   "job": "gen_job_019.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_topic_02",
+   "job": "gen_job_006.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_topic_02",
+   "job": "gen_job_018.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_topic_03",
+   "job": "gen_job_005.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_topic_03",
+   "job": "gen_job_006.py"
+  },
+  {
+   "from": "gen_src_04",
+   "to": "gen_topic_03",
+   "job": "gen_job_018.py"
+  },
+  {
+   "from": "gen_src_05",
+   "to": "gen_out_007",
+   "job": "gen_job_003.py"
+  },
+  {
+   "from": "gen_src_05",
+   "to": "gen_out_013",
+   "job": "gen_job_006.py"
+  },
+  {
+   "from": "gen_src_05",
+   "to": "gen_topic_02",
+   "job": "gen_job_006.py"
+  },
+  {
+   "from": "gen_src_05",
+   "to": "gen_topic_03",
+   "job": "gen_job_006.py"
+  },
+  {
+   "from": "gen_src_05",
+   "to": "gen_topic_03",
+   "job": "gen_job_008.py"
+  },
+  {
+   "from": "gen_src_06",
+   "to": "gen_out_003",
+   "job": "gen_job_001.py"
+  },
+  {
+   "from": "gen_src_06",
+   "to": "gen_out_007",
+   "job": "gen_job_003.py"
+  },
+  {
+   "from": "gen_src_06",
+   "to": "gen_out_018",
+   "job": "gen_nb_010.ipynb"
+  },
+  {
+   "from": "gen_src_06",
+   "to": "gen_out_019",
+   "job": "gen_job_011.py"
+  },
+  {
+   "from": "gen_src_06",
+   "to": "gen_topic_02",
+   "job": "gen_job_011.py"
+  },
+  {
+   "from": "gen_src_06",
+   "to": "gen_topic_03",
+   "job": "gen_job_011.py"
+  },
+  {
+   "from": "gen_src_07",
+   "to": "gen_out_003",
+   "job": "gen_job_001.py"
+  },
+  {
+   "from": "gen_src_07",
+   "to": "gen_out_008",
+   "job": "gen_job_003.py"
+  },
+  {
+   "from": "gen_src_07",
+   "to": "gen_out_026",
+   "job": "gen_job_022.py"
+  },
+  {
+   "from": "gen_src_08",
+   "to": "gen_out_001",
+   "job": "gen_job_001.py"
+  },
+  {
+   "from": "gen_src_08",
+   "to": "gen_out_002",
+   "job": "gen_job_001.py"
+  },
+  {
+   "from": "gen_src_08",
+   "to": "gen_out_006",
+   "job": "gen_job_003.py"
+  },
+  {
+   "from": "gen_src_08",
+   "to": "gen_topic_01",
+   "job": "gen_job_019.py"
+  },
+  {
+   "from": "gen_src_08",
+   "to": "gen_topic_03",
+   "job": "gen_job_016.py"
+  },
+  {
+   "from": "gen_src_09",
+   "to": "gen_out_005",
+   "job": "gen_job_002.py"
+  },
+  {
+   "from": "gen_src_09",
+   "to": "gen_out_011",
+   "job": "gen_job_004.py"
+  },
+  {
+   "from": "gen_src_09",
+   "to": "gen_out_017",
+   "job": "gen_nb_009.ipynb"
+  },
+  {
+   "from": "gen_src_09",
+   "to": "gen_out_020",
+   "job": "gen_job_012.py"
+  },
+  {
+   "from": "gen_src_09",
+   "to": "gen_out_024",
+   "job": "gen_job_020.py"
+  },
+  {
+   "from": "gen_src_09",
+   "to": "gen_topic_01",
+   "job": "gen_job_020.py"
+  },
+  {
+   "from": "gen_src_09",
+   "to": "gen_topic_03",
+   "job": "gen_job_020.py"
+  },
+  {
+   "from": "gen_src_10",
+   "to": "gen_out_024",
+   "job": "gen_job_020.py"
+  },
+  {
+   "from": "gen_src_10",
+   "to": "gen_topic_01",
+   "job": "gen_job_013.py"
+  },
+  {
+   "from": "gen_src_10",
+   "to": "gen_topic_01",
+   "job": "gen_job_020.py"
+  },
+  {
+   "from": "gen_src_10",
+   "to": "gen_topic_03",
+   "job": "gen_job_013.py"
+  },
+  {
+   "from": "gen_src_10",
+   "to": "gen_topic_03",
+   "job": "gen_job_020.py"
+  },
+  {
+   "from": "gen_src_10",
+   "to": "gen_topic_03",
+   "job": "gen_job_021.py"
+  },
+  {
+   "from": "gen_topic_01",
+   "to": "gen_out_028",
+   "job": "gen_job_024.py"
+  },
+  {
+   "from": "gen_topic_01",
+   "to": "gen_out_033",
+   "job": "gen_job_029.py"
+  },
+  {
+   "from": "gen_topic_02",
+   "to": "gen_out_029",
+   "job": "gen_job_025.py"
+  },
+  {
+   "from": "gen_topic_02",
+   "to": "gen_out_030",
+   "job": "gen_job_026.py"
+  },
+  {
+   "from": "gen_topic_02",
+   "to": "gen_out_033",
+   "job": "gen_job_029.py"
+  },
+  {
+   "from": "gen_topic_02",
+   "to": "gen_out_034",
+   "job": "gen_job_030.py"
+  },
+  {
+   "from": "gen_topic_03",
+   "to": "gen_out_028",
+   "job": "gen_job_024.py"
+  },
+  {
+   "from": "gen_topic_03",
+   "to": "gen_out_029",
+   "job": "gen_job_025.py"
+  },
+  {
+   "from": "gen_topic_03",
+   "to": "gen_out_034",
+   "job": "gen_job_030.py"
+  }
+ ],
+ "run_edges": [
+  {
+   "from_job": "gen_job_005.py",
+   "to_job": "gen_job_029.py",
+   "via": "gen_topic_01"
+  },
+  {
+   "from_job": "gen_job_006.py",
+   "to_job": "gen_job_024.py",
+   "via": "gen_topic_03"
+  },
+  {
+   "from_job": "gen_job_006.py",
+   "to_job": "gen_job_030.py",
+   "via": "gen_topic_02"
+  },
+  {
+   "from_job": "gen_job_011.py",
+   "to_job": "gen_job_026.py",
+   "via": "gen_topic_02"
+  },
+  {
+   "from_job": "gen_job_013.py",
+   "to_job": "gen_job_030.py",
+   "via": "gen_topic_03"
+  },
+  {
+   "from_job": "gen_job_014.py",
+   "to_job": "gen_job_025.py",
+   "via": "gen_topic_02"
+  },
+  {
+   "from_job": "gen_job_018.py",
+   "to_job": "gen_job_029.py",
+   "via": "gen_topic_02"
+  },
+  {
+   "from_job": "gen_job_020.py",
+   "to_job": "gen_job_024.py",
+   "via": "gen_topic_01"
+  },
+  {
+   "from_job": "gen_job_020.py",
+   "to_job": "gen_job_025.py",
+   "via": "gen_topic_03"
+  }
+ ],
+ "provenance": [
+  {
+   "dataset": "gen_out_001",
+   "upstream": [
+    "gen_src_08"
+   ]
+  },
+  {
+   "dataset": "gen_out_002",
+   "upstream": [
+    "gen_src_08"
+   ]
+  },
+  {
+   "dataset": "gen_out_003",
+   "upstream": [
+    "gen_src_06",
+    "gen_src_07"
+   ]
+  },
+  {
+   "dataset": "gen_out_004",
+   "upstream": [
+    "gen_src_02",
+    "gen_src_04"
+   ]
+  },
+  {
+   "dataset": "gen_out_005",
+   "upstream": [
+    "gen_src_09"
+   ]
+  },
+  {
+   "dataset": "gen_out_006",
+   "upstream": [
+    "gen_src_08"
+   ]
+  },
+  {
+   "dataset": "gen_out_007",
+   "upstream": [
+    "gen_src_05",
+    "gen_src_06"
+   ]
+  },
+  {
+   "dataset": "gen_out_008",
+   "upstream": [
+    "gen_src_02",
+    "gen_src_07"
+   ]
+  },
+  {
+   "dataset": "gen_out_009",
+   "upstream": [
+    "gen_src_03",
+    "gen_src_04"
+   ]
+  },
+  {
+   "dataset": "gen_out_010",
+   "upstream": [
+    "gen_src_03",
+    "gen_src_04"
+   ]
+  },
+  {
+   "dataset": "gen_out_011",
+   "upstream": [
+    "gen_src_03",
+    "gen_src_09"
+   ]
+  },
+  {
+   "dataset": "gen_out_012",
+   "upstream": [
+    "gen_src_04"
+   ]
+  },
+  {
+   "dataset": "gen_out_013",
+   "upstream": [
+    "gen_src_04",
+    "gen_src_05"
+   ]
+  },
+  {
+   "dataset": "gen_out_014",
+   "upstream": [
+    "gen_src_03",
+    "gen_src_04"
+   ]
+  },
+  {
+   "dataset": "gen_out_015",
+   "upstream": [
+    "gen_src_01",
+    "gen_src_02"
+   ]
+  },
+  {
+   "dataset": "gen_out_016",
+   "upstream": [
+    "gen_src_03"
+   ]
+  },
+  {
+   "dataset": "gen_out_017",
+   "upstream": [
+    "gen_src_04",
+    "gen_src_09"
+   ]
+  },
+  {
+   "dataset": "gen_out_018",
+   "upstream": [
+    "gen_src_06"
+   ]
+  },
+  {
+   "dataset": "gen_out_019",
+   "upstream": [
+    "gen_src_03",
+    "gen_src_06"
+   ]
+  },
+  {
+   "dataset": "gen_out_020",
+   "upstream": [
+    "gen_src_02",
+    "gen_src_09"
+   ]
+  },
+  {
+   "dataset": "gen_out_021",
+   "upstream": [
+    "gen_src_02",
+    "gen_src_04"
+   ]
+  },
+  {
+   "dataset": "gen_out_022",
+   "upstream": [
+    "gen_out_012",
+    "gen_src_04"
+   ]
+  },
+  {
+   "dataset": "gen_out_023",
+   "upstream": [
+    "gen_src_01",
+    "gen_src_04"
+   ]
+  },
+  {
+   "dataset": "gen_out_024",
+   "upstream": [
+    "gen_src_09",
+    "gen_src_10"
+   ]
+  },
+  {
+   "dataset": "gen_out_025",
+   "upstream": [
+    "gen_src_02"
+   ]
+  },
+  {
+   "dataset": "gen_out_026",
+   "upstream": [
+    "gen_src_07"
+   ]
+  },
+  {
+   "dataset": "gen_out_027",
+   "upstream": [
+    "gen_out_012",
+    "gen_out_022",
+    "gen_src_04"
+   ]
+  },
+  {
+   "dataset": "gen_out_028",
+   "upstream": [
+    "gen_src_04",
+    "gen_src_05",
+    "gen_src_09",
+    "gen_src_10",
+    "gen_topic_01",
+    "gen_topic_03"
+   ]
+  },
+  {
+   "dataset": "gen_out_029",
+   "upstream": [
+    "gen_src_02",
+    "gen_src_09",
+    "gen_src_10",
+    "gen_topic_02",
+    "gen_topic_03"
+   ]
+  },
+  {
+   "dataset": "gen_out_030",
+   "upstream": [
+    "gen_src_03",
+    "gen_src_06",
+    "gen_topic_02"
+   ]
+  },
+  {
+   "dataset": "gen_out_031",
+   "upstream": [
+    "gen_out_001",
+    "gen_src_08"
+   ]
+  },
+  {
+   "dataset": "gen_out_032",
+   "upstream": [
+    "gen_out_019",
+    "gen_src_03",
+    "gen_src_06"
+   ]
+  },
+  {
+   "dataset": "gen_out_033",
+   "upstream": [
+    "gen_src_04",
+    "gen_topic_01",
+    "gen_topic_02"
+   ]
+  },
+  {
+   "dataset": "gen_out_034",
+   "upstream": [
+    "gen_src_02",
+    "gen_src_04",
+    "gen_src_05",
+    "gen_src_10",
+    "gen_topic_02",
+    "gen_topic_03"
+   ]
+  },
+  {
+   "dataset": "gen_topic_01",
+   "upstream": [
+    "gen_src_02",
+    "gen_src_04",
+    "gen_src_08",
+    "gen_src_09",
+    "gen_src_10"
+   ]
+  },
+  {
+   "dataset": "gen_topic_02",
+   "upstream": [
+    "gen_src_02",
+    "gen_src_03",
+    "gen_src_04",
+    "gen_src_05",
+    "gen_src_06"
+   ]
+  },
+  {
+   "dataset": "gen_topic_03",
+   "upstream": [
+    "gen_src_02",
+    "gen_src_03",
+    "gen_src_04",
+    "gen_src_05",
+    "gen_src_06",
+    "gen_src_08",
+    "gen_src_09",
+    "gen_src_10"
+   ]
+  }
+ ],
+ "tables": {
+  "gen_out_001": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_002": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_003": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_004": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_005": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_006": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_007": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_008": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_009": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_010": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_011": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_012": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_013": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_014": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_015": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_016": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_017": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_018": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_019": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_020": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_021": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_022": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_023": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_024": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_025": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_026": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_027": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_028": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_029": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_030": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_031": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_032": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_033": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_out_034": {
+   "columns": "id int, v int",
+   "rows": []
+  },
+  "gen_src_01": {
+   "columns": "id int, v int",
+   "rows": [
+    [
+     1,
+     51
+    ],
+    [
+     2,
+     11
+    ],
+    [
+     3,
+     75
+    ]
+   ]
+  },
+  "gen_src_02": {
+   "columns": "id int, v int",
+   "rows": [
+    [
+     1,
+     27
+    ],
+    [
+     2,
+     17
+    ],
+    [
+     3,
+     53
+    ]
+   ]
+  },
+  "gen_src_03": {
+   "columns": "id int, v int",
+   "rows": [
+    [
+     1,
+     62
+    ],
+    [
+     2,
+     43
+    ],
+    [
+     3,
+     14
+    ]
+   ]
+  },
+  "gen_src_04": {
+   "columns": "id int, v int",
+   "rows": [
+    [
+     1,
+     90
+    ],
+    [
+     2,
+     73
+    ],
+    [
+     3,
+     21
+    ]
+   ]
+  },
+  "gen_src_05": {
+   "columns": "id int, v int",
+   "rows": [
+    [
+     1,
+     42
+    ],
+    [
+     2,
+     53
+    ],
+    [
+     3,
+     10
+    ]
+   ]
+  },
+  "gen_src_06": {
+   "columns": "id int, v int",
+   "rows": [
+    [
+     1,
+     57
+    ],
+    [
+     2,
+     9
+    ],
+    [
+     3,
+     59
+    ]
+   ]
+  },
+  "gen_src_07": {
+   "columns": "id int, v int",
+   "rows": [
+    [
+     1,
+     87
+    ],
+    [
+     2,
+     68
+    ],
+    [
+     3,
+     46
+    ]
+   ]
+  },
+  "gen_src_08": {
+   "columns": "id int, v int",
+   "rows": [
+    [
+     1,
+     20
+    ],
+    [
+     2,
+     26
+    ],
+    [
+     3,
+     30
+    ]
+   ]
+  },
+  "gen_src_09": {
+   "columns": "id int, v int",
+   "rows": [
+    [
+     1,
+     38
+    ],
+    [
+     2,
+     31
+    ],
+    [
+     3,
+     27
+    ]
+   ]
+  },
+  "gen_src_10": {
+   "columns": "id int, v int",
+   "rows": [
+    [
+     1,
+     22
+    ],
+    [
+     2,
+     39
+    ],
+    [
+     3,
+     58
+    ]
+   ]
+  }
+ },
+ "topics": [
+  "gen_topic_01",
+  "gen_topic_02",
+  "gen_topic_03"
+ ]
+}
