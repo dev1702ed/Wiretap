@@ -1,6 +1,6 @@
 [project]
 name = "dcp-openlineage"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Batch bridge: DCP provenance events to OpenLineage RunEvents."
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }

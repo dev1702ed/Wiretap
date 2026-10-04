@@ -10,3 +10,5 @@ benchmarks/tests/data/render_p51_comparison_expected.md -text
 benchmarks/ground_truth/generated/*.json -text
 docs/results/data/** -text
 benchmarks/ground_truth/stress/*.json -text
+*.png binary
+*.pdf binary
