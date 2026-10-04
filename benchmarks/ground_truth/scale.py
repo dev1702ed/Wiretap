@@ -8,6 +8,7 @@ hand-written key is (`score_workload`). This module only groups the rows:
     dataset-level baseline    provenance
     OpenLineage core          dataset edges, provenance
     OpenLineage + dcp facet   provenance
+    OpenLineage core (per process)   dataset edges, provenance    (P5.2)
 
 and micro-averages them: precision = sum of hits / sum of found, recall = sum
 of hits / sum of expected, over every row of every key in a group, per method
@@ -24,7 +25,9 @@ METHODS = (
     "dataset-level baseline",
     "OpenLineage core",
     "OpenLineage + dcp facet",
+    "OpenLineage core (per process)",  # P5.2: the bridge's `process` run scope
 )
+PER_PROCESS = "OpenLineage core (per process)"
 LEVELS = ("nodes", "dataset edges", "run edges", "provenance")
 
 
@@ -36,6 +39,10 @@ def method_level(label: str) -> tuple[str, str]:
         return "DCP run-level", "provenance"
     if label.endswith(" dataset-level baseline"):
         return "dataset-level baseline", "provenance"
+    if label == "openlineage (per process) dataset edges":
+        return PER_PROCESS, "dataset edges"
+    if label.startswith("openlineage (per process) provenance("):
+        return PER_PROCESS, "provenance"
     if label == "openlineage dataset edges":
         return "OpenLineage core", "dataset edges"
     if label.startswith("openlineage + dcp facet provenance("):
@@ -49,10 +56,20 @@ def _ratio(hits: int, total: int) -> float | None:
     return hits / total if total else None
 
 
+def all_rows(scored: dict) -> list[dict]:
+    """Every score row of one key: DCP's graph, then the OpenLineage
+    translation, then (P5.2, when scored) the per-process translation."""
+    return (
+        scored["dcp"]
+        + scored["openlineage"]
+        + scored.get("openlineage_per_process", [])
+    )
+
+
 def totals(scored: dict) -> dict[tuple[str, str], dict]:
     """(method, level) -> summed hits, found, expected, for one scored key."""
     out: dict = {}
-    for row in scored["dcp"] + scored["openlineage"]:
+    for row in all_rows(scored):
         cell = out.setdefault(
             method_level(row["label"]), {"hits": 0, "found": 0, "expected": 0}
         )
@@ -143,7 +160,7 @@ def misses(scored: dict) -> list[str]:
     """Every expected item some method did not find: recall below 1.0."""
     return [
         f"{row['label']}: {note}"
-        for row in scored["dcp"] + scored["openlineage"]
+        for row in all_rows(scored)
         for note in row["notes"]
         if note.startswith("-")
     ]
@@ -162,15 +179,17 @@ def split_jobs(events: list[dict]) -> list[str]:
 
 def explain_misses(key: dict, scored: dict, split: list[str]) -> dict:
     """Every expected item a method missed, checked against split runs. Only
-    OpenLineage's core model (inputs x outputs per run) can lose an item to a
-    split run; any other miss, or a core miss no split run explains, is a bug."""
+    OpenLineage's core model (inputs x outputs per run) over the default
+    trace-process run scope can lose an item to a split run; any other miss,
+    or a core miss no split run explains, is a bug. That includes every miss
+    of the per-process mapping (P5.2), which has no split runs."""
     writers: dict = {}
     for edge in key["dataset_edges"]:
         writers.setdefault(edge["to"], set()).add(edge["job"])
     split = set(split)
     total = explained = 0
     unexplained = []
-    for row in scored["dcp"] + scored["openlineage"]:
+    for row in all_rows(scored):
         method, level = method_level(row["label"])
         for note in row["notes"]:
             if not note.startswith("-"):
@@ -248,4 +267,16 @@ def summarize(
         "others": {n: aggregate([scored[n]]) for n in others},
         "extras": {n: explain_extras(keys[n], scored[n]) for n in scored},
         "misses": {n: explain_misses(keys[n], scored[n], split[n]) for n in scored},
+        "per_process_misses": {n: per_process_misses(scored[n]) for n in scored},
     }
+
+
+def per_process_misses(scored: dict) -> list[str]:
+    """Every expected item the per-process mapping (P5.2) missed. Expected:
+    none. A per-process run is never split, so none is explained."""
+    return [
+        f"{row['label']}: {note}"
+        for row in scored.get("openlineage_per_process", [])
+        for note in row["notes"]
+        if note.startswith("-")
+    ]

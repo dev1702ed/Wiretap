@@ -449,7 +449,10 @@ def _rows_agree(a: dict, b: dict) -> bool:
     def key(rows):
         return [(r["label"], r["hits"], r["found"], r["expected"]) for r in rows]
 
-    return all(key(a[s]) == key(b[s]) for s in ("dcp", "openlineage"))
+    sections = ["dcp", "openlineage"]
+    if "openlineage_per_process" in a or "openlineage_per_process" in b:
+        sections.append("openlineage_per_process")  # P5.2
+    return all(key(a.get(s, [])) == key(b.get(s, [])) for s in sections)
 
 
 def run_scale(out_dir: pathlib.Path, quick: bool, probes: dict, log) -> dict:

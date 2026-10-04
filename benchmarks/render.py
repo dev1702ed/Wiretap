@@ -16,7 +16,7 @@ _GROUND_TRUTH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ground
 if _GROUND_TRUTH not in sys.path:
     sys.path.insert(0, _GROUND_TRUTH)
 
-from score import format_table
+from score import fitted_table, format_table
 
 LATENCY_TRIGGER_US = 500.0  # Stage 5: _capture p99 above this on any tier
 FILE_ADDED_TRIGGER_US = 1000.0  # Stage 5: `file` added p99 at or above this on any tier
@@ -170,6 +170,14 @@ def _scores(workloads: list[dict]) -> list[str]:
             ),
             "",
         ]
+        per_process = w.get("score", w).get("openlineage_per_process")
+        if per_process is not None:  # P5.2
+            out += [
+                "OpenLineage translation, one run per process (core run model; added in P5.2):",
+                "",
+                *code(fitted_table(per_process)),
+                "",
+            ]
     return out
 
 
@@ -379,6 +387,22 @@ def _scale_summary(summary: dict) -> list[str]:
         ),
         "",
     ]
+    if "per_process_misses" in summary:  # P5.2
+        rows = [
+            [name, len(missed), "; ".join(missed) or "none"]
+            for name, missed in summary["per_process_misses"].items()
+        ]
+        out += [
+            (
+                "**OpenLineage core (per process), added in P5.2:** the same events "
+                "translated with one run per process, so no run is ever split. Its "
+                "misses are counted in *Missed items* above and none can be explained "
+                "by a split run; each one is listed here."
+            ),
+            "",
+            *table(["Key", "Per-process misses", "Each one"], rows),
+            "",
+        ]
     return out
 
 

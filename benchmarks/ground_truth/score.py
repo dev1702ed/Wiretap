@@ -16,6 +16,13 @@ what OpenLineage's core run model implies (every input of a run feeds every
 output); `openlineage + dcp facet provenance` rebuilds the backend graph from
 the `dcp` run facets and asks it.
 
+Since P5.2 each workload also gets a per-process OpenLineage section: the same
+events translated with the bridge's `process` run scope (one run per process,
+as a real OpenLineage integration reports it), read back with the core model:
+`openlineage (per process) dataset edges` and `openlineage (per process)
+provenance(...)`. It is printed after the existing sections, so every line
+printed before P5.2 is unchanged.
+
 The events come from harness.replay: DCP's real capture code with faked
 database and broker I/O. These are not live runs. The scoring is independent
 of where the events come from (`score_all(events_for)`): benchmarks/live runs
@@ -130,6 +137,28 @@ def openlineage_rows(key: dict, events: list[dict]):
         )
 
 
+def openlineage_process_rows(key: dict, events: list[dict]):
+    """OpenLineage's core model over the bridge's `process` run scope (P5.2)."""
+    ds = datasets(key)
+    name, names = _namer(ds)
+    implied = implied_dataset_edges(to_openlineage(events, run_scope="process"))
+
+    yield (
+        "openlineage (per process) dataset edges",
+        implied,
+        {(ds[e["from"]], ds[e["to"]], e["job"]) for e in key["dataset_edges"]},
+        lambda edges: [f"{name(a)}->{name(b)} ({job})" for a, b, job in edges],
+    )
+    for p in key["provenance"]:
+        target, expected = ds[p["dataset"]], {ds[a] for a in p["upstream"]}
+        yield (
+            f"openlineage (per process) provenance({p['dataset']})",
+            dataset_provenance(implied, target),
+            expected,
+            names,
+        )
+
+
 def measure(levels) -> list[dict]:
     """The rows as data: label, hits, found and expected counts, and notes."""
     out = []
@@ -148,23 +177,35 @@ def measure(levels) -> list[dict]:
     return out
 
 
-def format_table(measured: list[dict]) -> list[str]:
-    lines = [f"{'level':<52}{'precision':<16}{'recall':<16}notes"]
+LEVEL_WIDTH = 52
+
+
+def format_table(measured: list[dict], width: int = LEVEL_WIDTH) -> list[str]:
+    lines = [f"{'level':<{width}}{'precision':<16}{'recall':<16}notes"]
     for row in measured:
         line = (
-            f"{row['label']:<52}{ratio(row['hits'], row['found']):<16}"
+            f"{row['label']:<{width}}{ratio(row['hits'], row['found']):<16}"
             f"{ratio(row['hits'], row['expected']):<16}{' '.join(row['notes'])}"
         )
         lines.append(line.rstrip())
     return lines
 
 
+def fitted_table(measured: list[dict]) -> list[str]:
+    """format_table, its level column widened to the longest label if needed.
+    For the per-process section only: the older sections keep their width."""
+    longest = max((len(row["label"]) for row in measured), default=0)
+    return format_table(measured, max(LEVEL_WIDTH, longest + 1))
+
+
 def score_workload(key: dict, events: list[dict]) -> dict:
-    """Every level of one workload, for DCP's graph and for the OpenLineage translation."""
+    """Every level of one workload, for DCP's graph and for the OpenLineage
+    translation in both of the bridge's run scopes."""
     return {
         "workload": key["workload"],
         "dcp": measure(rows(key, events)),
         "openlineage": measure(openlineage_rows(key, events)),
+        "openlineage_per_process": measure(openlineage_process_rows(key, events)),
     }
 
 
@@ -193,6 +234,15 @@ def report_lines(results: list[dict], intro: str = REPLAY_INTRO) -> list[str]:
             f"-- {workload}: OpenLineage translation (core run model, then with the dcp facet)"
         )
         lines += format_table(result["openlineage"])
+        if "openlineage_per_process" in result:
+            lines += [
+                "",
+                (
+                    f"-- {workload}: OpenLineage translation, one run per process "
+                    "(core run model; added in P5.2)"
+                ),
+                *fitted_table(result["openlineage_per_process"]),
+            ]
     return lines
 
 
