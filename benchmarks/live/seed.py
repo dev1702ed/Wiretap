@@ -1,11 +1,15 @@
 """Reset the live benchmark data. Runs WITHOUT DCP, so set-up never appears as lineage. P5.
 
     python benchmarks/live/seed.py [--topic NAME ...]
+    python benchmarks/live/seed.py --key benchmarks/ground_truth/generated/scale_s01.json
 
 Destructive, by design: it DROPS and re-creates every table the answer keys
 use, in database `dcp` on localhost:5432, and deletes and re-creates the Kafka
 topic `enriched_orders` (plus any --topic) on localhost:9092 with exactly one
 partition. Leftover records from an earlier run would otherwise be read first.
+
+With --key (P5.1), it instead drops and re-creates a GENERATED key's own
+tables (named gen_*, with the rows the key lists) and topics (gen_*).
 
 The live harness runs this as its own process with DCP stripped from the
 environment. The password comes from DCP_PG_PASSWORD (default `dcp`).
@@ -113,13 +117,52 @@ def reset_topic(topic: str, timeout: float = 60.0) -> None:
         time.sleep(0.5)
 
 
+def key_seed_sql(key: dict) -> list[str]:
+    """A generated key's statements (P5.1): drop its tables, create, insert rows."""
+    tables = key["tables"]
+    statements = [f"DROP TABLE IF EXISTS {', '.join(tables)}"]
+    statements += [
+        f"CREATE TABLE {name} ({t['columns']})" for name, t in tables.items()
+    ]
+    for name, t in tables.items():
+        if t["rows"]:
+            values = ", ".join(
+                "(" + ", ".join(str(v) for v in row) + ")" for row in t["rows"]
+            )
+            statements.append(f"INSERT INTO {name} VALUES {values}")
+    return statements
+
+
+def seed_key(path: str, kafka: bool = True) -> str:
+    """Seed a generated key's own tables and topics. Returns a summary line."""
+    import json
+
+    import psycopg
+
+    with open(path, encoding="utf-8") as f:
+        key = json.load(f)
+    with psycopg.connect(PG_CONNINFO, password=pg_password(), autocommit=True) as conn:
+        for statement in key_seed_sql(key):
+            conn.execute(statement)
+    if kafka:
+        for topic in key["topics"]:
+            reset_topic(topic)
+    return f"seeded {len(key['tables'])} tables and {len(key['topics'])} topics of {key['workload']}"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--topic", action="append", default=[], help="another topic to reset"
     )
     parser.add_argument("--no-kafka", action="store_true", help="seed Postgres only")
+    parser.add_argument(
+        "--key", help="seed a generated key's own tables and topics (P5.1) instead"
+    )
     args = parser.parse_args(argv)
+    if args.key:
+        print(seed_key(args.key, kafka=not args.no_kafka))
+        return 0
     version = seed_postgres()
     print(f"seeded {len(TABLES)} tables; PostgreSQL {version}")
     if not args.no_kafka:

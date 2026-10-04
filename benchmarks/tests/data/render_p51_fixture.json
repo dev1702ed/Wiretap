@@ -1,0 +1,6165 @@
+{
+ "label": "fixture-p51",
+ "quick": true,
+ "environment": {
+  "timestamp_utc": "2026-01-02T00:00:00+00:00",
+  "command": "python benchmarks/run.py --label fixture-p51 --quick --only cpu,overhead (synthetic test fixture)",
+  "git_commit": "1111111111111111111111111111111111111111",
+  "git_dirty": false,
+  "python": "3.12.0",
+  "python_implementation": "CPython",
+  "os": "Synthetic-OS",
+  "cpu_model": "Synthetic CPU",
+  "cpu_count": 4,
+  "ci": false,
+  "postgres_server_version": "16.0",
+  "kafka_broker_version": null,
+  "kafka_broker_version_note": "not reported to clients by the Kafka protocol; declared: 3.8.0 (DCP_BENCH_KAFKA_VERSION)",
+  "packages": {
+   "dcp": "0.1.0.dev0",
+   "sqlglot": "30.0.0",
+   "psycopg": null
+  },
+  "dcp_configuration": {
+   "instrumentation": "dcp-instrument (sitecustomize), configured by DCP_* variables",
+   "http_emitter": "queue_size=10000, batch_size=500, max_retries=3, backoff=0.5 s",
+   "propagate_sql": "off, except the file+sqlcomment configuration"
+  },
+  "probes": {
+   "live": null,
+   "openlineage": null,
+   "uvicorn": null
+  },
+  "pins": {
+   "files": [
+    "benchmarks/requirements.txt",
+    "benchmarks/constraints.txt"
+   ],
+   "checked": 3,
+   "mismatches": [
+    {
+     "package": "uvicorn",
+     "pinned": "0.54.0",
+     "installed": "0.53.0"
+    }
+   ]
+  },
+  "finished_utc": "2026-01-02T00:10:00+00:00"
+ },
+ "stages": [
+  {
+   "stage": "replay",
+   "status": "not requested"
+  },
+  {
+   "stage": "live",
+   "status": "not requested"
+  },
+  {
+   "stage": "adversarial",
+   "status": "not requested"
+  },
+  {
+   "stage": "overhead",
+   "status": "ran",
+   "seconds": 168.4
+  },
+  {
+   "stage": "cpu",
+   "status": "ran",
+   "seconds": 67.7
+  }
+ ],
+ "overhead": {
+  "mode": {
+   "name": "quick",
+   "rounds": 5,
+   "calls": 300,
+   "warmup": 50,
+   "kafka_messages": 2000,
+   "kafka_warmup": 50,
+   "startup_reps": 10
+  },
+  "configs": [
+   "base",
+   "file",
+   "http",
+   "http-down",
+   "file+sqlcomment",
+   "wrap-only",
+   "capture-null"
+  ],
+  "kafka_configs": [
+   "base",
+   "file",
+   "http",
+   "wrap-only",
+   "capture-null"
+  ],
+  "added_in_p51": {
+   "configs": [
+    "wrap-only",
+    "capture-null"
+   ],
+   "tiers": [
+    "L1",
+    "L3",
+    "L5"
+   ]
+  },
+  "targets": {
+   "added_p99_us": 1000.0,
+   "throughput_loss_pct": 2.0
+  },
+  "postgres": {
+   "tiers": {
+    "T1": {
+     "label": "point read",
+     "latency_us": {
+      "base": {
+       "p50": 113.385,
+       "p95": 179.242,
+       "p99": 311.648,
+       "p99.9": 842.235,
+       "max": 1735.759,
+       "n": 1500
+      },
+      "file": {
+       "p50": 171.292,
+       "p95": 297.626,
+       "p99": 372.549,
+       "p99.9": 559.989,
+       "max": 634.202,
+       "n": 1500
+      },
+      "http": {
+       "p50": 201.107,
+       "p95": 408.763,
+       "p99": 1016.018,
+       "p99.9": 4838.292,
+       "max": 7320.305,
+       "n": 1500
+      },
+      "http-down": {
+       "p50": 178.647,
+       "p95": 282.434,
+       "p99": 477.72,
+       "p99.9": 881.461,
+       "max": 1125.973,
+       "n": 1500
+      },
+      "file+sqlcomment": {
+       "p50": 203.35,
+       "p95": 358.419,
+       "p99": 438.232,
+       "p99.9": 685.432,
+       "max": 937.301,
+       "n": 1500
+      },
+      "wrap-only": {
+       "p50": 115.401,
+       "p95": 188.251,
+       "p99": 328.381,
+       "p99.9": 548.763,
+       "max": 644.203,
+       "n": 1500
+      },
+      "capture-null": {
+       "p50": 160.549,
+       "p95": 244.282,
+       "p99": 400.225,
+       "p99.9": 1781.381,
+       "max": 2289.811,
+       "n": 1500
+      }
+     },
+     "throughput_per_s": {
+      "base": {
+       "p50": 7850.64,
+       "p95": 8960.08,
+       "p99": 9181.546,
+       "p99.9": 9231.376,
+       "max": 9236.912,
+       "n": 5
+      },
+      "file": {
+       "p50": 5524.038,
+       "p95": 5718.918,
+       "p99": 5724.882,
+       "p99.9": 5726.223,
+       "max": 5726.373,
+       "n": 5
+      },
+      "http": {
+       "p50": 4354.18,
+       "p95": 5372.776,
+       "p99": 5381.056,
+       "p99.9": 5382.919,
+       "max": 5383.126,
+       "n": 5
+      },
+      "http-down": {
+       "p50": 5107.69,
+       "p95": 5781.671,
+       "p99": 5895.484,
+       "p99.9": 5921.092,
+       "max": 5923.937,
+       "n": 5
+      },
+      "file+sqlcomment": {
+       "p50": 4579.519,
+       "p95": 5135.342,
+       "p99": 5200.401,
+       "p99.9": 5215.04,
+       "max": 5216.666,
+       "n": 5
+      },
+      "wrap-only": {
+       "p50": 7972.863,
+       "p95": 8572.305,
+       "p99": 8635.891,
+       "p99.9": 8650.198,
+       "max": 8651.788,
+       "n": 5
+      },
+      "capture-null": {
+       "p50": 5729.802,
+       "p95": 5949.361,
+       "p99": 5954.458,
+       "p99.9": 5955.605,
+       "max": 5955.733,
+       "n": 5
+      }
+     },
+     "versus_base": {
+      "file": {
+       "added_p50_us": {
+        "estimate": 70.682,
+        "low": 49.221,
+        "high": 105.795,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 64.227,
+        "low": -30.07,
+        "high": 147.597,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -34.36,
+        "low": -40.255,
+        "high": -28.933,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 67.522,
+        "low": 52.017,
+        "high": 88.665,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "http": {
+       "added_p50_us": {
+        "estimate": 83.963,
+        "low": 44.587,
+        "high": 123.34,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 734.884,
+        "low": 456.428,
+        "high": 1072.728,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -45.314,
+        "low": -56.459,
+        "high": -34.169,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 116.689,
+        "low": 67.549,
+        "high": 172.567,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      },
+      "http-down": {
+       "added_p50_us": {
+        "estimate": 62.459,
+        "low": 46.266,
+        "high": 74.767,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 143.375,
+        "low": -15.148,
+        "high": 301.898,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -34.904,
+        "low": -41.337,
+        "high": -29.118,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 68.396,
+        "low": 54.253,
+        "high": 82.54,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "file+sqlcomment": {
+       "added_p50_us": {
+        "estimate": 102.214,
+        "low": 73.915,
+        "high": 147.252,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 95.483,
+        "low": -52.277,
+        "high": 227.467,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -42.781,
+        "low": -52.609,
+        "high": -35.151,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 99.176,
+        "low": 71.293,
+        "high": 138.301,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "wrap-only": {
+       "added_p50_us": {
+        "estimate": -1.497,
+        "low": -12.709,
+        "high": 11.139,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 22.669,
+        "low": -74.649,
+        "high": 131.309,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -0.735,
+        "low": -9.136,
+        "high": 7.014,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 1.481,
+        "low": -8.338,
+        "high": 11.847,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "inconclusive"
+      },
+      "capture-null": {
+       "added_p50_us": {
+        "estimate": 49.622,
+        "low": 31.993,
+        "high": 73.883,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 234.883,
+        "low": 14.982,
+        "high": 507.133,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -30.097,
+        "low": -35.559,
+        "high": -24.742,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 54.917,
+        "low": 42.815,
+        "high": 70.262,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      }
+     },
+     "rounds": {
+      "base": [
+       {
+        "p50_us": 115.44,
+        "p99_us": 423.957,
+        "per_s": 7439.415
+       },
+       {
+        "p50_us": 108.425,
+        "p99_us": 417.559,
+        "per_s": 7743.343
+       },
+       {
+        "p50_us": 102.025,
+        "p99_us": 170.914,
+        "per_s": 9236.912
+       },
+       {
+        "p50_us": 117.728,
+        "p99_us": 219.669,
+        "per_s": 7852.752
+       },
+       {
+        "p50_us": 122.428,
+        "p99_us": 209.199,
+        "per_s": 7850.64
+       }
+      ],
+      "file": [
+       {
+        "p50_us": 255.452,
+        "p99_us": 409.772,
+        "per_s": 4135.545
+       },
+       {
+        "p50_us": 158.245,
+        "p99_us": 322.156,
+        "per_s": 5726.373
+       },
+       {
+        "p50_us": 160.764,
+        "p99_us": 328.133,
+        "per_s": 5689.098
+       },
+       {
+        "p50_us": 176.847,
+        "p99_us": 343.13,
+        "per_s": 5237.932
+       },
+       {
+        "p50_us": 168.149,
+        "p99_us": 359.243,
+        "per_s": 5524.038
+       }
+      ],
+      "http": [
+       {
+        "p50_us": 257.273,
+        "p99_us": 1758.317,
+        "per_s": 2828.308
+       },
+       {
+        "p50_us": 197.265,
+        "p99_us": 772.734,
+        "per_s": 4354.18
+       },
+       {
+        "p50_us": 224.121,
+        "p99_us": 1069.222,
+        "per_s": 3945.968
+       },
+       {
+        "p50_us": 153.23,
+        "p99_us": 704.882,
+        "per_s": 5331.378
+       },
+       {
+        "p50_us": 153.974,
+        "p99_us": 810.564,
+        "per_s": 5383.126
+       }
+      ],
+      "http-down": [
+       {
+        "p50_us": 179.911,
+        "p99_us": 371.721,
+        "per_s": 5066.867
+       },
+       {
+        "p50_us": 172.648,
+        "p99_us": 361.17,
+        "per_s": 5212.605
+       },
+       {
+        "p50_us": 182.862,
+        "p99_us": 312.425,
+        "per_s": 5107.69
+       },
+       {
+        "p50_us": 149.774,
+        "p99_us": 481.554,
+        "per_s": 5923.937
+       },
+       {
+        "p50_us": 193.149,
+        "p99_us": 631.305,
+        "per_s": 4656.918
+       }
+      ],
+      "file+sqlcomment": [
+       {
+        "p50_us": 203.421,
+        "p99_us": 284.999,
+        "per_s": 4810.046
+       },
+       {
+        "p50_us": 173.027,
+        "p99_us": 374.686,
+        "per_s": 5216.666
+       },
+       {
+        "p50_us": 290.818,
+        "p99_us": 465.362,
+        "per_s": 3535.326
+       },
+       {
+        "p50_us": 205.517,
+        "p99_us": 400.826,
+        "per_s": 4579.519
+       },
+       {
+        "p50_us": 204.332,
+        "p99_us": 392.839,
+        "per_s": 4512.426
+       }
+      ],
+      "wrap-only": [
+       {
+        "p50_us": 110.618,
+        "p99_us": 365.399,
+        "per_s": 7769.251
+       },
+       {
+        "p50_us": 130.206,
+        "p99_us": 297.669,
+        "per_s": 6988.995
+       },
+       {
+        "p50_us": 105.553,
+        "p99_us": 374.395,
+        "per_s": 7972.863
+       },
+       {
+        "p50_us": 110.124,
+        "p99_us": 203.324,
+        "per_s": 8254.375
+       },
+       {
+        "p50_us": 102.061,
+        "p99_us": 313.859,
+        "per_s": 8651.788
+       }
+      ],
+      "capture-null": [
+       {
+        "p50_us": 143.187,
+        "p99_us": 1148.251,
+        "per_s": 5638.976
+       },
+       {
+        "p50_us": 205.604,
+        "p99_us": 317.792,
+        "per_s": 4704.672
+       },
+       {
+        "p50_us": 150.321,
+        "p99_us": 404.934,
+        "per_s": 5923.874
+       },
+       {
+        "p50_us": 163.032,
+        "p99_us": 348.433,
+        "per_s": 5729.802
+       },
+       {
+        "p50_us": 152.011,
+        "p99_us": 396.305,
+        "per_s": 5955.733
+       }
+      ]
+     },
+     "attribution": [
+      {
+       "component": "wrapper",
+       "measured_as": "wrap-only",
+       "p50_us": {
+        "estimate": -1.497,
+        "low": -12.709,
+        "high": 11.139,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 1.481,
+        "low": -8.338,
+        "high": 11.847,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "capture + construction",
+       "measured_as": "capture-null \u2212 wrap-only",
+       "p50_us": {
+        "estimate": 51.119,
+        "low": 39.521,
+        "high": 64.774,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 53.436,
+        "low": 46.528,
+        "high": 62.084,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "async enqueue",
+       "measured_as": "http-down \u2212 capture-null",
+       "p50_us": {
+        "estimate": 12.838,
+        "low": -15.081,
+        "high": 37.653,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 13.479,
+        "low": -8.176,
+        "high": 33.526,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "synchronous file write",
+       "measured_as": "file \u2212 http-down",
+       "p50_us": {
+        "estimate": 8.223,
+        "low": -21.72,
+        "high": 46.32,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": -0.875,
+        "low": -24.929,
+        "high": 27.087,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "SQL comment",
+       "measured_as": "file+sqlcomment \u2212 file",
+       "p50_us": {
+        "estimate": 31.531,
+        "low": -18.248,
+        "high": 88.225,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 31.654,
+        "low": -6.738,
+        "high": 75.78,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      }
+     ]
+    },
+    "T2": {
+     "label": "join",
+     "latency_us": {
+      "base": {
+       "p50": 130.116,
+       "p95": 196.499,
+       "p99": 289.312,
+       "p99.9": 851.683,
+       "max": 1736.126,
+       "n": 1500
+      },
+      "file": {
+       "p50": 221.174,
+       "p95": 392.576,
+       "p99": 576.884,
+       "p99.9": 3072.123,
+       "max": 4644.355,
+       "n": 1500
+      },
+      "http": {
+       "p50": 199.368,
+       "p95": 391.604,
+       "p99": 663.712,
+       "p99.9": 2087.644,
+       "max": 2531.901,
+       "n": 1500
+      },
+      "http-down": {
+       "p50": 201.452,
+       "p95": 297.093,
+       "p99": 361.779,
+       "p99.9": 567.746,
+       "max": 699.462,
+       "n": 1500
+      },
+      "file+sqlcomment": {
+       "p50": 239.254,
+       "p95": 419.327,
+       "p99": 500.637,
+       "p99.9": 589.319,
+       "max": 617.491,
+       "n": 1500
+      },
+      "wrap-only": {
+       "p50": 120.809,
+       "p95": 203.229,
+       "p99": 321.137,
+       "p99.9": 2302.829,
+       "max": 2317.43,
+       "n": 1500
+      },
+      "capture-null": {
+       "p50": 168.249,
+       "p95": 271.226,
+       "p99": 405.372,
+       "p99.9": 994.977,
+       "max": 2552.977,
+       "n": 1500
+      }
+     },
+     "throughput_per_s": {
+      "base": {
+       "p50": 7250.045,
+       "p95": 8204.098,
+       "p99": 8366.73,
+       "p99.9": 8403.322,
+       "max": 8407.387,
+       "n": 5
+      },
+      "file": {
+       "p50": 3646.573,
+       "p95": 4900.977,
+       "p99": 4946.047,
+       "p99.9": 4956.187,
+       "max": 4957.314,
+       "n": 5
+      },
+      "http": {
+       "p50": 4754.316,
+       "p95": 4877.716,
+       "p99": 4880.444,
+       "p99.9": 4881.058,
+       "max": 4881.127,
+       "n": 5
+      },
+      "http-down": {
+       "p50": 4897.55,
+       "p95": 5331.604,
+       "p99": 5361.693,
+       "p99.9": 5368.463,
+       "max": 5369.215,
+       "n": 5
+      },
+      "file+sqlcomment": {
+       "p50": 4112.922,
+       "p95": 4304.835,
+       "p99": 4329.737,
+       "p99.9": 4335.34,
+       "max": 4335.963,
+       "n": 5
+      },
+      "wrap-only": {
+       "p50": 7456.621,
+       "p95": 7499.306,
+       "p99": 7505.427,
+       "p99.9": 7506.804,
+       "max": 7506.957,
+       "n": 5
+      },
+      "capture-null": {
+       "p50": 5491.956,
+       "p95": 5769.064,
+       "p99": 5786.521,
+       "p99.9": 5790.448,
+       "max": 5790.885,
+       "n": 5
+      }
+     },
+     "versus_base": {
+      "file": {
+       "added_p50_us": {
+        "estimate": 97.167,
+        "low": 68.987,
+        "high": 131.188,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 219.753,
+        "low": 44.383,
+        "high": 370.872,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -43.79,
+        "low": -49.008,
+        "high": -38.825,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 112.754,
+        "low": 87.149,
+        "high": 138.359,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "http": {
+       "added_p50_us": {
+        "estimate": 82.064,
+        "low": 53.628,
+        "high": 114.897,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 262.549,
+        "low": 26.24,
+        "high": 470.471,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -39.718,
+        "low": -45.17,
+        "high": -35.027,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 95.974,
+        "low": 74.119,
+        "high": 126.808,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "http-down": {
+       "added_p50_us": {
+        "estimate": 72.194,
+        "low": 46.923,
+        "high": 103.707,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": -6.72,
+        "low": -249.593,
+        "high": 149.705,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -32.901,
+        "low": -43.637,
+        "high": -23.654,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 72.966,
+        "low": 46.251,
+        "high": 103.993,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "file+sqlcomment": {
+       "added_p50_us": {
+        "estimate": 124.866,
+        "low": 86.298,
+        "high": 164.295,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 86.936,
+        "low": -174.826,
+        "high": 260.929,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -46.22,
+        "low": -54.494,
+        "high": -37.946,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 126.304,
+        "low": 90.503,
+        "high": 163.297,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "wrap-only": {
+       "added_p50_us": {
+        "estimate": -10.778,
+        "low": -25.712,
+        "high": 5.185,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 296.371,
+        "low": -11.369,
+        "high": 904.504,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": 0.491,
+        "low": -6.988,
+        "high": 8.657,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": -0.35,
+        "low": -11.59,
+        "high": 9.663,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "inconclusive"
+      },
+      "capture-null": {
+       "added_p50_us": {
+        "estimate": 36.471,
+        "low": 23.486,
+        "high": 50.619,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 15.247,
+        "low": -246.455,
+        "high": 174.801,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -23.402,
+        "low": -32.394,
+        "high": -14.411,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 44.212,
+        "low": 25.649,
+        "high": 62.775,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      }
+     },
+     "rounds": {
+      "base": [
+       {
+        "p50_us": 149.294,
+        "p99_us": 253.426,
+        "per_s": 6410.108
+       },
+       {
+        "p50_us": 127.689,
+        "p99_us": 229.172,
+        "per_s": 7390.942
+       },
+       {
+        "p50_us": 108.254,
+        "p99_us": 250.544,
+        "per_s": 8407.387
+       },
+       {
+        "p50_us": 139.234,
+        "p99_us": 768.63,
+        "per_s": 6412.942
+       },
+       {
+        "p50_us": 128.475,
+        "p99_us": 295.938,
+        "per_s": 7250.045
+       }
+      ],
+      "file": [
+       {
+        "p50_us": 269.194,
+        "p99_us": 588.843,
+        "per_s": 3429.247
+       },
+       {
+        "p50_us": 281.336,
+        "p99_us": 526.191,
+        "per_s": 3491.075
+       },
+       {
+        "p50_us": 187.897,
+        "p99_us": 341.906,
+        "per_s": 4957.314
+       },
+       {
+        "p50_us": 214.333,
+        "p99_us": 700.342,
+        "per_s": 3646.573
+       },
+       {
+        "p50_us": 186.022,
+        "p99_us": 739.191,
+        "per_s": 4675.627
+       }
+      ],
+      "http": [
+       {
+        "p50_us": 289.521,
+        "p99_us": 589.566,
+        "per_s": 3227.044
+       },
+       {
+        "p50_us": 182.998,
+        "p99_us": 835.65,
+        "per_s": 4754.316
+       },
+       {
+        "p50_us": 183.309,
+        "p99_us": 473.677,
+        "per_s": 4864.071
+       },
+       {
+        "p50_us": 237.732,
+        "p99_us": 605.837,
+        "per_s": 3947.797
+       },
+       {
+        "p50_us": 169.707,
+        "p99_us": 605.726,
+        "per_s": 4881.127
+       }
+      ],
+      "http-down": [
+       {
+        "p50_us": 204.417,
+        "p99_us": 353.654,
+        "per_s": 4573.731
+       },
+       {
+        "p50_us": 252.023,
+        "p99_us": 434.647,
+        "per_s": 3747.215
+       },
+       {
+        "p50_us": 200.018,
+        "p99_us": 333.671,
+        "per_s": 4897.55
+       },
+       {
+        "p50_us": 175.216,
+        "p99_us": 297.222,
+        "per_s": 5369.215
+       },
+       {
+        "p50_us": 182.239,
+        "p99_us": 344.914,
+        "per_s": 5181.159
+       }
+      ],
+      "file+sqlcomment": [
+       {
+        "p50_us": 212.168,
+        "p99_us": 511.95,
+        "per_s": 4112.922
+       },
+       {
+        "p50_us": 316.786,
+        "p99_us": 532.103,
+        "per_s": 3074.397
+       },
+       {
+        "p50_us": 226.428,
+        "p99_us": 354.565,
+        "per_s": 4335.963
+       },
+       {
+        "p50_us": 233.019,
+        "p99_us": 356.098,
+        "per_s": 4180.324
+       },
+       {
+        "p50_us": 288.875,
+        "p99_us": 477.671,
+        "per_s": 3362.646
+       }
+      ],
+      "wrap-only": [
+       {
+        "p50_us": 117.39,
+        "p99_us": 240.983,
+        "per_s": 7456.621
+       },
+       {
+        "p50_us": 132.292,
+        "p99_us": 232.247,
+        "per_s": 7297.783
+       },
+       {
+        "p50_us": 124.356,
+        "p99_us": 238.017,
+        "per_s": 7468.701
+       },
+       {
+        "p50_us": 112.251,
+        "p99_us": 2279.287,
+        "per_s": 6092.916
+       },
+       {
+        "p50_us": 112.766,
+        "p99_us": 289.032,
+        "per_s": 7506.957
+       }
+      ],
+      "capture-null": [
+       {
+        "p50_us": 167.906,
+        "p99_us": 434.38,
+        "per_s": 5463.72
+       },
+       {
+        "p50_us": 164.202,
+        "p99_us": 342.284,
+        "per_s": 5681.783
+       },
+       {
+        "p50_us": 168.276,
+        "p99_us": 331.177,
+        "per_s": 5491.956
+       },
+       {
+        "p50_us": 161.079,
+        "p99_us": 270.674,
+        "per_s": 5790.885
+       },
+       {
+        "p50_us": 173.834,
+        "p99_us": 495.429,
+        "per_s": 4730.92
+       }
+      ]
+     },
+     "attribution": [
+      {
+       "component": "wrapper",
+       "measured_as": "wrap-only",
+       "p50_us": {
+        "estimate": -10.778,
+        "low": -25.712,
+        "high": 5.185,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": -0.35,
+        "low": -11.59,
+        "high": 9.663,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "capture + construction",
+       "measured_as": "capture-null \u2212 wrap-only",
+       "p50_us": {
+        "estimate": 47.249,
+        "low": 38.677,
+        "high": 55.529,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 44.562,
+        "low": 24.413,
+        "high": 64.332,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "async enqueue",
+       "measured_as": "http-down \u2212 capture-null",
+       "p50_us": {
+        "estimate": 35.723,
+        "low": 15.365,
+        "high": 62.822,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 28.754,
+        "low": 0.522,
+        "high": 63.358,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "synchronous file write",
+       "measured_as": "file \u2212 http-down",
+       "p50_us": {
+        "estimate": 24.973,
+        "low": 1.307,
+        "high": 47.446,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 39.788,
+        "low": 11.021,
+        "high": 71.3,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "SQL comment",
+       "measured_as": "file+sqlcomment \u2212 file",
+       "p50_us": {
+        "estimate": 27.699,
+        "low": -20.036,
+        "high": 72.539,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 13.55,
+        "low": -28.322,
+        "high": 54.714,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      }
+     ]
+    },
+    "T3": {
+     "label": "insert values",
+     "latency_us": {
+      "base": {
+       "p50": 336.447,
+       "p95": 564.227,
+       "p99": 1821.833,
+       "p99.9": 3782.218,
+       "max": 4267.897,
+       "n": 1500
+      },
+      "file": {
+       "p50": 480.174,
+       "p95": 725.091,
+       "p99": 1127.933,
+       "p99.9": 4212.725,
+       "max": 4997.457,
+       "n": 1500
+      },
+      "http": {
+       "p50": 460.291,
+       "p95": 787.67,
+       "p99": 1080.471,
+       "p99.9": 1988.754,
+       "max": 2183.304,
+       "n": 1500
+      },
+      "http-down": {
+       "p50": 486.872,
+       "p95": 722.256,
+       "p99": 864.508,
+       "p99.9": 2072.629,
+       "max": 3031.217,
+       "n": 1500
+      },
+      "file+sqlcomment": {
+       "p50": 532.215,
+       "p95": 752.387,
+       "p99": 931.748,
+       "p99.9": 3307.223,
+       "max": 7314.585,
+       "n": 1500
+      },
+      "wrap-only": {
+       "p50": 377.917,
+       "p95": 563.174,
+       "p99": 812.047,
+       "p99.9": 3027.647,
+       "max": 3145.035,
+       "n": 1500
+      },
+      "capture-null": {
+       "p50": 443.929,
+       "p95": 675.818,
+       "p99": 1059.159,
+       "p99.9": 2843.316,
+       "max": 3069.469,
+       "n": 1500
+      }
+     },
+     "throughput_per_s": {
+      "base": {
+       "p50": 2821.827,
+       "p95": 3209.301,
+       "p99": 3256.338,
+       "p99.9": 3266.922,
+       "max": 3268.098,
+       "n": 5
+      },
+      "file": {
+       "p50": 1958.069,
+       "p95": 2218.249,
+       "p99": 2227.013,
+       "p99.9": 2228.984,
+       "max": 2229.203,
+       "n": 5
+      },
+      "http": {
+       "p50": 1974.774,
+       "p95": 2154.261,
+       "p99": 2165.91,
+       "p99.9": 2168.531,
+       "max": 2168.822,
+       "n": 5
+      },
+      "http-down": {
+       "p50": 2083.395,
+       "p95": 2329.763,
+       "p99": 2338.333,
+       "p99.9": 2340.262,
+       "max": 2340.476,
+       "n": 5
+      },
+      "file+sqlcomment": {
+       "p50": 1709.844,
+       "p95": 2144.24,
+       "p99": 2193.052,
+       "p99.9": 2204.035,
+       "max": 2205.256,
+       "n": 5
+      },
+      "wrap-only": {
+       "p50": 2396.529,
+       "p95": 2642.986,
+       "p99": 2660.594,
+       "p99.9": 2664.555,
+       "max": 2664.995,
+       "n": 5
+      },
+      "capture-null": {
+       "p50": 2141.802,
+       "p95": 2274.622,
+       "p99": 2284.838,
+       "p99.9": 2287.137,
+       "max": 2287.392,
+       "n": 5
+      }
+     },
+     "versus_base": {
+      "file": {
+       "added_p50_us": {
+        "estimate": 134.27,
+        "low": 65.117,
+        "high": 191.157,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": -85.709,
+        "low": -344.148,
+        "high": 147.124,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -24.17,
+        "low": -33.259,
+        "high": -14.516,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 122.017,
+        "low": 71.007,
+        "high": 163.769,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "http": {
+       "added_p50_us": {
+        "estimate": 120.58,
+        "low": 94.334,
+        "high": 145.989,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": -171.085,
+        "low": -1071.43,
+        "high": 444.765,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -22.536,
+        "low": -31.96,
+        "high": -8.636,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 111.031,
+        "low": 43.256,
+        "high": 155.4,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "http-down": {
+       "added_p50_us": {
+        "estimate": 140.117,
+        "low": 54.176,
+        "high": 213.888,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": -348.27,
+        "low": -1197.911,
+        "high": 191.839,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -22.399,
+        "low": -34.052,
+        "high": -10.745,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 114.975,
+        "low": 54.496,
+        "high": 185.851,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "file+sqlcomment": {
+       "added_p50_us": {
+        "estimate": 197.221,
+        "low": 101.19,
+        "high": 279.161,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": -313.792,
+        "low": -1276.715,
+        "high": 310.682,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -27.868,
+        "low": -45.128,
+        "high": -4.071,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 168.47,
+        "low": 34.175,
+        "high": 269.142,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "wrap-only": {
+       "added_p50_us": {
+        "estimate": 42.276,
+        "low": 0.396,
+        "high": 84.156,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": -61.044,
+        "low": -1306.52,
+        "high": 1224.097,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -4.853,
+        "low": -18.706,
+        "high": 16.339,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 21.052,
+        "low": -62.705,
+        "high": 76.918,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "inconclusive"
+      },
+      "capture-null": {
+       "added_p50_us": {
+        "estimate": 109.594,
+        "low": 42.066,
+        "high": 187.37,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 23.886,
+        "low": -1094.744,
+        "high": 1109.645,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -18.079,
+        "low": -34.869,
+        "high": -1.026,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 92.539,
+        "low": 2.689,
+        "high": 193.504,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "inconclusive"
+      }
+     },
+     "rounds": {
+      "base": [
+       {
+        "p50_us": 397.525,
+        "p99_us": 2870.873,
+        "per_s": 1894.485
+       },
+       {
+        "p50_us": 280.747,
+        "p99_us": 575.561,
+        "per_s": 3268.098
+       },
+       {
+        "p50_us": 291.651,
+        "p99_us": 1223.943,
+        "per_s": 2974.113
+       },
+       {
+        "p50_us": 329.995,
+        "p99_us": 605.561,
+        "per_s": 2821.827
+       },
+       {
+        "p50_us": 398.132,
+        "p99_us": 770.055,
+        "per_s": 2432.541
+       }
+      ],
+      "file": [
+       {
+        "p50_us": 530.192,
+        "p99_us": 2512.889,
+        "per_s": 1628.503
+       },
+       {
+        "p50_us": 434.274,
+        "p99_us": 767.963,
+        "per_s": 2174.432
+       },
+       {
+        "p50_us": 512.594,
+        "p99_us": 729.809,
+        "per_s": 1951.679
+       },
+       {
+        "p50_us": 490.28,
+        "p99_us": 717.088,
+        "per_s": 1958.069
+       },
+       {
+        "p50_us": 402.058,
+        "p99_us": 889.7,
+        "per_s": 2229.203
+       }
+      ],
+      "http": [
+       {
+        "p50_us": 474.877,
+        "p99_us": 991.047,
+        "per_s": 1974.774
+       },
+       {
+        "p50_us": 413.128,
+        "p99_us": 1054.609,
+        "per_s": 2168.822
+       },
+       {
+        "p50_us": 445.208,
+        "p99_us": 1004.918,
+        "per_s": 2096.016
+       },
+       {
+        "p50_us": 475.221,
+        "p99_us": 1106.911,
+        "per_s": 1932.894
+       },
+       {
+        "p50_us": 492.517,
+        "p99_us": 1033.085,
+        "per_s": 1891.154
+       }
+      ],
+      "http-down": [
+       {
+        "p50_us": 588.404,
+        "p99_us": 865.963,
+        "per_s": 1660.569
+       },
+       {
+        "p50_us": 465.238,
+        "p99_us": 862.932,
+        "per_s": 2083.395
+       },
+       {
+        "p50_us": 543.246,
+        "p99_us": 961.744,
+        "per_s": 1774.015
+       },
+       {
+        "p50_us": 400.42,
+        "p99_us": 751.623,
+        "per_s": 2340.476
+       },
+       {
+        "p50_us": 401.325,
+        "p99_us": 862.383,
+        "per_s": 2286.908
+       }
+      ],
+      "file+sqlcomment": [
+       {
+        "p50_us": 433.415,
+        "p99_us": 688.18,
+        "per_s": 2205.256
+       },
+       {
+        "p50_us": 575.715,
+        "p99_us": 975.23,
+        "per_s": 1709.844
+       },
+       {
+        "p50_us": 548.613,
+        "p99_us": 988.775,
+        "per_s": 1662.442
+       },
+       {
+        "p50_us": 604.448,
+        "p99_us": 910.404,
+        "per_s": 1634.542
+       },
+       {
+        "p50_us": 521.961,
+        "p99_us": 914.443,
+        "per_s": 1900.177
+       }
+      ],
+      "wrap-only": [
+       {
+        "p50_us": 373.49,
+        "p99_us": 658.229,
+        "per_s": 2554.95
+       },
+       {
+        "p50_us": 359.66,
+        "p99_us": 686.424,
+        "per_s": 2664.995
+       },
+       {
+        "p50_us": 400.269,
+        "p99_us": 834.979,
+        "per_s": 2396.529
+       },
+       {
+        "p50_us": 375.712,
+        "p99_us": 2738.423,
+        "per_s": 2320.097
+       },
+       {
+        "p50_us": 400.299,
+        "p99_us": 822.719,
+        "per_s": 2348.043
+       }
+      ],
+      "capture-null": [
+       {
+        "p50_us": 434.962,
+        "p99_us": 953.389,
+        "per_s": 2141.802
+       },
+       {
+        "p50_us": 538.205,
+        "p99_us": 2420.845,
+        "per_s": 1737.311
+       },
+       {
+        "p50_us": 418.69,
+        "p99_us": 677.691,
+        "per_s": 2287.392
+       },
+       {
+        "p50_us": 440.747,
+        "p99_us": 784.817,
+        "per_s": 2223.539
+       },
+       {
+        "p50_us": 413.417,
+        "p99_us": 1328.68,
+        "per_s": 2132.973
+       }
+      ]
+     },
+     "attribution": [
+      {
+       "component": "wrapper",
+       "measured_as": "wrap-only",
+       "p50_us": {
+        "estimate": 42.276,
+        "low": 0.396,
+        "high": 84.156,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 21.052,
+        "low": -62.705,
+        "high": 76.918,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "capture + construction",
+       "measured_as": "capture-null \u2212 wrap-only",
+       "p50_us": {
+        "estimate": 67.318,
+        "low": 24.562,
+        "high": 123.818,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 71.487,
+        "low": 24.039,
+        "high": 139.064,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "async enqueue",
+       "measured_as": "http-down \u2212 capture-null",
+       "p50_us": {
+        "estimate": 30.523,
+        "low": -47.736,
+        "high": 108.912,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 22.435,
+        "low": -55.364,
+        "high": 100.234,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "synchronous file write",
+       "measured_as": "file \u2212 http-down",
+       "p50_us": {
+        "estimate": -5.847,
+        "low": -41.801,
+        "high": 42.42,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 7.042,
+        "low": -32.436,
+        "high": 48.419,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "SQL comment",
+       "measured_as": "file+sqlcomment \u2212 file",
+       "p50_us": {
+        "estimate": 62.951,
+        "low": -22.574,
+        "high": 127.371,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 46.453,
+        "low": -58.313,
+        "high": 110.634,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      }
+     ]
+    },
+    "T4": {
+     "label": "insert-select",
+     "latency_us": {
+      "base": {
+       "p50": 352.709,
+       "p95": 533.462,
+       "p99": 652.09,
+       "p99.9": 2035.293,
+       "max": 2500.973,
+       "n": 1500
+      },
+      "file": {
+       "p50": 514.946,
+       "p95": 781.526,
+       "p99": 1043.623,
+       "p99.9": 2260.246,
+       "max": 2455.809,
+       "n": 1500
+      },
+      "http": {
+       "p50": 454.817,
+       "p95": 819.506,
+       "p99": 1233.659,
+       "p99.9": 2238.538,
+       "max": 3218.882,
+       "n": 1500
+      },
+      "http-down": {
+       "p50": 478.503,
+       "p95": 707.022,
+       "p99": 857.696,
+       "p99.9": 1439.416,
+       "max": 1876.152,
+       "n": 1500
+      },
+      "file+sqlcomment": {
+       "p50": 547.069,
+       "p95": 777.831,
+       "p99": 1014.401,
+       "p99.9": 2931.621,
+       "max": 4017.185,
+       "n": 1500
+      },
+      "wrap-only": {
+       "p50": 362.809,
+       "p95": 531.172,
+       "p99": 715.689,
+       "p99.9": 1320.027,
+       "max": 1612.252,
+       "n": 1500
+      },
+      "capture-null": {
+       "p50": 448.33,
+       "p95": 658.501,
+       "p99": 854.137,
+       "p99.9": 1864.035,
+       "max": 2497.924,
+       "n": 1500
+      }
+     },
+     "throughput_per_s": {
+      "base": {
+       "p50": 2825.299,
+       "p95": 3012.574,
+       "p99": 3035.453,
+       "p99.9": 3040.601,
+       "max": 3041.173,
+       "n": 5
+      },
+      "file": {
+       "p50": 1797.879,
+       "p95": 2126.695,
+       "p99": 2155.312,
+       "p99.9": 2161.751,
+       "max": 2162.467,
+       "n": 5
+      },
+      "http": {
+       "p50": 2061.071,
+       "p95": 2170.514,
+       "p99": 2172.528,
+       "p99.9": 2172.981,
+       "max": 2173.031,
+       "n": 5
+      },
+      "http-down": {
+       "p50": 2027.42,
+       "p95": 2105.706,
+       "p99": 2118.467,
+       "p99.9": 2121.338,
+       "max": 2121.657,
+       "n": 5
+      },
+      "file+sqlcomment": {
+       "p50": 1755.536,
+       "p95": 1984.796,
+       "p99": 2005.428,
+       "p99.9": 2010.07,
+       "max": 2010.586,
+       "n": 5
+      },
+      "wrap-only": {
+       "p50": 2658.809,
+       "p95": 2952.6,
+       "p99": 3009.43,
+       "p99.9": 3022.216,
+       "max": 3023.637,
+       "n": 5
+      },
+      "capture-null": {
+       "p50": 2092.431,
+       "p95": 2254.649,
+       "p99": 2282.407,
+       "p99.9": 2288.653,
+       "max": 2289.347,
+       "n": 5
+      }
+     },
+     "versus_base": {
+      "file": {
+       "added_p50_us": {
+        "estimate": 169.806,
+        "low": 138.556,
+        "high": 198.353,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 409.832,
+        "low": 179.39,
+        "high": 725.318,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -31.157,
+        "low": -36.239,
+        "high": -25.8,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 170.269,
+        "low": 135.196,
+        "high": 205.343,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "http": {
+       "added_p50_us": {
+        "estimate": 102.434,
+        "low": 83.051,
+        "high": 130.497,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 559.326,
+        "low": 407.527,
+        "high": 682.02,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -25.678,
+        "low": -29.045,
+        "high": -23.151,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 128.481,
+        "low": 113.88,
+        "high": 143.953,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "http-down": {
+       "added_p50_us": {
+        "estimate": 126.922,
+        "low": 93.128,
+        "high": 159.116,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 212.351,
+        "low": 152.218,
+        "high": 262.679,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -24.233,
+        "low": -30.358,
+        "high": -17.135,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 118.864,
+        "low": 84.409,
+        "high": 150.407,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "file+sqlcomment": {
+       "added_p50_us": {
+        "estimate": 184.09,
+        "low": 89.52,
+        "high": 274.941,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 378.832,
+        "low": 293.152,
+        "high": 468.347,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -33.057,
+        "low": -43.955,
+        "high": -19.175,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 195.951,
+        "low": 105.098,
+        "high": 279.928,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "wrap-only": {
+       "added_p50_us": {
+        "estimate": 6.056,
+        "low": -49.121,
+        "high": 61.233,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 75.553,
+        "low": -31.69,
+        "high": 201.445,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -0.77,
+        "low": -12.806,
+        "high": 11.29,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 5.545,
+        "low": -41.766,
+        "high": 54.701,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "inconclusive"
+      },
+      "capture-null": {
+       "added_p50_us": {
+        "estimate": 90.629,
+        "low": 46.307,
+        "high": 139.233,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 202.113,
+        "low": 70.491,
+        "high": 360.885,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -20.726,
+        "low": -28.145,
+        "high": -12.278,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 97.976,
+        "low": 57.107,
+        "high": 133.649,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      }
+     },
+     "rounds": {
+      "base": [
+       {
+        "p50_us": 358.866,
+        "p99_us": 669.39,
+        "per_s": 2611.091
+       },
+       {
+        "p50_us": 341.447,
+        "p99_us": 513.34,
+        "per_s": 2898.177
+       },
+       {
+        "p50_us": 336.497,
+        "p99_us": 551.552,
+        "per_s": 2825.299
+       },
+       {
+        "p50_us": 297.478,
+        "p99_us": 731.962,
+        "per_s": 3041.173
+       },
+       {
+        "p50_us": 441.515,
+        "p99_us": 649.167,
+        "per_s": 2173.345
+       }
+      ],
+      "file": [
+       {
+        "p50_us": 563.752,
+        "p99_us": 1122.684,
+        "per_s": 1649.027
+       },
+       {
+        "p50_us": 456.25,
+        "p99_us": 636.267,
+        "per_s": 2162.467
+       },
+       {
+        "p50_us": 517.465,
+        "p99_us": 1568.343,
+        "per_s": 1797.879
+       },
+       {
+        "p50_us": 497.99,
+        "p99_us": 993.17,
+        "per_s": 1983.609
+       },
+       {
+        "p50_us": 589.376,
+        "p99_us": 844.111,
+        "per_s": 1686.161
+       }
+      ],
+      "http": [
+       {
+        "p50_us": 452.396,
+        "p99_us": 1225.339,
+        "per_s": 1952.712
+       },
+       {
+        "p50_us": 420.416,
+        "p99_us": 1269.618,
+        "per_s": 2160.446
+       },
+       {
+        "p50_us": 418.391,
+        "p99_us": 1161.636,
+        "per_s": 2173.031
+       },
+       {
+        "p50_us": 453.884,
+        "p99_us": 1020.96,
+        "per_s": 2061.071
+       },
+       {
+        "p50_us": 542.888,
+        "p99_us": 1234.487,
+        "per_s": 1686.428
+       }
+      ],
+      "http-down": [
+       {
+        "p50_us": 471.088,
+        "p99_us": 872.9,
+        "per_s": 2027.42
+       },
+       {
+        "p50_us": 477.758,
+        "p99_us": 794.06,
+        "per_s": 2121.657
+       },
+       {
+        "p50_us": 477.201,
+        "p99_us": 819.278,
+        "per_s": 2041.9
+       },
+       {
+        "p50_us": 478.362,
+        "p99_us": 828.581,
+        "per_s": 2010.121
+       },
+       {
+        "p50_us": 506.003,
+        "p99_us": 862.345,
+        "per_s": 1947.642
+       }
+      ],
+      "file+sqlcomment": [
+       {
+        "p50_us": 534.903,
+        "p99_us": 1072.624,
+        "per_s": 1755.536
+       },
+       {
+        "p50_us": 546.718,
+        "p99_us": 1042.977,
+        "per_s": 1720.331
+       },
+       {
+        "p50_us": 512.929,
+        "p99_us": 901.143,
+        "per_s": 1881.636
+       },
+       {
+        "p50_us": 638.091,
+        "p99_us": 1118.249,
+        "per_s": 1490.452
+       },
+       {
+        "p50_us": 463.613,
+        "p99_us": 874.58,
+        "per_s": 2010.586
+       }
+      ],
+      "wrap-only": [
+       {
+        "p50_us": 355.759,
+        "p99_us": 594.574,
+        "per_s": 2668.452
+       },
+       {
+        "p50_us": 314.182,
+        "p99_us": 558.963,
+        "per_s": 3023.637
+       },
+       {
+        "p50_us": 416.148,
+        "p99_us": 851.687,
+        "per_s": 2321.747
+       },
+       {
+        "p50_us": 372.462,
+        "p99_us": 704.741,
+        "per_s": 2588.366
+       },
+       {
+        "p50_us": 347.533,
+        "p99_us": 783.21,
+        "per_s": 2658.809
+       }
+      ],
+      "capture-null": [
+       {
+        "p50_us": 449.97,
+        "p99_us": 755.17,
+        "per_s": 2115.86
+       },
+       {
+        "p50_us": 408.289,
+        "p99_us": 1020.928,
+        "per_s": 2289.347
+       },
+       {
+        "p50_us": 441.374,
+        "p99_us": 807.885,
+        "per_s": 2092.431
+       },
+       {
+        "p50_us": 472.293,
+        "p99_us": 751.995,
+        "per_s": 2040.546
+       },
+       {
+        "p50_us": 457.021,
+        "p99_us": 789.998,
+        "per_s": 2068.728
+       }
+      ]
+     },
+     "attribution": [
+      {
+       "component": "wrapper",
+       "measured_as": "wrap-only",
+       "p50_us": {
+        "estimate": 6.056,
+        "low": -49.121,
+        "high": 61.233,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 5.545,
+        "low": -41.766,
+        "high": 54.701,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "capture + construction",
+       "measured_as": "capture-null \u2212 wrap-only",
+       "p50_us": {
+        "estimate": 84.573,
+        "low": 53.923,
+        "high": 103.378,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 92.431,
+        "low": 69.352,
+        "high": 106.088,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "async enqueue",
+       "measured_as": "http-down \u2212 capture-null",
+       "p50_us": {
+        "estimate": 36.293,
+        "low": 17.662,
+        "high": 55.701,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 20.888,
+        "low": 11.821,
+        "high": 29.954,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "synchronous file write",
+       "measured_as": "file \u2212 http-down",
+       "p50_us": {
+        "estimate": 42.884,
+        "low": 7.301,
+        "high": 78.467,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 51.405,
+        "low": 11.917,
+        "high": 90.415,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "SQL comment",
+       "measured_as": "file+sqlcomment \u2212 file",
+       "p50_us": {
+        "estimate": 14.284,
+        "low": -63.134,
+        "high": 96.385,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 25.682,
+        "low": -57.947,
+        "high": 116.495,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      }
+     ]
+    },
+    "T5": {
+     "label": "analytical",
+     "latency_us": {
+      "base": {
+       "p50": 183.839,
+       "p95": 288.835,
+       "p99": 360.891,
+       "p99.9": 753.276,
+       "max": 889.924,
+       "n": 1500
+      },
+      "file": {
+       "p50": 279.938,
+       "p95": 492.556,
+       "p99": 652.63,
+       "p99.9": 1738.728,
+       "max": 3538.055,
+       "n": 1500
+      },
+      "http": {
+       "p50": 263.721,
+       "p95": 488.009,
+       "p99": 1062.07,
+       "p99.9": 2415.235,
+       "max": 2630.516,
+       "n": 1500
+      },
+      "http-down": {
+       "p50": 253.706,
+       "p95": 372.531,
+       "p99": 511.022,
+       "p99.9": 647.473,
+       "max": 698.6,
+       "n": 1500
+      },
+      "file+sqlcomment": {
+       "p50": 310.548,
+       "p95": 523.094,
+       "p99": 674.767,
+       "p99.9": 2560.462,
+       "max": 2972.228,
+       "n": 1500
+      },
+      "wrap-only": {
+       "p50": 182.136,
+       "p95": 298.982,
+       "p99": 446.977,
+       "p99.9": 1719.638,
+       "max": 3420.564,
+       "n": 1500
+      },
+      "capture-null": {
+       "p50": 284.262,
+       "p95": 407.974,
+       "p99": 492.831,
+       "p99.9": 761.862,
+       "max": 1033.037,
+       "n": 1500
+      }
+     },
+     "throughput_per_s": {
+      "base": {
+       "p50": 5231.499,
+       "p95": 5671.117,
+       "p99": 5730.522,
+       "p99.9": 5743.888,
+       "max": 5745.373,
+       "n": 5
+      },
+      "file": {
+       "p50": 3250.794,
+       "p95": 3488.028,
+       "p99": 3526.347,
+       "p99.9": 3534.968,
+       "max": 3535.926,
+       "n": 5
+      },
+      "http": {
+       "p50": 3457.407,
+       "p95": 3763.423,
+       "p99": 3766.035,
+       "p99.9": 3766.623,
+       "max": 3766.688,
+       "n": 5
+      },
+      "http-down": {
+       "p50": 3822.834,
+       "p95": 4018.375,
+       "p99": 4049.083,
+       "p99.9": 4055.993,
+       "max": 4056.761,
+       "n": 5
+      },
+      "file+sqlcomment": {
+       "p50": 2850.654,
+       "p95": 3270.846,
+       "p99": 3281.182,
+       "p99.9": 3283.507,
+       "max": 3283.766,
+       "n": 5
+      },
+      "wrap-only": {
+       "p50": 4659.9,
+       "p95": 5545.725,
+       "p99": 5592.782,
+       "p99.9": 5603.37,
+       "max": 5604.546,
+       "n": 5
+      },
+      "capture-null": {
+       "p50": 3488.506,
+       "p95": 4012.307,
+       "p99": 4068.361,
+       "p99.9": 4080.973,
+       "max": 4082.375,
+       "n": 5
+      }
+     },
+     "versus_base": {
+      "file": {
+       "added_p50_us": {
+        "estimate": 97.752,
+        "low": 79.703,
+        "high": 115.856,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 272.927,
+        "low": 157.944,
+        "high": 429.903,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -36.183,
+        "low": -40.581,
+        "high": -31.813,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 112.327,
+        "low": 99.349,
+        "high": 125.304,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "http": {
+       "added_p50_us": {
+        "estimate": 83.67,
+        "low": 43.83,
+        "high": 123.51,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 646.371,
+        "low": 526.417,
+        "high": 730.73,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -33.448,
+        "low": -42.862,
+        "high": -23.108,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 104.662,
+        "low": 65.317,
+        "high": 146.194,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "http-down": {
+       "added_p50_us": {
+        "estimate": 64.883,
+        "low": 30.834,
+        "high": 101.55,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 119.894,
+        "low": 28.71,
+        "high": 193.87,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -25.01,
+        "low": -35.583,
+        "high": -14.325,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 68.379,
+        "low": 38.583,
+        "high": 104.201,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "file+sqlcomment": {
+       "added_p50_us": {
+        "estimate": 128.531,
+        "low": 114.402,
+        "high": 140.016,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 273.582,
+        "low": 126.122,
+        "high": 409.489,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -41.885,
+        "low": -46.824,
+        "high": -38.036,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 143.843,
+        "low": 124.426,
+        "high": 163.26,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "wrap-only": {
+       "added_p50_us": {
+        "estimate": -3.109,
+        "low": -18.182,
+        "high": 6.23,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 89.993,
+        "low": -10.01,
+        "high": 196.696,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -2.015,
+        "low": -8.603,
+        "high": 6.466,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 4.095,
+        "low": -14.145,
+        "high": 18.445,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "inconclusive"
+      },
+      "capture-null": {
+       "added_p50_us": {
+        "estimate": 93.373,
+        "low": 65.675,
+        "high": 126.976,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 113.111,
+        "low": 27.23,
+        "high": 165.282,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -30.838,
+        "low": -38.971,
+        "high": -24.137,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 91.019,
+        "low": 65.447,
+        "high": 123.869,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      }
+     },
+     "rounds": {
+      "base": [
+       {
+        "p50_us": 236.539,
+        "p99_us": 377.455,
+        "per_s": 4046.131
+       },
+       {
+        "p50_us": 158.411,
+        "p99_us": 335.424,
+        "per_s": 5745.373
+       },
+       {
+        "p50_us": 167.69,
+        "p99_us": 471.476,
+        "per_s": 5374.089
+       },
+       {
+        "p50_us": 171.965,
+        "p99_us": 356.299,
+        "per_s": 5231.499
+       },
+       {
+        "p50_us": 186.404,
+        "p99_us": 293.992,
+        "per_s": 5066.227
+       }
+      ],
+      "file": [
+       {
+        "p50_us": 309.587,
+        "p99_us": 667.077,
+        "per_s": 2867.422
+       },
+       {
+        "p50_us": 277.137,
+        "p99_us": 462.474,
+        "per_s": 3296.437
+       },
+       {
+        "p50_us": 293.969,
+        "p99_us": 689.591,
+        "per_s": 3175.434
+       },
+       {
+        "p50_us": 260.956,
+        "p99_us": 515.051,
+        "per_s": 3535.926
+       },
+       {
+        "p50_us": 268.118,
+        "p99_us": 865.086,
+        "per_s": 3250.794
+       }
+      ],
+      "http": [
+       {
+        "p50_us": 252.79,
+        "p99_us": 1015.009,
+        "per_s": 3457.407
+       },
+       {
+        "p50_us": 233.9,
+        "p99_us": 1045.587,
+        "per_s": 3766.688
+       },
+       {
+        "p50_us": 300.632,
+        "p99_us": 1228.83,
+        "per_s": 3032.228
+       },
+       {
+        "p50_us": 227.544,
+        "p99_us": 768.692,
+        "per_s": 3750.362
+       },
+       {
+        "p50_us": 324.491,
+        "p99_us": 1008.381,
+        "per_s": 2717.581
+       }
+      ],
+      "http-down": [
+       {
+        "p50_us": 244.563,
+        "p99_us": 567.386,
+        "per_s": 3761.762
+       },
+       {
+        "p50_us": 292.416,
+        "p99_us": 468.202,
+        "per_s": 3278.166
+       },
+       {
+        "p50_us": 244.921,
+        "p99_us": 423.601,
+        "per_s": 3864.833
+       },
+       {
+        "p50_us": 224.832,
+        "p99_us": 453.543,
+        "per_s": 4056.761
+       },
+       {
+        "p50_us": 238.693,
+        "p99_us": 521.383,
+        "per_s": 3822.834
+       }
+      ],
+      "file+sqlcomment": [
+       {
+        "p50_us": 374.403,
+        "p99_us": 894.987,
+        "per_s": 2541.958
+       },
+       {
+        "p50_us": 283.766,
+        "p99_us": 675.577,
+        "per_s": 2850.654
+       },
+       {
+        "p50_us": 270.619,
+        "p99_us": 527.629,
+        "per_s": 3283.766
+       },
+       {
+        "p50_us": 301.404,
+        "p99_us": 478.296,
+        "per_s": 3219.167
+       },
+       {
+        "p50_us": 333.472,
+        "p99_us": 626.067,
+        "per_s": 2811.615
+       }
+      ],
+      "wrap-only": [
+       {
+        "p50_us": 204.073,
+        "p99_us": 448.215,
+        "per_s": 4606.312
+       },
+       {
+        "p50_us": 164.763,
+        "p99_us": 305.754,
+        "per_s": 5604.546
+       },
+       {
+        "p50_us": 166.994,
+        "p99_us": 440.739,
+        "per_s": 5310.439
+       },
+       {
+        "p50_us": 179.147,
+        "p99_us": 643.068,
+        "per_s": 4590.0
+       },
+       {
+        "p50_us": 190.488,
+        "p99_us": 446.833,
+        "per_s": 4659.9
+       }
+      ],
+      "capture-null": [
+       {
+        "p50_us": 315.426,
+        "p99_us": 540.992,
+        "per_s": 3089.309
+       },
+       {
+        "p50_us": 313.835,
+        "p99_us": 481.619,
+        "per_s": 3052.031
+       },
+       {
+        "p50_us": 257.318,
+        "p99_us": 418.154,
+        "per_s": 3732.038
+       },
+       {
+        "p50_us": 221.671,
+        "p99_us": 488.876,
+        "per_s": 4082.375
+       },
+       {
+        "p50_us": 279.625,
+        "p99_us": 470.561,
+        "per_s": 3488.506
+       }
+      ]
+     },
+     "attribution": [
+      {
+       "component": "wrapper",
+       "measured_as": "wrap-only",
+       "p50_us": {
+        "estimate": -3.109,
+        "low": -18.182,
+        "high": 6.23,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 4.095,
+        "low": -14.145,
+        "high": 18.445,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "capture + construction",
+       "measured_as": "capture-null \u2212 wrap-only",
+       "p50_us": {
+        "estimate": 96.482,
+        "low": 65.612,
+        "high": 126.44,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 86.924,
+        "low": 51.987,
+        "high": 123.652,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "async enqueue",
+       "measured_as": "http-down \u2212 capture-null",
+       "p50_us": {
+        "estimate": -28.49,
+        "low": -52.904,
+        "high": -7.978,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": -22.639,
+        "low": -41.08,
+        "high": -7.056,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "synchronous file write",
+       "measured_as": "file \u2212 http-down",
+       "p50_us": {
+        "estimate": 32.868,
+        "low": 6.527,
+        "high": 53.465,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 43.947,
+        "low": 17.482,
+        "high": 68.16,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "SQL comment",
+       "measured_as": "file+sqlcomment \u2212 file",
+       "p50_us": {
+        "estimate": 30.779,
+        "low": 0.279,
+        "high": 60.158,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 31.516,
+        "low": 8.942,
+        "high": 47.004,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      }
+     ]
+    },
+    "L1": {
+     "label": "point read, literal (added in P5.1)",
+     "latency_us": {
+      "base": {
+       "p50": 125.212,
+       "p95": 199.781,
+       "p99": 273.104,
+       "p99.9": 511.872,
+       "max": 669.554,
+       "n": 1500
+      },
+      "file": {
+       "p50": 537.518,
+       "p95": 855.429,
+       "p99": 1429.097,
+       "p99.9": 3583.556,
+       "max": 5790.769,
+       "n": 1500
+      },
+      "http": {
+       "p50": 555.954,
+       "p95": 1003.999,
+       "p99": 1225.572,
+       "p99.9": 1963.055,
+       "max": 2028.846,
+       "n": 1500
+      },
+      "http-down": {
+       "p50": 573.36,
+       "p95": 874.614,
+       "p99": 1400.885,
+       "p99.9": 22218.776,
+       "max": 25259.927,
+       "n": 1500
+      },
+      "file+sqlcomment": {
+       "p50": 546.883,
+       "p95": 887.036,
+       "p99": 1195.892,
+       "p99.9": 2542.881,
+       "max": 3033.172,
+       "n": 1500
+      },
+      "wrap-only": {
+       "p50": 152.239,
+       "p95": 230.98,
+       "p99": 337.942,
+       "p99.9": 728.093,
+       "max": 1143.145,
+       "n": 1500
+      },
+      "capture-null": {
+       "p50": 525.893,
+       "p95": 875.361,
+       "p99": 1082.919,
+       "p99.9": 1739.511,
+       "max": 2733.185,
+       "n": 1500
+      }
+     },
+     "throughput_per_s": {
+      "base": {
+       "p50": 7573.563,
+       "p95": 7959.307,
+       "p99": 8003.183,
+       "p99.9": 8013.055,
+       "max": 8014.152,
+       "n": 5
+      },
+      "file": {
+       "p50": 1740.131,
+       "p95": 1770.316,
+       "p99": 1775.118,
+       "p99.9": 1776.199,
+       "max": 1776.319,
+       "n": 5
+      },
+      "http": {
+       "p50": 1662.594,
+       "p95": 1833.805,
+       "p99": 1850.209,
+       "p99.9": 1853.9,
+       "max": 1854.31,
+       "n": 5
+      },
+      "http-down": {
+       "p50": 1438.872,
+       "p95": 1513.686,
+       "p99": 1514.609,
+       "p99.9": 1514.816,
+       "max": 1514.839,
+       "n": 5
+      },
+      "file+sqlcomment": {
+       "p50": 1727.198,
+       "p95": 1833.148,
+       "p99": 1850.341,
+       "p99.9": 1854.209,
+       "max": 1854.639,
+       "n": 5
+      },
+      "wrap-only": {
+       "p50": 6275.689,
+       "p95": 7109.69,
+       "p99": 7170.826,
+       "p99.9": 7184.582,
+       "max": 7186.11,
+       "n": 5
+      },
+      "capture-null": {
+       "p50": 1863.332,
+       "p95": 1966.347,
+       "p99": 1983.047,
+       "p99.9": 1986.804,
+       "max": 1987.221,
+       "n": 5
+      }
+     },
+     "versus_base": {
+      "file": {
+       "added_p50_us": {
+        "estimate": 430.067,
+        "low": 373.335,
+        "high": 516.314,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 1241.685,
+        "low": 788.751,
+        "high": 2005.904,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -76.726,
+        "low": -79.5,
+        "high": -73.047,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 472.184,
+        "low": 416.147,
+        "high": 552.874,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      },
+      "http": {
+       "added_p50_us": {
+        "estimate": 446.724,
+        "low": 396.793,
+        "high": 496.655,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 969.715,
+        "low": 736.968,
+        "high": 1230.3,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -77.145,
+        "low": -80.038,
+        "high": -74.852,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 480.389,
+        "low": 426.605,
+        "high": 536.836,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      },
+      "http-down": {
+       "added_p50_us": {
+        "estimate": 461.084,
+        "low": 426.124,
+        "high": 511.985,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 1303.87,
+        "low": 839.658,
+        "high": 1989.184,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -79.621,
+        "low": -81.539,
+        "high": -77.513,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 550.901,
+        "low": 528.604,
+        "high": 582.516,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      },
+      "file+sqlcomment": {
+       "added_p50_us": {
+        "estimate": 445.727,
+        "low": 377.415,
+        "high": 539.939,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 953.576,
+        "low": 676.263,
+        "high": 1205.906,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -76.772,
+        "low": -79.568,
+        "high": -72.427,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 474.769,
+        "low": 412.486,
+        "high": 544.46,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      },
+      "wrap-only": {
+       "added_p50_us": {
+        "estimate": 14.211,
+        "low": 5.014,
+        "high": 23.718,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 47.176,
+        "low": -29.286,
+        "high": 108.024,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -11.8,
+        "low": -17.44,
+        "high": -6.34,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 18.956,
+        "low": 9.528,
+        "high": 28.517,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "capture-null": {
+       "added_p50_us": {
+        "estimate": 431.751,
+        "low": 345.357,
+        "high": 559.862,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 736.784,
+        "low": 568.035,
+        "high": 873.834,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -75.362,
+        "low": -80.456,
+        "high": -70.039,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 453.78,
+        "low": 367.933,
+        "high": 571.445,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      }
+     },
+     "rounds": {
+      "base": [
+       {
+        "p50_us": 157.644,
+        "p99_us": 356.716,
+        "per_s": 5864.571
+       },
+       {
+        "p50_us": 118.799,
+        "p99_us": 273.104,
+        "per_s": 7573.563
+       },
+       {
+        "p50_us": 121.103,
+        "p99_us": 232.208,
+        "per_s": 7739.93
+       },
+       {
+        "p50_us": 132.629,
+        "p99_us": 250.313,
+        "per_s": 6769.827
+       },
+       {
+        "p50_us": 117.728,
+        "p99_us": 176.517,
+        "per_s": 8014.152
+       }
+      ],
+      "file": [
+       {
+        "p50_us": 510.44,
+        "p99_us": 1441.812,
+        "per_s": 1776.319
+       },
+       {
+        "p50_us": 510.143,
+        "p99_us": 1108.621,
+        "per_s": 1746.303
+       },
+       {
+        "p50_us": 515.024,
+        "p99_us": 1042.981,
+        "per_s": 1740.131
+       },
+       {
+        "p50_us": 730.537,
+        "p99_us": 2984.005,
+        "per_s": 1295.015
+       },
+       {
+        "p50_us": 532.091,
+        "p99_us": 919.864,
+        "per_s": 1716.131
+       }
+      ],
+      "http": [
+       {
+        "p50_us": 661.928,
+        "p99_us": 1191.814,
+        "per_s": 1451.516
+       },
+       {
+        "p50_us": 505.335,
+        "p99_us": 858.898,
+        "per_s": 1854.31
+       },
+       {
+        "p50_us": 545.706,
+        "p99_us": 1324.572,
+        "per_s": 1662.594
+       },
+       {
+        "p50_us": 525.775,
+        "p99_us": 1104.781,
+        "per_s": 1751.783
+       },
+       {
+        "p50_us": 642.779,
+        "p99_us": 1657.372,
+        "per_s": 1417.124
+       }
+      ],
+      "http-down": [
+       {
+        "p50_us": 618.446,
+        "p99_us": 1019.114,
+        "per_s": 1438.872
+       },
+       {
+        "p50_us": 533.236,
+        "p99_us": 1298.269,
+        "per_s": 1514.839
+       },
+       {
+        "p50_us": 678.405,
+        "p99_us": 1401.384,
+        "per_s": 1352.424
+       },
+       {
+        "p50_us": 576.636,
+        "p99_us": 1292.235,
+        "per_s": 1425.4
+       },
+       {
+        "p50_us": 546.598,
+        "p99_us": 2797.209,
+        "per_s": 1509.074
+       }
+      ],
+      "file+sqlcomment": [
+       {
+        "p50_us": 509.726,
+        "p99_us": 796.471,
+        "per_s": 1854.639
+       },
+       {
+        "p50_us": 572.315,
+        "p99_us": 1347.444,
+        "per_s": 1565.737
+       },
+       {
+        "p50_us": 512.346,
+        "p99_us": 1583.576,
+        "per_s": 1727.198
+       },
+       {
+        "p50_us": 763.994,
+        "p99_us": 1165.018,
+        "per_s": 1335.279
+       },
+       {
+        "p50_us": 518.155,
+        "p99_us": 1164.231,
+        "per_s": 1747.183
+       }
+      ],
+      "wrap-only": [
+       {
+        "p50_us": 162.668,
+        "p99_us": 260.989,
+        "per_s": 5652.589
+       },
+       {
+        "p50_us": 123.901,
+        "p99_us": 412.311,
+        "per_s": 6804.01
+       },
+       {
+        "p50_us": 126.061,
+        "p99_us": 293.459,
+        "per_s": 7186.11
+       },
+       {
+        "p50_us": 161.428,
+        "p99_us": 301.963,
+        "per_s": 5661.119
+       },
+       {
+        "p50_us": 144.898,
+        "p99_us": 256.017,
+        "per_s": 6275.689
+       }
+      ],
+      "capture-null": [
+       {
+        "p50_us": 468.916,
+        "p99_us": 780.895,
+        "per_s": 1987.221
+       },
+       {
+        "p50_us": 803.505,
+        "p99_us": 1095.541,
+        "per_s": 1230.319
+       },
+       {
+        "p50_us": 493.7,
+        "p99_us": 1100.721,
+        "per_s": 1863.332
+       },
+       {
+        "p50_us": 502.439,
+        "p99_us": 914.252,
+        "per_s": 1882.85
+       },
+       {
+        "p50_us": 538.101,
+        "p99_us": 1081.37,
+        "per_s": 1696.784
+       }
+      ]
+     },
+     "attribution": [
+      {
+       "component": "wrapper",
+       "measured_as": "wrap-only",
+       "p50_us": {
+        "estimate": 14.211,
+        "low": 5.014,
+        "high": 23.718,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 18.956,
+        "low": 9.528,
+        "high": 28.517,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "capture + construction",
+       "measured_as": "capture-null \u2212 wrap-only",
+       "p50_us": {
+        "estimate": 417.541,
+        "low": 330.804,
+        "high": 554.605,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 434.823,
+        "low": 351.812,
+        "high": 556.389,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "async enqueue",
+       "measured_as": "http-down \u2212 capture-null",
+       "p50_us": {
+        "estimate": 29.332,
+        "low": -130.556,
+        "high": 148.534,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 97.122,
+        "low": -36.387,
+        "high": 191.895,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "synchronous file write",
+       "measured_as": "file \u2212 http-down",
+       "p50_us": {
+        "estimate": -31.017,
+        "low": -119.081,
+        "high": 67.838,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": -78.717,
+        "low": -138.57,
+        "high": -0.015,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "SQL comment",
+       "measured_as": "file+sqlcomment \u2212 file",
+       "p50_us": {
+        "estimate": 15.66,
+        "low": -6.789,
+        "high": 43.459,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 2.585,
+        "low": -20.797,
+        "high": 35.729,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      }
+     ]
+    },
+    "L3": {
+     "label": "insert values, literal (added in P5.1)",
+     "latency_us": {
+      "base": {
+       "p50": 343.733,
+       "p95": 544.606,
+       "p99": 732.993,
+       "p99.9": 1801.341,
+       "max": 3395.254,
+       "n": 1500
+      },
+      "file": {
+       "p50": 881.572,
+       "p95": 1247.87,
+       "p99": 1717.636,
+       "p99.9": 3514.295,
+       "max": 5914.145,
+       "n": 1500
+      },
+      "http": {
+       "p50": 903.412,
+       "p95": 1294.152,
+       "p99": 1681.196,
+       "p99.9": 3982.389,
+       "max": 5310.198,
+       "n": 1500
+      },
+      "http-down": {
+       "p50": 810.635,
+       "p95": 1142.793,
+       "p99": 1434.458,
+       "p99.9": 2791.474,
+       "max": 5573.774,
+       "n": 1500
+      },
+      "file+sqlcomment": {
+       "p50": 816.505,
+       "p95": 1166.054,
+       "p99": 1497.593,
+       "p99.9": 2330.846,
+       "max": 2821.654,
+       "n": 1500
+      },
+      "wrap-only": {
+       "p50": 399.044,
+       "p95": 624.782,
+       "p99": 785.701,
+       "p99.9": 2133.82,
+       "max": 2421.489,
+       "n": 1500
+      },
+      "capture-null": {
+       "p50": 813.497,
+       "p95": 1145.128,
+       "p99": 1573.959,
+       "p99.9": 3917.08,
+       "max": 20660.463,
+       "n": 1500
+      }
+     },
+     "throughput_per_s": {
+      "base": {
+       "p50": 2851.03,
+       "p95": 3271.665,
+       "p99": 3299.892,
+       "p99.9": 3306.243,
+       "max": 3306.949,
+       "n": 5
+      },
+      "file": {
+       "p50": 1036.084,
+       "p95": 1258.959,
+       "p99": 1270.451,
+       "p99.9": 1273.037,
+       "max": 1273.324,
+       "n": 5
+      },
+      "http": {
+       "p50": 1057.5,
+       "p95": 1150.394,
+       "p99": 1160.075,
+       "p99.9": 1162.253,
+       "max": 1162.496,
+       "n": 5
+      },
+      "http-down": {
+       "p50": 1173.459,
+       "p95": 1329.758,
+       "p99": 1351.693,
+       "p99.9": 1356.629,
+       "max": 1357.177,
+       "n": 5
+      },
+      "file+sqlcomment": {
+       "p50": 1077.334,
+       "p95": 1374.683,
+       "p99": 1380.235,
+       "p99.9": 1381.484,
+       "max": 1381.622,
+       "n": 5
+      },
+      "wrap-only": {
+       "p50": 2257.64,
+       "p95": 3116.033,
+       "p99": 3177.66,
+       "p99.9": 3191.526,
+       "max": 3193.067,
+       "n": 5
+      },
+      "capture-null": {
+       "p50": 1154.977,
+       "p95": 1411.972,
+       "p99": 1438.306,
+       "p99.9": 1444.232,
+       "max": 1444.89,
+       "n": 5
+      }
+     },
+     "versus_base": {
+      "file": {
+       "added_p50_us": {
+        "estimate": 534.252,
+        "low": 480.624,
+        "high": 602.458,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 933.599,
+        "low": 727.68,
+        "high": 1224.323,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -60.248,
+        "low": -63.826,
+        "high": -56.669,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 555.528,
+        "low": 497.333,
+        "high": 626.723,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      },
+      "http": {
+       "added_p50_us": {
+        "estimate": 551.157,
+        "low": 459.37,
+        "high": 640.923,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 930.382,
+        "low": 732.55,
+        "high": 1128.215,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -60.291,
+        "low": -66.818,
+        "high": -53.764,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 563.755,
+        "low": 479.615,
+        "high": 642.899,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      },
+      "http-down": {
+       "added_p50_us": {
+        "estimate": 472.764,
+        "low": 435.55,
+        "high": 511.536,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 650.571,
+        "low": 564.492,
+        "high": 724.115,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -56.627,
+        "low": -60.031,
+        "high": -53.222,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 475.253,
+        "low": 446.388,
+        "high": 507.692,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "file+sqlcomment": {
+       "added_p50_us": {
+        "estimate": 487.856,
+        "low": 378.142,
+        "high": 587.289,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 605.552,
+        "low": 411.76,
+        "high": 820.536,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -56.478,
+        "low": -63.92,
+        "high": -47.587,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 491.952,
+        "low": 377.522,
+        "high": 597.425,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "wrap-only": {
+       "added_p50_us": {
+        "estimate": 62.341,
+        "low": -39.346,
+        "high": 164.688,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": -18.208,
+        "low": -202.634,
+        "high": 195.294,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -8.771,
+        "low": -31.178,
+        "high": 17.279,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 56.974,
+        "low": -46.92,
+        "high": 160.959,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "inconclusive"
+      },
+      "capture-null": {
+       "added_p50_us": {
+        "estimate": 480.949,
+        "low": 408.958,
+        "high": 558.139,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 1004.151,
+        "low": 405.2,
+        "high": 1851.259,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -57.506,
+        "low": -61.371,
+        "high": -54.721,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 498.8,
+        "low": 422.344,
+        "high": 564.888,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "inconclusive",
+       "throughput_verdict": "not met"
+      }
+     },
+     "rounds": {
+      "base": [
+       {
+        "p50_us": 412.538,
+        "p99_us": 792.255,
+        "per_s": 2333.12
+       },
+       {
+        "p50_us": 397.389,
+        "p99_us": 742.557,
+        "per_s": 2323.481
+       },
+       {
+        "p50_us": 299.534,
+        "p99_us": 590.321,
+        "per_s": 3130.531
+       },
+       {
+        "p50_us": 324.296,
+        "p99_us": 1034.127,
+        "per_s": 2851.03
+       },
+       {
+        "p50_us": 289.367,
+        "p99_us": 479.865,
+        "per_s": 3306.949
+       }
+      ],
+      "file": [
+       {
+        "p50_us": 952.082,
+        "p99_us": 1565.274,
+        "per_s": 1012.515
+       },
+       {
+        "p50_us": 911.654,
+        "p99_us": 2228.435,
+        "per_s": 1036.084
+       },
+       {
+        "p50_us": 753.223,
+        "p99_us": 1234.456,
+        "per_s": 1273.324
+       },
+       {
+        "p50_us": 985.55,
+        "p99_us": 1866.116,
+        "per_s": 962.681
+       },
+       {
+        "p50_us": 791.875,
+        "p99_us": 1412.837,
+        "per_s": 1201.496
+       }
+      ],
+      "http": [
+       {
+        "p50_us": 820.224,
+        "p99_us": 1529.504,
+        "per_s": 1162.496
+       },
+       {
+        "p50_us": 840.62,
+        "p99_us": 1921.229,
+        "per_s": 1101.989
+       },
+       {
+        "p50_us": 930.098,
+        "p99_us": 1518.901,
+        "per_s": 1057.5
+       },
+       {
+        "p50_us": 929.419,
+        "p99_us": 1663.962,
+        "per_s": 1045.513
+       },
+       {
+        "p50_us": 958.549,
+        "p99_us": 1657.441,
+        "per_s": 1019.796
+       }
+      ],
+      "http-down": [
+       {
+        "p50_us": 872.26,
+        "p99_us": 1449.985,
+        "per_s": 1141.923
+       },
+       {
+        "p50_us": 912.491,
+        "p99_us": 1406.69,
+        "per_s": 1082.833
+       },
+       {
+        "p50_us": 829.515,
+        "p99_us": 1257.011,
+        "per_s": 1173.459
+       },
+       {
+        "p50_us": 776.929,
+        "p99_us": 1532.192,
+        "per_s": 1220.082
+       },
+       {
+        "p50_us": 695.747,
+        "p99_us": 1246.103,
+        "per_s": 1357.177
+       }
+      ],
+      "file+sqlcomment": [
+       {
+        "p50_us": 940.465,
+        "p99_us": 1298.106,
+        "per_s": 1077.334
+       },
+       {
+        "p50_us": 706.449,
+        "p99_us": 1038.763,
+        "per_s": 1381.622
+       },
+       {
+        "p50_us": 697.569,
+        "p99_us": 1133.968,
+        "per_s": 1346.928
+       },
+       {
+        "p50_us": 889.79,
+        "p99_us": 1698.457,
+        "per_s": 1069.081
+       },
+       {
+        "p50_us": 928.131,
+        "p99_us": 1497.593,
+        "per_s": 1040.02
+       }
+      ],
+      "wrap-only": [
+       {
+        "p50_us": 420.836,
+        "p99_us": 786.445,
+        "per_s": 2257.64
+       },
+       {
+        "p50_us": 292.644,
+        "p99_us": 527.09,
+        "per_s": 3193.067
+       },
+       {
+        "p50_us": 350.57,
+        "p99_us": 586.805,
+        "per_s": 2807.897
+       },
+       {
+        "p50_us": 433.507,
+        "p99_us": 769.397,
+        "per_s": 2205.309
+       },
+       {
+        "p50_us": 537.271,
+        "p99_us": 878.349,
+        "per_s": 1815.741
+       }
+      ],
+      "capture-null": [
+       {
+        "p50_us": 870.13,
+        "p99_us": 3458.536,
+        "per_s": 1013.971
+       },
+       {
+        "p50_us": 1005.274,
+        "p99_us": 1400.715,
+        "per_s": 999.62
+       },
+       {
+        "p50_us": 666.273,
+        "p99_us": 1189.615,
+        "per_s": 1444.89
+       },
+       {
+        "p50_us": 751.157,
+        "p99_us": 1198.969,
+        "per_s": 1280.302
+       },
+       {
+        "p50_us": 835.034,
+        "p99_us": 1412.043,
+        "per_s": 1154.977
+       }
+      ]
+     },
+     "attribution": [
+      {
+       "component": "wrapper",
+       "measured_as": "wrap-only",
+       "p50_us": {
+        "estimate": 62.341,
+        "low": -39.346,
+        "high": 164.688,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 56.974,
+        "low": -46.92,
+        "high": 160.959,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "capture + construction",
+       "measured_as": "capture-null \u2212 wrap-only",
+       "p50_us": {
+        "estimate": 418.608,
+        "low": 308.916,
+        "high": 576.989,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 441.826,
+        "low": 324.268,
+        "high": 586.5,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "async enqueue",
+       "measured_as": "http-down \u2212 capture-null",
+       "p50_us": {
+        "estimate": -8.185,
+        "low": -92.402,
+        "high": 84.544,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": -23.547,
+        "low": -111.175,
+        "high": 81.661,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "synchronous file write",
+       "measured_as": "file \u2212 http-down",
+       "p50_us": {
+        "estimate": 61.488,
+        "low": -26.717,
+        "high": 144.23,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 80.276,
+        "low": -9.383,
+        "high": 161.952,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "SQL comment",
+       "measured_as": "file+sqlcomment \u2212 file",
+       "p50_us": {
+        "estimate": -46.396,
+        "low": -144.598,
+        "high": 59.492,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": -63.576,
+        "low": -168.6,
+        "high": 48.275,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      }
+     ]
+    },
+    "L5": {
+     "label": "analytical, literal (added in P5.1)",
+     "latency_us": {
+      "base": {
+       "p50": 476.911,
+       "p95": 748.589,
+       "p99": 869.935,
+       "p99.9": 1163.471,
+       "max": 1289.767,
+       "n": 1500
+      },
+      "file": {
+       "p50": 3648.2,
+       "p95": 6279.478,
+       "p99": 7777.227,
+       "p99.9": 23555.873,
+       "max": 34138.682,
+       "n": 1500
+      },
+      "http": {
+       "p50": 4040.338,
+       "p95": 6699.292,
+       "p99": 8754.921,
+       "p99.9": 27780.277,
+       "max": 31769.956,
+       "n": 1500
+      },
+      "http-down": {
+       "p50": 3601.097,
+       "p95": 6263.212,
+       "p99": 7919.377,
+       "p99.9": 27190.503,
+       "max": 32758.609,
+       "n": 1500
+      },
+      "file+sqlcomment": {
+       "p50": 3354.71,
+       "p95": 5844.36,
+       "p99": 7600.609,
+       "p99.9": 19969.39,
+       "max": 32621.916,
+       "n": 1500
+      },
+      "wrap-only": {
+       "p50": 523.54,
+       "p95": 749.829,
+       "p99": 880.425,
+       "p99.9": 1529.724,
+       "max": 2631.766,
+       "n": 1500
+      },
+      "capture-null": {
+       "p50": 3247.825,
+       "p95": 5527.915,
+       "p99": 6334.908,
+       "p99.9": 20604.447,
+       "max": 22764.027,
+       "n": 1500
+      }
+     },
+     "throughput_per_s": {
+      "base": {
+       "p50": 2003.671,
+       "p95": 2172.641,
+       "p99": 2198.535,
+       "p99.9": 2204.361,
+       "max": 2205.008,
+       "n": 5
+      },
+      "file": {
+       "p50": 254.951,
+       "p95": 261.69,
+       "p99": 262.866,
+       "p99.9": 263.13,
+       "max": 263.16,
+       "n": 5
+      },
+      "http": {
+       "p50": 210.953,
+       "p95": 242.159,
+       "p99": 244.042,
+       "p99.9": 244.466,
+       "max": 244.513,
+       "n": 5
+      },
+      "http-down": {
+       "p50": 242.533,
+       "p95": 255.185,
+       "p99": 257.46,
+       "p99.9": 257.972,
+       "max": 258.029,
+       "n": 5
+      },
+      "file+sqlcomment": {
+       "p50": 258.977,
+       "p95": 283.711,
+       "p99": 284.458,
+       "p99.9": 284.626,
+       "max": 284.645,
+       "n": 5
+      },
+      "wrap-only": {
+       "p50": 1810.594,
+       "p95": 1946.921,
+       "p99": 1960.361,
+       "p99.9": 1963.385,
+       "max": 1963.721,
+       "n": 5
+      },
+      "capture-null": {
+       "p50": 283.38,
+       "p95": 293.372,
+       "p99": 293.824,
+       "p99.9": 293.926,
+       "max": 293.937,
+       "n": 5
+      }
+     },
+     "versus_base": {
+      "file": {
+       "added_p50_us": {
+        "estimate": 3300.423,
+        "low": 2915.159,
+        "high": 3838.417,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 6733.513,
+        "low": 6017.317,
+        "high": 7449.709,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -87.636,
+        "low": -89.081,
+        "high": -86.17,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 3661.36,
+        "low": 3334.797,
+        "high": 4097.336,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "not met",
+       "throughput_verdict": "not met"
+      },
+      "http": {
+       "added_p50_us": {
+        "estimate": 3608.92,
+        "low": 3340.195,
+        "high": 3843.108,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 7677.065,
+        "low": 7225.284,
+        "high": 8062.315,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -88.819,
+        "low": -89.57,
+        "high": -88.068,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 4059.836,
+        "low": 3778.665,
+        "high": 4301.062,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "not met",
+       "throughput_verdict": "not met"
+      },
+      "http-down": {
+       "added_p50_us": {
+        "estimate": 3158.497,
+        "low": 2947.352,
+        "high": 3376.053,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 6780.252,
+        "low": 6355.338,
+        "high": 7205.167,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -87.745,
+        "low": -88.798,
+        "high": -86.197,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 3673.645,
+        "low": 3462.074,
+        "high": 3881.761,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "not met",
+       "throughput_verdict": "not met"
+      },
+      "file+sqlcomment": {
+       "added_p50_us": {
+        "estimate": 2872.558,
+        "low": 2810.699,
+        "high": 2934.4,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 6504.832,
+        "low": 5145.266,
+        "high": 7651.038,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -86.591,
+        "low": -87.181,
+        "high": -85.89,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 3291.844,
+        "low": 3127.293,
+        "high": 3456.395,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "not met",
+       "throughput_verdict": "not met"
+      },
+      "wrap-only": {
+       "added_p50_us": {
+        "estimate": 60.435,
+        "low": 24.419,
+        "high": 101.206,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 48.4,
+        "low": -9.615,
+        "high": 98.714,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -8.122,
+        "low": -13.162,
+        "high": -2.005,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 45.465,
+        "low": 8.73,
+        "high": 77.09,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "met",
+       "throughput_verdict": "not met"
+      },
+      "capture-null": {
+       "added_p50_us": {
+        "estimate": 2768.202,
+        "low": 2710.366,
+        "high": 2832.148,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "added_p99_us": {
+        "estimate": 5146.22,
+        "low": 4421.976,
+        "high": 5792.482,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "throughput_change_pct": {
+        "estimate": -85.841,
+        "low": -87.389,
+        "high": -84.253,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_added_us": {
+        "estimate": 3119.443,
+        "low": 2900.344,
+        "high": 3361.784,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "latency_verdict": "not met",
+       "throughput_verdict": "not met"
+      }
+     },
+     "rounds": {
+      "base": [
+       {
+        "p50_us": 482.267,
+        "p99_us": 1048.164,
+        "per_s": 1942.61
+       },
+       {
+        "p50_us": 545.549,
+        "p99_us": 872.539,
+        "per_s": 1682.739
+       },
+       {
+        "p50_us": 439.438,
+        "p99_us": 601.925,
+        "per_s": 2205.008
+       },
+       {
+        "p50_us": 476.918,
+        "p99_us": 812.885,
+        "per_s": 2003.671
+       },
+       {
+        "p50_us": 475.226,
+        "p99_us": 666.433,
+        "per_s": 2043.174
+       }
+      ],
+      "file": [
+       {
+        "p50_us": 4803.373,
+        "p99_us": 8488.345,
+        "per_s": 201.056
+       },
+       {
+        "p50_us": 3439.327,
+        "p99_us": 6695.689,
+        "per_s": 255.813
+       },
+       {
+        "p50_us": 3803.318,
+        "p99_us": 8540.342,
+        "per_s": 235.144
+       },
+       {
+        "p50_us": 3535.381,
+        "p99_us": 7304.232,
+        "per_s": 254.951
+       },
+       {
+        "p50_us": 3340.113,
+        "p99_us": 6640.901,
+        "per_s": 263.16
+       }
+      ],
+      "http": [
+       {
+        "p50_us": 4164.695,
+        "p99_us": 8799.508,
+        "per_s": 210.953
+       },
+       {
+        "p50_us": 4413.436,
+        "p99_us": 8451.466,
+        "per_s": 205.233
+       },
+       {
+        "p50_us": 3870.148,
+        "p99_us": 8824.6,
+        "per_s": 232.745
+       },
+       {
+        "p50_us": 3611.044,
+        "p99_us": 7587.824,
+        "per_s": 244.513
+       },
+       {
+        "p50_us": 4404.675,
+        "p99_us": 8723.872,
+        "per_s": 206.142
+       }
+      ],
+      "http-down": [
+       {
+        "p50_us": 3656.831,
+        "p99_us": 8289.526,
+        "per_s": 231.85
+       },
+       {
+        "p50_us": 3344.374,
+        "p99_us": 7418.367,
+        "per_s": 258.029
+       },
+       {
+        "p50_us": 3560.016,
+        "p99_us": 7194.528,
+        "per_s": 242.533
+       },
+       {
+        "p50_us": 4005.294,
+        "p99_us": 8288.137,
+        "per_s": 221.929
+       },
+       {
+        "p50_us": 3645.371,
+        "p99_us": 6712.648,
+        "per_s": 243.812
+       }
+      ],
+      "file+sqlcomment": [
+       {
+        "p50_us": 3455.562,
+        "p99_us": 7733.379,
+        "per_s": 251.158
+       },
+       {
+        "p50_us": 3437.954,
+        "p99_us": 7427.098,
+        "per_s": 244.947
+       },
+       {
+        "p50_us": 3241.82,
+        "p99_us": 8896.845,
+        "per_s": 284.645
+       },
+       {
+        "p50_us": 3393.422,
+        "p99_us": 4838.71,
+        "per_s": 279.977
+       },
+       {
+        "p50_us": 3253.43,
+        "p99_us": 7630.075,
+        "per_s": 258.977
+       }
+      ],
+      "wrap-only": [
+       {
+        "p50_us": 623.977,
+        "p99_us": 1166.516,
+        "per_s": 1630.817
+       },
+       {
+        "p50_us": 558.131,
+        "p99_us": 819.895,
+        "per_s": 1749.259
+       },
+       {
+        "p50_us": 501.626,
+        "p99_us": 668.362,
+        "per_s": 1963.721
+       },
+       {
+        "p50_us": 494.291,
+        "p99_us": 827.527,
+        "per_s": 1879.723
+       },
+       {
+        "p50_us": 543.548,
+        "p99_us": 761.647,
+        "per_s": 1810.594
+       }
+      ],
+      "capture-null": [
+       {
+        "p50_us": 3209.429,
+        "p99_us": 6209.161,
+        "per_s": 283.38
+       },
+       {
+        "p50_us": 3286.374,
+        "p99_us": 4769.596,
+        "per_s": 291.113
+       },
+       {
+        "p50_us": 3264.673,
+        "p99_us": 6086.502,
+        "per_s": 268.207
+       },
+       {
+        "p50_us": 3155.26,
+        "p99_us": 5747.014,
+        "per_s": 293.937
+       },
+       {
+        "p50_us": 3344.674,
+        "p99_us": 6920.772,
+        "per_s": 246.681
+       }
+      ]
+     },
+     "attribution": [
+      {
+       "component": "wrapper",
+       "measured_as": "wrap-only",
+       "p50_us": {
+        "estimate": 60.435,
+        "low": 24.419,
+        "high": 101.206,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 45.465,
+        "low": 8.73,
+        "high": 77.09,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "capture + construction",
+       "measured_as": "capture-null \u2212 wrap-only",
+       "p50_us": {
+        "estimate": 2707.767,
+        "low": 2636.074,
+        "high": 2771.318,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 3073.979,
+        "low": 2876.536,
+        "high": 3317.437,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "async enqueue",
+       "measured_as": "http-down \u2212 capture-null",
+       "p50_us": {
+        "estimate": 390.295,
+        "low": 184.419,
+        "high": 630.299,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": 554.202,
+        "low": 264.428,
+        "high": 848.218,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "synchronous file write",
+       "measured_as": "file \u2212 http-down",
+       "p50_us": {
+        "estimate": 141.925,
+        "low": -294.339,
+        "high": 675.534,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": -12.286,
+        "low": -347.353,
+        "high": 361.97,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      },
+      {
+       "component": "SQL comment",
+       "measured_as": "file+sqlcomment \u2212 file",
+       "p50_us": {
+        "estimate": -427.865,
+        "low": -921.261,
+        "high": -63.615,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       },
+       "implied_us": {
+        "estimate": -369.515,
+        "low": -762.821,
+        "high": 23.79,
+        "rounds": 5,
+        "resamples": 10000,
+        "seed": 20261003
+       }
+      }
+     ]
+    }
+   },
+   "delivery": {
+    "file": {
+     "expected_per_round": 4200,
+     "delivered_per_round": [
+      4200,
+      4200,
+      4200,
+      4200,
+      4200
+     ]
+    },
+    "http": {
+     "expected_per_round": 4200,
+     "delivered_per_round": [
+      4200,
+      4200,
+      4200,
+      4200,
+      4200
+     ]
+    },
+    "http-down": {
+     "expected_per_round": 4200,
+     "delivered_per_round": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ],
+     "note": "not measurable (nothing listens)"
+    },
+    "file+sqlcomment": {
+     "expected_per_round": 4200,
+     "delivered_per_round": [
+      4200,
+      4200,
+      4200,
+      4200,
+      4200
+     ]
+    },
+    "wrap-only": {
+     "expected_per_round": 4200,
+     "delivered_per_round": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ],
+     "note": "none by design (capture off)"
+    },
+    "capture-null": {
+     "expected_per_round": 4200,
+     "delivered_per_round": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ],
+     "note": "none by design (null:// discards)"
+    }
+   },
+   "profile": {
+    "tiers": [
+     "T1",
+     "L1"
+    ],
+    "top": 15,
+    "configs": {
+     "file": {
+      "T1": {
+       "calls": 300,
+       "wrapper_found": true,
+       "wrapper_cumulative_us_per_call": 205.781,
+       "original_cumulative_us_per_call": 129.869,
+       "top": [
+        {
+         "function": "dcp/interceptors/postgres.py:38(execute)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 2.263,
+         "cumulative_us_per_call": 205.781,
+         "share_of_wrapper_pct": 100.0
+        },
+        {
+         "function": "psycopg/cursor.py:100(execute)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 1.422,
+         "cumulative_us_per_call": 129.869,
+         "share_of_wrapper_pct": 63.11
+        },
+        {
+         "function": "psycopg/connection.py:479(wait)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 52.515,
+         "cumulative_us_per_call": 128.05,
+         "share_of_wrapper_pct": 62.226
+        }
+       ],
+       "dcp_top": [
+        {
+         "function": "dcp/interceptors/postgres.py:57(_capture)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 8.777,
+         "cumulative_us_per_call": 73.091,
+         "share_of_wrapper_pct": 35.519
+        },
+        {
+         "function": "dcp/emitters/file.py:34(emit)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 3.108,
+         "cumulative_us_per_call": 20.226,
+         "share_of_wrapper_pct": 9.829
+        },
+        {
+         "function": "dcp/envelope.py:68(new_id)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 1.491,
+         "cumulative_us_per_call": 12.276,
+         "share_of_wrapper_pct": 5.966
+        }
+       ]
+      },
+      "L1": {
+       "calls": 300,
+       "wrapper_found": true,
+       "wrapper_cumulative_us_per_call": 1272.931,
+       "original_cumulative_us_per_call": 305.791,
+       "top": [
+        {
+         "function": "dcp/interceptors/postgres.py:38(execute)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 3.346,
+         "cumulative_us_per_call": 1272.931,
+         "share_of_wrapper_pct": 100.0
+        },
+        {
+         "function": "dcp/interceptors/postgres.py:57(_capture)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 12.237,
+         "cumulative_us_per_call": 962.798,
+         "share_of_wrapper_pct": 75.636
+        },
+        {
+         "function": "dcp/interceptors/postgres.py:133(_classify_parts)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 2.445,
+         "cumulative_us_per_call": 860.725,
+         "share_of_wrapper_pct": 67.618
+        }
+       ],
+       "dcp_top": [
+        {
+         "function": "dcp/interceptors/postgres.py:57(_capture)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 12.237,
+         "cumulative_us_per_call": 962.798,
+         "share_of_wrapper_pct": 75.636
+        },
+        {
+         "function": "dcp/interceptors/postgres.py:133(_classify_parts)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 2.445,
+         "cumulative_us_per_call": 860.725,
+         "share_of_wrapper_pct": 67.618
+        },
+        {
+         "function": "dcp/interceptors/postgres.py:140(_classify_parts_cached)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 0.807,
+         "cumulative_us_per_call": 858.078,
+         "share_of_wrapper_pct": 67.41
+        }
+       ]
+      }
+     },
+     "wrap-only": {
+      "T1": {
+       "calls": 300,
+       "wrapper_found": true,
+       "wrapper_cumulative_us_per_call": 113.427,
+       "original_cumulative_us_per_call": 111.923,
+       "top": [
+        {
+         "function": "dcp/interceptors/postgres.py:38(execute)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 1.371,
+         "cumulative_us_per_call": 113.427,
+         "share_of_wrapper_pct": 100.0
+        },
+        {
+         "function": "psycopg/cursor.py:100(execute)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 1.543,
+         "cumulative_us_per_call": 111.923,
+         "share_of_wrapper_pct": 98.674
+        },
+        {
+         "function": "psycopg/connection.py:479(wait)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 44.611,
+         "cumulative_us_per_call": 110.034,
+         "share_of_wrapper_pct": 97.009
+        }
+       ],
+       "dcp_top": [
+        {
+         "function": "dcp/config.py:147(capture_enabled)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 0.133,
+         "cumulative_us_per_call": 0.133,
+         "share_of_wrapper_pct": 0.117
+        }
+       ]
+      },
+      "L1": {
+       "calls": 300,
+       "wrapper_found": true,
+       "wrapper_cumulative_us_per_call": 145.24,
+       "original_cumulative_us_per_call": 143.918,
+       "top": [
+        {
+         "function": "dcp/interceptors/postgres.py:38(execute)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 1.185,
+         "cumulative_us_per_call": 145.24,
+         "share_of_wrapper_pct": 100.0
+        },
+        {
+         "function": "psycopg/cursor.py:100(execute)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 1.751,
+         "cumulative_us_per_call": 143.918,
+         "share_of_wrapper_pct": 99.089
+        },
+        {
+         "function": "psycopg/connection.py:479(wait)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 69.419,
+         "cumulative_us_per_call": 141.844,
+         "share_of_wrapper_pct": 97.662
+        }
+       ],
+       "dcp_top": [
+        {
+         "function": "dcp/config.py:147(capture_enabled)",
+         "calls_per_call": 1.0,
+         "own_us_per_call": 0.138,
+         "cumulative_us_per_call": 0.138,
+         "share_of_wrapper_pct": 0.095
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  "kafka": {
+   "message_bytes": 1024,
+   "latency_us": {
+    "base": {
+     "p50": 0.691,
+     "p95": 3.034,
+     "p99": 4.93,
+     "p99.9": 40.983,
+     "max": 177.128,
+     "n": 10000
+    },
+    "file": {
+     "p50": 25.244,
+     "p95": 68.589,
+     "p99": 97.994,
+     "p99.9": 274.669,
+     "max": 3224.675,
+     "n": 10000
+    },
+    "http": {
+     "p50": 48.533,
+     "p95": 110.936,
+     "p99": 158.88,
+     "p99.9": 425.374,
+     "max": 3550.981,
+     "n": 10000
+    },
+    "wrap-only": {
+     "p50": 1.016,
+     "p95": 3.058,
+     "p99": 5.77,
+     "p99.9": 44.077,
+     "max": 313.331,
+     "n": 10000
+    },
+    "capture-null": {
+     "p50": 15.323,
+     "p95": 27.473,
+     "p99": 54.463,
+     "p99.9": 110.87,
+     "max": 196.366,
+     "n": 10000
+    }
+   },
+   "throughput_per_s": {
+    "base": {
+     "p50": 159428.036,
+     "p95": 203452.076,
+     "p99": 207628.304,
+     "p99.9": 208567.955,
+     "max": 208672.361,
+     "n": 5
+    },
+    "file": {
+     "p50": 33989.635,
+     "p95": 36353.452,
+     "p99": 36399.15,
+     "p99.9": 36409.432,
+     "max": 36410.575,
+     "n": 5
+    },
+    "http": {
+     "p50": 21370.091,
+     "p95": 23816.124,
+     "p99": 24177.593,
+     "p99.9": 24258.924,
+     "max": 24267.961,
+     "n": 5
+    },
+    "wrap-only": {
+     "p50": 181012.2,
+     "p95": 254247.926,
+     "p99": 254383.908,
+     "p99.9": 254414.504,
+     "max": 254417.903,
+     "n": 5
+    },
+    "capture-null": {
+     "p50": 55697.231,
+     "p95": 56218.465,
+     "p99": 56266.275,
+     "p99.9": 56277.032,
+     "max": 56278.227,
+     "n": 5
+    }
+   },
+   "versus_base": {
+    "file": {
+     "added_p50_us": {
+      "estimate": 28.177,
+      "low": 23.29,
+      "high": 36.716,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "added_p99_us": {
+      "estimate": 87.526,
+      "low": 68.059,
+      "high": 112.165,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "throughput_change_pct": {
+      "estimate": -80.055,
+      "low": -86.837,
+      "high": -73.837,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "implied_added_us": {
+      "estimate": 29.185,
+      "low": 20.892,
+      "high": 41.564,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "latency_verdict": "met",
+     "throughput_verdict": "not met"
+    },
+    "http": {
+     "added_p50_us": {
+      "estimate": 52.376,
+      "low": 40.867,
+      "high": 70.231,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "added_p99_us": {
+      "estimate": 121.294,
+      "low": 93.7,
+      "high": 155.173,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "throughput_change_pct": {
+      "estimate": -87.013,
+      "low": -91.369,
+      "high": -82.249,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "implied_added_us": {
+      "estimate": 48.942,
+      "low": 35.847,
+      "high": 70.051,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "latency_verdict": "met",
+     "throughput_verdict": "not met"
+    },
+    "wrap-only": {
+     "added_p50_us": {
+      "estimate": 0.323,
+      "low": 0.197,
+      "high": 0.411,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "added_p99_us": {
+      "estimate": 3.825,
+      "low": -0.739,
+      "high": 12.022,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "throughput_change_pct": {
+      "estimate": 22.177,
+      "low": -2.739,
+      "high": 44.198,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "implied_added_us": {
+      "estimate": -0.98,
+      "low": -2.008,
+      "high": 0.314,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "latency_verdict": "met",
+     "throughput_verdict": "inconclusive"
+    },
+    "capture-null": {
+     "added_p50_us": {
+      "estimate": 14.465,
+      "low": 13.929,
+      "high": 15.002,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "added_p99_us": {
+      "estimate": 49.469,
+      "low": 46.57,
+      "high": 52.082,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "throughput_change_pct": {
+      "estimate": -65.247,
+      "low": -71.6,
+      "high": -59.087,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "implied_added_us": {
+      "estimate": 12.021,
+      "low": 10.88,
+      "high": 13.465,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "latency_verdict": "met",
+     "throughput_verdict": "not met"
+    }
+   },
+   "rounds": {
+    "base": [
+     {
+      "p50_us": 0.632,
+      "p99_us": 4.018,
+      "per_s": 112911.287,
+      "flush_ms": 14.835
+     },
+     {
+      "p50_us": 0.884,
+      "p99_us": 5.526,
+      "per_s": 182570.938,
+      "flush_ms": 7.706
+     },
+     {
+      "p50_us": 0.684,
+      "p99_us": 4.844,
+      "per_s": 208672.361,
+      "flush_ms": 6.51
+     },
+     {
+      "p50_us": 0.905,
+      "p99_us": 6.095,
+      "per_s": 151236.704,
+      "flush_ms": 9.685
+     },
+     {
+      "p50_us": 0.639,
+      "p99_us": 4.006,
+      "per_s": 159428.036,
+      "flush_ms": 9.722
+     }
+    ],
+    "file": [
+     {
+      "p50_us": 24.53,
+      "p99_us": 76.303,
+      "per_s": 33989.635,
+      "flush_ms": 2.566
+     },
+     {
+      "p50_us": 45.854,
+      "p99_us": 134.365,
+      "per_s": 17374.043,
+      "flush_ms": 2.132
+     },
+     {
+      "p50_us": 26.424,
+      "p99_us": 106.867,
+      "per_s": 27924.717,
+      "flush_ms": 1.419
+     },
+     {
+      "p50_us": 23.837,
+      "p99_us": 79.34,
+      "per_s": 36124.961,
+      "flush_ms": 1.341
+     },
+     {
+      "p50_us": 23.982,
+      "p99_us": 65.246,
+      "per_s": 36410.575,
+      "flush_ms": 1.954
+     }
+    ],
+    "http": [
+     {
+      "p50_us": 37.793,
+      "p99_us": 96.789,
+      "per_s": 24267.961,
+      "flush_ms": 4.098
+     },
+     {
+      "p50_us": 87.261,
+      "p99_us": 191.61,
+      "per_s": 10511.687,
+      "flush_ms": 1.217
+     },
+     {
+      "p50_us": 46.17,
+      "p99_us": 114.911,
+      "per_s": 22008.775,
+      "flush_ms": 4.694
+     },
+     {
+      "p50_us": 46.917,
+      "p99_us": 92.541,
+      "per_s": 20767.22,
+      "flush_ms": 3.248
+     },
+     {
+      "p50_us": 47.48,
+      "p99_us": 135.111,
+      "per_s": 21370.091,
+      "flush_ms": 1.265
+     }
+    ],
+    "wrap-only": [
+     {
+      "p50_us": 1.027,
+      "p99_us": 4.382,
+      "per_s": 149075.275,
+      "flush_ms": 9.956
+     },
+     {
+      "p50_us": 1.329,
+      "p99_us": 25.448,
+      "per_s": 142763.989,
+      "flush_ms": 8.563
+     },
+     {
+      "p50_us": 1.008,
+      "p99_us": 4.74,
+      "per_s": 254417.903,
+      "flush_ms": 4.224
+     },
+     {
+      "p50_us": 0.991,
+      "p99_us": 4.593,
+      "per_s": 181012.2,
+      "flush_ms": 7.501
+     },
+     {
+      "p50_us": 1.003,
+      "p99_us": 4.452,
+      "per_s": 253568.019,
+      "flush_ms": 4.291
+     }
+    ],
+    "capture-null": [
+     {
+      "p50_us": 15.989,
+      "p99_us": 57.901,
+      "per_s": 52241.237,
+      "flush_ms": 1.342
+     },
+     {
+      "p50_us": 14.675,
+      "p99_us": 49.63,
+      "per_s": 56278.227,
+      "flush_ms": 1.9
+     },
+     {
+      "p50_us": 15.663,
+      "p99_us": 55.391,
+      "per_s": 51584.953,
+      "flush_ms": 2.74
+     },
+     {
+      "p50_us": 14.767,
+      "p99_us": 56.693,
+      "per_s": 55979.416,
+      "flush_ms": 1.653
+     },
+     {
+      "p50_us": 14.979,
+      "p99_us": 52.22,
+      "per_s": 55697.231,
+      "flush_ms": 1.554
+     }
+    ]
+   },
+   "attribution": [
+    {
+     "component": "wrapper",
+     "measured_as": "wrap-only",
+     "p50_us": {
+      "estimate": 0.323,
+      "low": 0.197,
+      "high": 0.411,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "implied_us": {
+      "estimate": -0.98,
+      "low": -2.008,
+      "high": 0.314,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     }
+    },
+    {
+     "component": "capture + construction",
+     "measured_as": "capture-null \u2212 wrap-only",
+     "p50_us": {
+      "estimate": 14.143,
+      "low": 13.643,
+      "high": 14.663,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "implied_us": {
+      "estimate": 13.001,
+      "low": 11.728,
+      "high": 14.543,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     }
+    },
+    {
+     "component": "enqueue (http, live backend)",
+     "measured_as": "http \u2212 capture-null",
+     "p50_us": {
+      "estimate": 37.91,
+      "low": 26.013,
+      "high": 56.154,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "implied_us": {
+      "estimate": 36.922,
+      "low": 24.775,
+      "high": 57.686,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     }
+    },
+    {
+     "component": "synchronous file write",
+     "measured_as": "file \u2212 capture-null",
+     "p50_us": {
+      "estimate": 13.711,
+      "low": 8.832,
+      "high": 22.568,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     },
+     "implied_us": {
+      "estimate": 17.164,
+      "low": 9.787,
+      "high": 29.06,
+      "rounds": 5,
+      "resamples": 10000,
+      "seed": 20261003
+     }
+    }
+   ],
+   "delivery": {
+    "file": {
+     "expected_per_round": 2050,
+     "delivered_per_round": [
+      2050,
+      2050,
+      2050,
+      2050,
+      2050
+     ]
+    },
+    "http": {
+     "expected_per_round": 2050,
+     "delivered_per_round": [
+      2050,
+      2050,
+      2050,
+      2050,
+      2050
+     ]
+    },
+    "wrap-only": {
+     "expected_per_round": 2050,
+     "delivered_per_round": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ],
+     "note": "none by design (capture off)"
+    },
+    "capture-null": {
+     "expected_per_round": 2050,
+     "delivered_per_round": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ],
+     "note": "none by design (null:// discards)"
+    }
+   }
+  },
+  "startup": {
+   "reps": 10,
+   "ms": {
+    "python": {
+     "p50": 14.191,
+     "p95": 26.215,
+     "p99": 31.307,
+     "p99.9": 32.452,
+     "max": 32.58,
+     "n": 10
+    },
+    "dcp-instrument python": {
+     "p50": 431.887,
+     "p95": 457.252,
+     "p99": 459.722,
+     "p99.9": 460.278,
+     "max": 460.34,
+     "n": 10
+    },
+    "python with DCP's sitecustomize": {
+     "p50": 275.817,
+     "p95": 295.316,
+     "p99": 306.068,
+     "p99.9": 308.487,
+     "max": 308.756,
+     "n": 10
+    },
+    "python, importing psycopg and confluent_kafka (added in P5.1)": {
+     "p50": 188.355,
+     "p95": 227.37,
+     "p99": 236.891,
+     "p99.9": 239.033,
+     "max": 239.272,
+     "n": 10
+    },
+    "dcp-instrument python, importing psycopg and confluent_kafka (added in P5.1)": {
+     "p50": 433.357,
+     "p95": 510.056,
+     "p99": 526.485,
+     "p99.9": 530.181,
+     "max": 530.592,
+     "n": 10
+    }
+   }
+  },
+  "backpressure": {
+   "queue_size": 8,
+   "calls": 300,
+   "events_emitted": 350,
+   "dropped": 350,
+   "latency_us": {
+    "p50": 165.052,
+    "p95": 295.301,
+    "p99": 393.787,
+    "p99.9": 465.23,
+    "max": 467.269,
+    "n": 300
+   },
+   "bound_ms": 50.0,
+   "bounded": true
+  }
+ },
+ "cpu": {
+  "pythons": [
+   {
+    "python": "3.12.0",
+    "implementation": "CPython",
+    "executable": "/synthetic/python",
+    "sqlglot": "30.0.0",
+    "warmup": 1000,
+    "timed": 10000,
+    "tiers": {
+     "T1": {
+      "label": "point read",
+      "capture_us": {
+       "p50": 9.722,
+       "p95": 13.608,
+       "p99": 33.348,
+       "p99.9": 55.626,
+       "max": 203.957,
+       "n": 10000
+      },
+      "classify_us": {
+       "p50": 0.869,
+       "p95": 1.464,
+       "p99": 1.753,
+       "p99.9": 20.002,
+       "max": 93.376,
+       "n": 10000
+      }
+     },
+     "T2": {
+      "label": "join",
+      "capture_us": {
+       "p50": 17.628,
+       "p95": 27.046,
+       "p99": 49.938,
+       "p99.9": 77.858,
+       "max": 166.478,
+       "n": 10000
+      },
+      "classify_us": {
+       "p50": 1.283,
+       "p95": 1.342,
+       "p99": 1.473,
+       "p99.9": 21.122,
+       "max": 67.878,
+       "n": 10000
+      }
+     },
+     "T3": {
+      "label": "insert values",
+      "capture_us": {
+       "p50": 9.508,
+       "p95": 19.757,
+       "p99": 44.568,
+       "p99.9": 75.017,
+       "max": 261.301,
+       "n": 10000
+      },
+      "classify_us": {
+       "p50": 1.322,
+       "p95": 1.669,
+       "p99": 2.836,
+       "p99.9": 27.053,
+       "max": 57.215,
+       "n": 10000
+      }
+     },
+     "T4": {
+      "label": "insert-select",
+      "capture_us": {
+       "p50": 17.018,
+       "p95": 34.135,
+       "p99": 57.56,
+       "p99.9": 128.946,
+       "max": 226.389,
+       "n": 10000
+      },
+      "classify_us": {
+       "p50": 1.294,
+       "p95": 1.35,
+       "p99": 1.795,
+       "p99.9": 22.418,
+       "max": 32.507,
+       "n": 10000
+      }
+     },
+     "T5": {
+      "label": "analytical",
+      "capture_us": {
+       "p50": 17.687,
+       "p95": 38.989,
+       "p99": 66.364,
+       "p99.9": 144.695,
+       "max": 396.876,
+       "n": 10000
+      },
+      "classify_us": {
+       "p50": 1.199,
+       "p95": 2.419,
+       "p99": 2.679,
+       "p99.9": 30.169,
+       "max": 41.087,
+       "n": 10000
+      }
+     },
+     "L1": {
+      "label": "point read, literal (added in P5.1)",
+      "capture_us": {
+       "p50": 209.609,
+       "p95": 385.315,
+       "p99": 525.482,
+       "p99.9": 1119.555,
+       "max": 10940.064,
+       "n": 10000
+      },
+      "classify_us": {
+       "p50": 185.659,
+       "p95": 347.941,
+       "p99": 442.746,
+       "p99.9": 738.263,
+       "max": 12406.53,
+       "n": 10000
+      }
+     },
+     "L3": {
+      "label": "insert values, literal (added in P5.1)",
+      "capture_us": {
+       "p50": 159.662,
+       "p95": 298.847,
+       "p99": 393.503,
+       "p99.9": 683.363,
+       "max": 10030.024,
+       "n": 10000
+      },
+      "classify_us": {
+       "p50": 142.733,
+       "p95": 254.16,
+       "p99": 308.337,
+       "p99.9": 461.256,
+       "max": 13327.268,
+       "n": 10000
+      }
+     },
+     "L5": {
+      "label": "analytical, literal (added in P5.1)",
+      "capture_us": {
+       "p50": 2371.981,
+       "p95": 3723.46,
+       "p99": 5370.326,
+       "p99.9": 15660.523,
+       "max": 21932.341,
+       "n": 10000
+      },
+      "classify_us": {
+       "p50": 2293.04,
+       "p95": 3674.097,
+       "p99": 5457.977,
+       "p99.9": 16660.042,
+       "max": 22039.544,
+       "n": 10000
+      }
+     }
+    }
+   }
+  ]
+ }
+}

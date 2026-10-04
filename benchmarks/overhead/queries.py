@@ -4,6 +4,17 @@ T5 was written once, before any timing was taken, as a realistic analytical
 query over the seeded tables: two CTEs and a third building on them, a join, a
 window function, and aggregates.
 
+The L tiers were ADDED IN P5.1, after P5's results were seen. Each inlines a
+literal that is different on EVERY call, so the query text never repeats and
+every call misses DCP's parse cache: the ad-hoc-script shape
+(f"... WHERE id = {x}") that P5's parameterised tiers never exercised. They make
+the benchmark harder, never easier. T1-T5 are unchanged.
+
+    L1  T1 with the id inlined (ids above 4 match no row, as such ids would)
+    L3  T3 with both values inlined
+    L5  T5 with its one numeric literal inlined: `net_total >= -n`, so it
+        varies per call and, like T5's 0, keeps every row
+
 Plain data, imported by the CPU microbenchmark and by the overhead workers
 (which contain no DCP code).
 """
@@ -73,6 +84,7 @@ class Tier:
     query: str
     returns_rows: bool
     events_per_call: int  # DCP events one call emits: reads + writes
+    literal: bool = False  # P5.1: a different inlined literal on every call
 
     def params(self, i: int) -> tuple:
         """Deterministic parameters for call i (ids 1-4 exist in orders)."""
@@ -82,6 +94,22 @@ class Tier:
         if self.name == "T5":
             return (0,)
         return (row_id,)
+
+    def statement(self, n: int) -> tuple[str, tuple | None]:
+        """(query text, params) for call number n.
+
+        A parameterised tier sends the same text with params(n). A literal tier
+        formats n into the text, so callers must give each call of a process a
+        different n (pg_worker numbers warm-up and timed calls consecutively).
+        """
+        if not self.literal:
+            return self.query, self.params(n)
+        return self.query.format(n=n, value=f"{n % 97}.5"), None
+
+
+def literal_texts(tier: Tier, count: int, start: int = 0) -> list[str]:
+    """`count` distinct texts of a literal tier, from call number `start`."""
+    return [tier.statement(n)[0] for n in range(start, start + count)]
 
 
 TIERS = [
@@ -103,4 +131,29 @@ TIERS = [
         2,
     ),
     Tier("T5", "analytical", T5_ANALYTICAL, True, 2),
+    # Added in P5.1 (cache-hostile): see the module docstring.
+    Tier(
+        "L1",
+        "point read, literal (added in P5.1)",
+        "SELECT id, total FROM orders WHERE id = {n}",
+        True,
+        1,
+        literal=True,
+    ),
+    Tier(
+        "L3",
+        "insert values, literal (added in P5.1)",
+        "INSERT INTO summary VALUES ({n}, {value})",
+        False,
+        1,
+        literal=True,
+    ),
+    Tier(
+        "L5",
+        "analytical, literal (added in P5.1)",
+        T5_ANALYTICAL.replace("{", "{{").replace("}", "}}").replace("%s", "-{n}"),
+        True,
+        2,
+        literal=True,
+    ),
 ]

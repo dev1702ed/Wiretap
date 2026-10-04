@@ -13,6 +13,8 @@ Configuration is by environment variable, read by sitecustomize in the child:
     DCP_EMIT            sink, as for dcp.init(emit=...)       default: console
     DCP_JOB_NAME        job name                              default: script basename
     DCP_PROPAGATE_SQL   "1" turns on the SQL trace comment    default: off
+    DCP_CAPTURE         "off" keeps the patches but skips      default: on
+                        capture: the kill switch (P5.1)
 
 The child's exit code is passed through. A child killed by a signal exits
 128 + the signal number, as a shell reports it.
@@ -34,7 +36,8 @@ USAGE = """usage: dcp-instrument COMMAND [ARGS...]
 
 Run COMMAND (usually `python script.py`) with DCP capture, no code changes.
 Environment: DCP_EMIT (default console), DCP_JOB_NAME (default: script name),
-DCP_PROPAGATE_SQL=1 (opt in to the SQL trace comment)."""
+DCP_PROPAGATE_SQL=1 (opt in to the SQL trace comment), DCP_CAPTURE=off (kill
+switch: run with the patches installed but capture nothing)."""
 
 
 def instrumented_env(env: dict[str, str] | None = None) -> dict[str, str]:

@@ -13,6 +13,7 @@ from dcp import config
 from dcp.emitters.console import ConsoleEmitter
 from dcp.emitters.file import FileEmitter
 from dcp.emitters.http import HTTPEmitter
+from dcp.emitters.null import NullEmitter
 
 
 @pytest.fixture
@@ -22,6 +23,7 @@ def registered(monkeypatch):
     monkeypatch.setattr(config, "_emitter", None)
     monkeypatch.setattr(config, "_job", None)
     monkeypatch.setattr(config, "_propagate_sql", False)
+    monkeypatch.setattr(config, "_capture", True)
     monkeypatch.setattr(config, "_shutdown_registered", False)
     monkeypatch.setattr(config, "atexit", types.SimpleNamespace(register=calls.append))
     yield calls
@@ -42,7 +44,16 @@ def test_file(registered, tmp_path):
     emitter = config.current_emitter()
     assert isinstance(emitter, FileEmitter)
     assert emitter.path == str(path)
+    assert emitter.sync  # synchronous by default (P5.1 measured the asynchronous sink slower)
     assert registered == [config.shutdown]
+
+
+@pytest.mark.parametrize(("suffix", "sync"), [("?sync=1", True), ("?sync=0", False), ("", True)])
+def test_file_sync_option(registered, tmp_path, suffix, sync):
+    path = tmp_path / "events.jsonl"
+    config.init(f"file://{path}{suffix}")
+    emitter = config.current_emitter()
+    assert emitter.path == str(path) and emitter.sync is sync
 
 
 def test_http(registered):
@@ -51,6 +62,23 @@ def test_http(registered):
     assert isinstance(emitter, HTTPEmitter)
     assert emitter.url == "http://127.0.0.1:8000/events"
     assert registered == [config.shutdown]
+
+
+def test_null_is_a_diagnostic_sink_that_records_nothing(registered):
+    config.init("null://")
+    emitter = config.current_emitter()
+    assert isinstance(emitter, NullEmitter)
+    assert emitter.emit(object()) is None  # discarded, not even serialised
+    assert registered == []  # nothing buffered, nothing to flush at exit
+
+
+def test_capture_is_on_unless_switched_off(registered):
+    config.init("console")
+    assert config.capture_enabled()
+    config.init("console", capture=False)
+    assert not config.capture_enabled()
+    config.init("console")
+    assert config.capture_enabled()
 
 
 def test_shutdown_is_registered_once(registered, tmp_path):
@@ -80,6 +108,8 @@ def test_marquez_points_at_the_batch_bridge(registered):
         "https://localhost:8000",
         "file://",
         "http://",
+        "null",
+        "null://x",
         "http://localhost:notaport",
     ],
 )

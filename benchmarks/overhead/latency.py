@@ -9,6 +9,18 @@ Configurations (fixed), in this order every round:
     http-down        dcp-instrument, http:// sink to a closed port, so the
                      emitter's worker is failing and retrying the whole time
     file+sqlcomment  dcp-instrument, file:// sink, DCP_PROPAGATE_SQL=1
+    wrap-only        dcp-instrument, DCP_CAPTURE=off (added in P5.1): the
+                     wrappers are installed and call straight through
+    capture-null     dcp-instrument, null:// sink (added in P5.1): capture and
+                     event construction on the real psycopg path, no delivery
+
+The two ablations were added in P5.1, after P5's results were seen, to
+attribute the per-call cost: wrapper (wrap-only), capture and construction
+(capture-null - wrap-only), async enqueue (http-down - capture-null), the
+synchronous file write (file - http-down), the SQL comment
+(file+sqlcomment - file). A profiling round (one extra round per instrumented
+configuration, under cProfile, T1 and L1 only) explains each component; it is
+never used for a timing.
 
 Every configuration runs pg_worker.py as a fresh subprocess per round; rounds
 alternate configurations in the fixed order to cancel drift. Process start-up
@@ -44,8 +56,40 @@ PG_WORKER = OVERHEAD / "pg_worker.py"
 KAFKA_WORKER = OVERHEAD / "kafka_worker.py"
 BACKPRESSURE_WORKER = OVERHEAD / "backpressure_worker.py"
 
-CONFIGS = ("base", "file", "http", "http-down", "file+sqlcomment")
-KAFKA_CONFIGS = ("base", "file", "http")
+CONFIGS = (
+    "base",
+    "file",
+    "http",
+    "http-down",
+    "file+sqlcomment",
+    "wrap-only",
+    "capture-null",
+)
+KAFKA_CONFIGS = ("base", "file", "http", "wrap-only", "capture-null")
+ADDED_IN_P51 = ("wrap-only", "capture-null")
+NO_DELIVERY = {
+    "http-down": "not measurable (nothing listens)",
+    "wrap-only": "none by design (capture off)",
+    "capture-null": "none by design (null:// discards)",
+}
+PROFILE_TIERS = ("T1", "L1")
+# A3's attribution (P5.1): each component is the difference between two
+# configurations' per-round values, paired by round, so base cancels out.
+COMPONENTS = (
+    ("wrapper", "wrap-only", "base"),
+    ("capture + construction", "capture-null", "wrap-only"),
+    ("async enqueue", "http-down", "capture-null"),
+    ("synchronous file write", "file", "http-down"),
+    ("SQL comment", "file+sqlcomment", "file"),
+)
+# Kafka runs no http-down or file+sqlcomment: enqueue is measured against the
+# live backend, and the file write against capture-null.
+KAFKA_COMPONENTS = (
+    ("wrapper", "wrap-only", "base"),
+    ("capture + construction", "capture-null", "wrap-only"),
+    ("enqueue (http, live backend)", "http", "capture-null"),
+    ("synchronous file write", "file", "capture-null"),
+)
 LATENCY_TARGET_US = 1000.0  # < 1 ms p99 added
 THROUGHPUT_TARGET_PCT = 2.0  # < 2% throughput loss
 BACKPRESSURE_QUEUE = 8
@@ -178,9 +222,13 @@ def config_env(
         "file+sqlcomment": "file://" + str(sink),
         "http": backend_url,
         "http-down": closed_url,
+        "wrap-only": "null://",
+        "capture-null": "null://",
     }[config]
     if config == "file+sqlcomment":
         env["DCP_PROPAGATE_SQL"] = "1"
+    if config == "wrap-only":
+        env["DCP_CAPTURE"] = "off"
     return env
 
 
@@ -258,11 +306,39 @@ def _compare(per_round: dict, configs, value_key: str) -> dict:
             "added_p50_us": added_p50,
             "added_p99_us": added_p99,
             "throughput_change_pct": throughput,
+            # P5.1: the fixed cost per call that throughput implies,
+            # 1e6/throughput_instrumented - 1e6/throughput_base, paired by round.
+            "implied_added_us": stats.paired_difference(
+                [1e6 / r[value_key] for r in base], [1e6 / r[value_key] for r in rows]
+            ),
             "latency_verdict": stats.latency_verdict(added_p99, LATENCY_TARGET_US),
             "throughput_verdict": stats.throughput_verdict(
                 throughput, THROUGHPUT_TARGET_PCT
             ),
         }
+    return out
+
+
+def attribution(rounds: dict, components=COMPONENTS) -> list[dict]:
+    """Split the added cost into COMPONENTS, two ways, each with a bootstrap CI:
+    by per-round p50 latency, and by the per-call cost throughput implies."""
+    out = []
+    for name, config, minus in components:
+        if config not in rounds or minus not in rounds:
+            continue
+        a, b = rounds[config], rounds[minus]
+        out.append(
+            {
+                "component": name,
+                "measured_as": f"{config} − {minus}" if minus != "base" else config,
+                "p50_us": stats.paired_difference(
+                    [r["p50_us"] for r in b], [r["p50_us"] for r in a]
+                ),
+                "implied_us": stats.paired_difference(
+                    [1e6 / r["per_s"] for r in b], [1e6 / r["per_s"] for r in a]
+                ),
+            }
+        )
     return out
 
 
@@ -301,6 +377,7 @@ def postgres(mode: Mode, out_dir: pathlib.Path, closed_url: str, log=print) -> d
             if config != "base":
                 delivery[config].append(delivered["delivered"])
             log(f"  postgres round {r + 1}/{mode.rounds} {config}")
+    profile = _profile_round(mode, out_dir, closed_url, log)
     tiers = {}
     for tier in TIERS:
         rounds = {c: per_round[c][tier.name] for c in CONFIGS}
@@ -313,18 +390,58 @@ def postgres(mode: Mode, out_dir: pathlib.Path, closed_url: str, log=print) -> d
                 c: stats.summarize([r["per_s"] for r in rounds[c]]) for c in CONFIGS
             },
             "versus_base": _compare(rounds, CONFIGS, "per_s"),
+            "rounds": rounds,
+            "attribution": attribution(rounds),
         }
     return {
         "tiers": tiers,
         "delivery": {
             c: {
-                "expected_per_round": expected_events,
+                "expected_per_round": 0 if c == "wrap-only" else expected_events,
                 "delivered_per_round": delivery[c],
+                **({"note": NO_DELIVERY[c]} if c in NO_DELIVERY else {}),
             }
             for c in CONFIGS
             if c != "base"
         },
+        "profile": profile,
     }
+
+
+def _profile_round(mode: Mode, out_dir: pathlib.Path, closed_url: str, log) -> dict:
+    """One extra round per instrumented configuration, under cProfile, on
+    PROFILE_TIERS only. Attribution only: no timing from it is ever used."""
+    from overhead import profiling
+
+    raw = out_dir / "raw" / "profile"
+    raw.mkdir(parents=True, exist_ok=True)
+    out = {"tiers": list(PROFILE_TIERS), "top": profiling.TOP, "configs": {}}
+    for config in CONFIGS:
+        if config == "base":
+            continue
+        prefix = raw / f"pg-{config}"
+        _round_run(
+            config,
+            PG_WORKER,
+            [
+                raw / f"pg-{config}.json",
+                mode.warmup,
+                mode.calls,
+                "--profile",
+                prefix,
+                "--tiers",
+                ",".join(PROFILE_TIERS),
+            ],
+            raw,
+            out_dir / "backend" / "pg-profile",
+            closed_url,
+        )
+        out["configs"][config] = {
+            tier: profiling.summarize_file(f"{prefix}.{tier}.prof", mode.calls)
+            for tier in PROFILE_TIERS
+        }
+        log(f"  postgres profiling round {config}")
+    return out
 
 
 def kafka(mode: Mode, out_dir: pathlib.Path, log=print) -> dict:
@@ -359,15 +476,23 @@ def kafka(mode: Mode, out_dir: pathlib.Path, log=print) -> dict:
             for c in KAFKA_CONFIGS
         },
         "versus_base": _compare(per_round, KAFKA_CONFIGS, "per_s"),
+        "rounds": per_round,
+        "attribution": attribution(per_round, KAFKA_COMPONENTS),
         "delivery": {
             c: {
-                "expected_per_round": mode.kafka_warmup + mode.kafka_messages,
+                "expected_per_round": (
+                    0 if c == "wrap-only" else mode.kafka_warmup + mode.kafka_messages
+                ),
                 "delivered_per_round": delivery[c],
+                **({"note": NO_DELIVERY[c]} if c in NO_DELIVERY else {}),
             }
             for c in KAFKA_CONFIGS
             if c != "base"
         },
     }
+
+
+IMPORTS_BOTH = "import psycopg, confluent_kafka"
 
 
 def startup(mode: Mode, out_dir: pathlib.Path) -> dict:
@@ -387,6 +512,22 @@ def startup(mode: Mode, out_dir: pathlib.Path) -> dict:
         "python with DCP's sitecustomize": (
             [sys.executable, "-c", "pass"],
             instrumented_env(dcp_env),
+        ),
+        # Added in P5.1: a program that does import the libraries DCP patches.
+        "python, importing psycopg and confluent_kafka (added in P5.1)": (
+            [sys.executable, "-c", IMPORTS_BOTH],
+            plain_env,
+        ),
+        "dcp-instrument python, importing psycopg and confluent_kafka (added in P5.1)": (
+            [
+                sys.executable,
+                "-m",
+                "dcp.instrument",
+                sys.executable,
+                "-c",
+                IMPORTS_BOTH,
+            ],
+            dcp_env,
         ),
     }
     times = {name: [] for name in variants}
@@ -442,6 +583,10 @@ def run(out_dir: pathlib.Path, quick: bool, log=print) -> dict:
             "mode": asdict(mode),
             "configs": list(CONFIGS),
             "kafka_configs": list(KAFKA_CONFIGS),
+            "added_in_p51": {
+                "configs": list(ADDED_IN_P51),
+                "tiers": [t.name for t in TIERS if t.literal],
+            },
             "targets": {
                 "added_p99_us": LATENCY_TARGET_US,
                 "throughput_loss_pct": THROUGHPUT_TARGET_PCT,

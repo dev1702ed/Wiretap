@@ -51,9 +51,11 @@ arrives (BASELINE.md §3).
 ### What decision 6 changes
 
 Decision 6 is closed (P5): `dcp-instrument python script.py` captures a script
-that contains **no DCP code at all**. DCP's `sitecustomize` initialises and
-patches at interpreter start-up, configured by environment variables, so the
-script is literally untouched. Cases 1 and 2 are therefore claimed as
+that contains **no DCP code at all**. DCP's `sitecustomize` initialises at
+interpreter start-up, configured by environment variables, and (since P5.1)
+patches each library right after the script imports it, so the script is
+literally untouched. P5.1's generated workloads (`ground_truth/generated/`) run
+every one of their programs this way live, notebooks included. Cases 1 and 2 are therefore claimed as
 **"no code changes"**: DCP attests lineage the author never declared, whereas
 manual OpenLineage emission requires the author to name every dataset.
 

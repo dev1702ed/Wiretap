@@ -27,6 +27,36 @@ CI_NOTE = (
 )
 
 
+P51_TIERS_NOTE = (
+    "**Added in P5.1, after P5's results were seen:** the L tiers inline a literal "
+    "that differs on every call, so the query text never repeats and every call "
+    "misses the parse cache (the ad-hoc-script shape). They make the benchmark "
+    "harder; T1–T5 are unchanged."
+)
+P51_CONFIGS_NOTE = (
+    "**Added in P5.1, after P5's results were seen:** the L tiers (cache-hostile: "
+    "a different inlined literal on every call) and the diagnostic configurations "
+    "`wrap-only` (`DCP_CAPTURE=off`: the wrappers alone) and `capture-null` "
+    "(`null://`: capture and event construction, no delivery), which exist to "
+    "attribute the per-call cost. The column *Implied added µs/call* is "
+    "`1e6/throughput_instrumented − 1e6/throughput_base`, paired by round with a "
+    "bootstrap interval: the fixed cost per call that the throughput change implies."
+)
+NORMALIZE_NOTE = (
+    "*normalise* (P5.1, O1): the literal-normalisation pass alone, which builds the "
+    "parse cache's second-level key on an exact-text miss. A parameterised tier pays "
+    "it only on its first call; a literal tier pays it on every call."
+)
+PROFILE_NOTE = (
+    "One extra round per instrumented configuration, under `cProfile`, timed loop "
+    "only; never used for any timing. Functions reached from DCP's psycopg wrapper "
+    "(`execute` in `dcp/interceptors/postgres.py`, which also calls the original "
+    "`execute`), ranked by cumulative time, per timed call. **cProfile inflates "
+    "absolute times, most where many small functions run: read these for "
+    "attribution, not magnitude.**"
+)
+
+
 def us(value) -> str:
     return "n/a" if value is None else f"{value:.1f}"
 
@@ -83,7 +113,24 @@ def _environment(results: dict) -> list[str]:
     ]
     packages = ", ".join(f"{k} {v}" for k, v in env["packages"].items() if v)
     rows.append(["Packages", packages])
+    if "pins" in env:
+        rows.append(["Pinned versions", _pins(env["pins"])])
     return ["## Environment", "", *table(["", ""], rows), ""]
+
+
+def _pins(pins: dict) -> str:
+    """The A1 check: installed versions against benchmarks/requirements.txt and
+    constraints.txt. A mismatch is recorded, never fatal."""
+    if "error" in pins:
+        return f"not checked ({pins['error']})"
+    files = " and ".join(f"`{f}`" for f in pins["files"])
+    if not pins["mismatches"]:
+        return f"all {pins['checked']} pins match ({files})"
+    shown = ", ".join(
+        f"{m['package']} {m['installed'] or 'not installed'} (pinned {m['pinned']})"
+        for m in pins["mismatches"]
+    )
+    return f"**{len(pins['mismatches'])} of {pins['checked']} differ from the pins** ({files}): {shown}"
 
 
 def _stages(results: dict) -> list[str]:
@@ -235,6 +282,191 @@ def _adversarial(results: dict) -> list[str]:
     ]
 
 
+SCALE_NOTE = (
+    "**Generated keys, added in P5.1** (`benchmarks/ground_truth/generate.py`): "
+    "generated from fixed seeds, not hand-written, with truth derived from the "
+    "generator's own construction. Scored with the same row functions as the "
+    "hand-written keys, and **reported apart from them, never pooled**. "
+    "Precision and recall are micro-averaged: summed hits over summed found (or "
+    "expected), over every row of every key in the group; the per-key columns give "
+    "each key's own micro-average, as min / median / max."
+)
+
+
+def _r(value) -> str:
+    return "n/a" if value is None else f"{value:.3f}"
+
+
+def _spread(s) -> str:
+    return (
+        "n/a" if s is None else f"{_r(s['min'])} / {_r(s['median'])} / {_r(s['max'])}"
+    )
+
+
+def _scale_table(rows: list[dict], per_key: bool) -> list[str]:
+    header = ["Method", "Level", "Precision", "Recall"]
+    if per_key:
+        header += [
+            "Keys",
+            "Per-key precision min / median / max",
+            "Per-key recall min / median / max",
+        ]
+    out = []
+    for a in rows:
+        row = [
+            a["method"],
+            a["level"],
+            f"{a['hits']}/{a['found']} = {_r(a['precision'])}",
+            f"{a['hits']}/{a['expected']} = {_r(a['recall'])}",
+        ]
+        if per_key:
+            row += [
+                a["keys"],
+                _spread(a["per_key_precision"]),
+                _spread(a["per_key_recall"]),
+            ]
+        out.append(row)
+    return table(header, out)
+
+
+def _scale_summary(summary: dict) -> list[str]:
+    out = []
+    if summary["seeds"]["names"]:
+        names = summary["seeds"]["names"]
+        out += [
+            f"#### {names[0]} … {names[-1]} ({len(names)} keys), micro-averaged",
+            "",
+            *_scale_table(summary["seeds"]["aggregate"], per_key=True),
+            "",
+        ]
+    for name, rows in summary["others"].items():
+        out += [f"#### {name}, on its own", "", *_scale_table(rows, per_key=False), ""]
+    rows = []
+    for name, e in summary["extras"].items():
+        m = summary["misses"][name]
+        rows.append(
+            [
+                name,
+                e["extras"],
+                e["explained_by_distractors"],
+                "; ".join(e["unexplained"]) or "none",
+                m["misses"],
+                m["explained_by_split_runs"],
+                "; ".join(m["unexplained"]) or "none",
+            ]
+        )
+    out += [
+        (
+            "Every item DCP's own graph found beyond the truth, checked against the "
+            "generator's distractor reads; and every expected item any method missed "
+            "(recall below 1.0), checked against split runs: a consumer that reads "
+            "records from two producers joins two traces, and the P4 bridge maps one "
+            "OpenLineage run per (trace, process), so OpenLineage's core model sees two "
+            "runs where there was one process. Anything unexplained is a bug."
+        ),
+        "",
+        *table(
+            [
+                "Key",
+                "DCP extras",
+                "Explained by a distractor read",
+                "Unexplained extras",
+                "Missed items",
+                "Explained by a split run",
+                "Unexplained misses",
+            ],
+            rows,
+        ),
+        "",
+    ]
+    return out
+
+
+def _scale(results: dict) -> list[str]:
+    if "scale" not in results:
+        return []
+    s = results["scale"]
+    rows = [
+        [
+            k["workload"],
+            k["seed"],
+            k["jobs"],
+            ", ".join(f"{n} {kind}" for kind, n in sorted(k["kinds"].items())),
+            k["jobs_with_distractors"],
+            k["fan_in_topics"],
+            k.get("split_jobs", "n/a"),
+            k["datasets"],
+            k["provenance_entries"],
+        ]
+        for k in s["replay"]["summary"]["keys"]
+    ]
+    out = [
+        "## Ground truth at scale: generated keys (added in P5.1)",
+        "",
+        SCALE_NOTE,
+        "",
+        f"Generator version {s['generator_version']}.",
+        "",
+        *table(
+            [
+                "Key",
+                "Seed",
+                "Jobs",
+                "Job kinds",
+                "Jobs with a distractor read",
+                "Fan-in topics",
+                "Jobs on two traces (split runs)",
+                "Datasets",
+                "Provenance entries",
+            ],
+            rows,
+        ),
+        "",
+        "### Replay",
+        "",
+        "DCP's real capture code with faked I/O, as for the hand-written keys.",
+        "",
+        *_scale_summary(s["replay"]["summary"]),
+    ]
+    live = s.get("live", {})
+    out += ["### Live", ""]
+    if "skipped" in live:
+        return out + [f"Skipped: {live['skipped']}", ""]
+    rows = [
+        [
+            name,
+            r["processes"],
+            ", ".join(map(str, r["exit_codes"])),
+            r["events"],
+            r["manifest_records"],
+            "yes" if r["agrees_with_replay"] else "**NO**",
+        ]
+        for name, r in live["records"].items()
+    ]
+    out += [
+        (
+            f"Real PostgreSQL and Kafka, every process a separate OS process under "
+            f"`dcp-instrument`, consumers reading their named record by exact offset "
+            f"(run id `{live['run_id']}`; {live['mode']})."
+        ),
+        "",
+        *table(
+            [
+                "Key",
+                "Processes",
+                "Exit codes",
+                "DCP events",
+                "Records in the run manifest",
+                "Every row agrees with replay",
+            ],
+            rows,
+        ),
+        "",
+        *_scale_summary(live["summary"]),
+    ]
+    return out
+
+
 def stage5_trigger(results: dict) -> list[str]:
     """Which of Stage 5's trigger conditions fire, from the numbers."""
     fired = []
@@ -269,6 +501,18 @@ def _cpu(results: dict) -> list[str]:
         ),
         "",
     ]
+    if any(
+        "(added in P5.1)" in tier["label"]
+        for py in results["cpu"]["pythons"]
+        for tier in py.get("tiers", {}).values()
+    ):
+        out += [P51_TIERS_NOTE, ""]
+    if any(
+        "normalize_us" in tier
+        for py in results["cpu"]["pythons"]
+        for tier in py.get("tiers", {}).values()
+    ):
+        out += [NORMALIZE_NOTE, ""]
     for py in results["cpu"]["pythons"]:
         if "error" in py:
             out += [
@@ -278,20 +522,23 @@ def _cpu(results: dict) -> list[str]:
                 "",
             ]
             continue
+        normalize = any("normalize_us" in tier for tier in py["tiers"].values())
         rows = []
         for name, tier in py["tiers"].items():
             c, k = tier["capture_us"], tier["classify_us"]
-            rows.append(
-                [
-                    f"{name} {tier['label']}",
-                    us(c["p50"]),
-                    us(c["p95"]),
-                    us(c["p99"]),
-                    us(c["p99.9"]),
-                    us(k["p50"]),
-                    us(k["p99"]),
-                ]
-            )
+            row = [
+                f"{name} {tier['label']}",
+                us(c["p50"]),
+                us(c["p95"]),
+                us(c["p99"]),
+                us(c["p99.9"]),
+                us(k["p50"]),
+                us(k["p99"]),
+            ]
+            if normalize:
+                n = tier.get("normalize_us") or {}
+                row += [us(n.get("p50")), us(n.get("p99"))]
+            rows.append(row)
         out += [
             (
                 f"### Python {py['python']} (sqlglot {py['sqlglot']}; {py['warmup']} warm-up, "
@@ -307,6 +554,7 @@ def _cpu(results: dict) -> list[str]:
                     "p99.9",
                     "classify p50",
                     "classify p99",
+                    *(["normalise p50", "normalise p99"] if normalize else []),
                 ],
                 rows,
             ),
@@ -315,20 +563,147 @@ def _cpu(results: dict) -> list[str]:
     return out
 
 
+def _has_implied(versus: dict) -> bool:
+    return any("implied_added_us" in v for v in versus.values())
+
+
 def _verdict_rows(versus: dict) -> list[list]:
+    implied = _has_implied(versus)
     rows = []
     for config, v in versus.items():
-        rows.append(
-            [
-                config,
-                ci(v["added_p50_us"]),
-                ci(v["added_p99_us"]),
-                pct(v["throughput_change_pct"]),
-                v["latency_verdict"],
-                v["throughput_verdict"],
-            ]
-        )
+        row = [
+            config,
+            ci(v["added_p50_us"]),
+            ci(v["added_p99_us"]),
+            pct(v["throughput_change_pct"]),
+        ]
+        if implied:
+            row.append(ci(v["implied_added_us"]))
+        rows.append(row + [v["latency_verdict"], v["throughput_verdict"]])
     return rows
+
+
+def _verdict_table(versus: dict) -> list[str]:
+    header = VERDICT_HEADER
+    if _has_implied(versus):
+        header = [
+            *VERDICT_HEADER[:4],
+            "Implied added µs/call [95% CI]",
+            *VERDICT_HEADER[4:],
+        ]
+    return table(header, _verdict_rows(versus))
+
+
+def _attribution(tiers: dict, kafka: dict | None) -> list[str]:
+    """A3's attribution (P5.1): the added cost split into components."""
+    blocks = [
+        (name, f"{name} {tier['label']}", tier["attribution"])
+        for name, tier in tiers.items()
+        if tier.get("attribution")
+    ]
+    if kafka and kafka.get("attribution"):
+        blocks.append(("Kafka", "Kafka `produce()`", kafka["attribution"]))
+    if not blocks:
+        return []
+    out = [
+        "### Attribution of the added cost (added in P5.1)",
+        "",
+        (
+            "Each component is the difference between two configurations, paired by "
+            "round (so `base` cancels), with a 95% bootstrap interval: by per-round p50 "
+            "latency, and by the mean cost per call that throughput implies. Microseconds."
+        ),
+        "",
+    ]
+    for _name, title, rows in blocks:
+        out += [
+            f"#### {title}",
+            "",
+            *table(
+                [
+                    "Component",
+                    "Measured as",
+                    "p50 µs [95% CI]",
+                    "Implied µs/call [95% CI]",
+                ],
+                [
+                    [
+                        r["component"],
+                        f"`{r['measured_as']}`",
+                        ci(r["p50_us"]),
+                        ci(r["implied_us"]),
+                    ]
+                    for r in rows
+                ],
+            ),
+            "",
+        ]
+    return out
+
+
+def _profile(profile: dict | None) -> list[str]:
+    if not profile:
+        return []
+    out = ["### Profiling round (added in P5.1)", "", PROFILE_NOTE, ""]
+    for config, tiers in profile["configs"].items():
+        for tier, s in tiers.items():
+            if not s.get("wrapper_found"):
+                out += [
+                    f"#### `{config}`, {tier}: DCP's wrapper not found in the profile",
+                    "",
+                ]
+                continue
+            header = [
+                "Function",
+                "Calls per call",
+                "Own µs",
+                "Cumulative µs",
+                "Share of wrapper",
+            ]
+            out += [
+                (
+                    f"#### `{config}`, {tier}: wrapper {us(s['wrapper_cumulative_us_per_call'])} "
+                    f"µs per call under cProfile, of which the original `execute` "
+                    f"{us(s.get('original_cumulative_us_per_call'))} µs ({s['calls']} calls)"
+                ),
+                "",
+                "The whole call path:",
+                "",
+                *table(header, _profile_rows(s["top"])),
+                "",
+            ]
+            if s.get("dcp_top"):
+                out += [
+                    "DCP's part only (not through the original `execute`):",
+                    "",
+                    *table(header, _profile_rows(s["dcp_top"])),
+                    "",
+                ]
+    return out
+
+
+def _profile_rows(rows: list[dict]) -> list[list]:
+    return [
+        [
+            f"`{r['function']}`",
+            f"{r['calls_per_call']:.2f}",
+            us(r["own_us_per_call"]),
+            us(r["cumulative_us_per_call"]),
+            "n/a"
+            if r["share_of_wrapper_pct"] is None
+            else f"{r['share_of_wrapper_pct']:.1f}%",
+        ]
+        for r in rows
+    ]
+
+
+def _delivery_shown(d: dict) -> str:
+    delivered = d["delivered_per_round"]
+    if "note" in d:
+        return d["note"]
+    if all(x is None for x in delivered):
+        return "not measurable (nothing listens)"
+    return ", ".join(map(str, delivered))
 
 
 VERDICT_HEADER = [
@@ -361,6 +736,8 @@ def _overhead(results: dict) -> list[str]:
         ),
         "",
     ]
+    if "added_in_p51" in o:
+        out += [P51_CONFIGS_NOTE, ""]
     for name, tier in o["postgres"]["tiers"].items():
         rows = []
         for config, lat in tier["latency_us"].items():
@@ -392,18 +769,12 @@ def _overhead(results: dict) -> list[str]:
                 rows,
             ),
             "",
-            *table(VERDICT_HEADER, _verdict_rows(tier["versus_base"])),
+            *_verdict_table(tier["versus_base"]),
             "",
         ]
     rows = []
     for config, d in o["postgres"]["delivery"].items():
-        delivered = d["delivered_per_round"]
-        shown = (
-            "not measurable (nothing listens)"
-            if all(x is None for x in delivered)
-            else (", ".join(map(str, delivered)))
-        )
-        rows.append([config, d["expected_per_round"], shown])
+        rows.append([config, d["expected_per_round"], _delivery_shown(d)])
     out += [
         "### Events delivered (Postgres rounds)",
         "",
@@ -426,7 +797,7 @@ def _overhead(results: dict) -> list[str]:
             ]
         )
     kd = [
-        [c, d["expected_per_round"], ", ".join(map(str, d["delivered_per_round"]))]
+        [c, d["expected_per_round"], _delivery_shown(d)]
         for c, d in k["delivery"].items()
     ]
     out += [
@@ -450,10 +821,12 @@ def _overhead(results: dict) -> list[str]:
             rows,
         ),
         "",
-        *table(VERDICT_HEADER, _verdict_rows(k["versus_base"])),
+        *_verdict_table(k["versus_base"]),
         "",
         *table(["Config", "Emitted per round", "Delivered, per round"], kd),
         "",
+        *_attribution(o["postgres"]["tiers"], k),
+        *_profile(o["postgres"].get("profile")),
     ]
     s = o["startup"]
     rows = [
@@ -519,6 +892,7 @@ def render(results: dict) -> str:
         *_replay(results),
         *_live(results),
         *_adversarial(results),
+        *_scale(results),
         *_cpu(results),
         *_overhead(results),
         *_trigger(results),
@@ -592,12 +966,258 @@ def _compare_rows(before: dict, after: dict) -> list[str]:
     return out
 
 
-def render_comparison(before: dict, after: dict) -> str:
-    lines = [
+def _is_p51(results: dict) -> bool:
+    tiers = results.get("overhead", {}).get("postgres", {}).get("tiers", {})
+    return any(_has_implied(t["versus_base"]) for t in tiers.values())
+
+
+def _cmp(before, after, fmt) -> list[str]:
+    return [
+        fmt(before) if before is not None else "n/a",
+        fmt(after) if after is not None else "n/a",
+    ]
+
+
+def _compare_rows_p51(before: dict, after: dict) -> list[str]:
+    """P5.1's comparison: every tier and configuration, the implied cost, the
+    attribution, Kafka and start-up. Every row, whichever way it moved."""
+    out = []
+    pythons_b = {
+        p["python"]: p for p in before.get("cpu", {}).get("pythons", []) if "tiers" in p
+    }
+    pythons_a = {
+        p["python"]: p for p in after.get("cpu", {}).get("pythons", []) if "tiers" in p
+    }
+    for version in sorted(set(pythons_b) & set(pythons_a)):
+        tb, ta = pythons_b[version]["tiers"], pythons_a[version]["tiers"]
+        rows = []
+        for name in [n for n in tb if n in ta]:
+            rows.append(
+                [
+                    f"{name} {tb[name]['label']}",
+                    *_cmp(
+                        tb[name]["capture_us"]["p50"], ta[name]["capture_us"]["p50"], us
+                    ),
+                    *_cmp(
+                        tb[name]["capture_us"]["p99"], ta[name]["capture_us"]["p99"], us
+                    ),
+                    *_cmp(
+                        tb[name]["classify_us"]["p50"],
+                        ta[name]["classify_us"]["p50"],
+                        us,
+                    ),
+                ]
+            )
+        out += [
+            f"### 4a, Python {version}: `_capture` and `_classify` (µs)",
+            "",
+            *table(
+                [
+                    "Tier",
+                    "capture p50 before",
+                    "after",
+                    "capture p99 before",
+                    "after",
+                    "classify p50 before",
+                    "after",
+                ],
+                rows,
+            ),
+            "",
+        ]
+        if any("normalize_us" in tier for tier in ta.values()):
+            rows = [
+                [
+                    f"{name} {tier['label']}",
+                    us(tier["normalize_us"]["p50"]),
+                    us(tier["normalize_us"]["p99"]),
+                ]
+                for name, tier in ta.items()
+                if "normalize_us" in tier
+            ]
+            out += [
+                f"#### 4a, Python {version}: the cache-key normalisation pass alone, after (µs)",
+                "",
+                *table(["Tier", "p50", "p99"], rows),
+                "",
+            ]
+    sections = [
         (
-            f"# P5 Stage 5: parse cache, before (`{before['label']}`) and after "
-            f"(`{after['label']}`)"
+            f"{name} {tier['label']}",
+            tier,
+            after["overhead"]["postgres"]["tiers"].get(name),
+        )
+        for name, tier in before.get("overhead", {})
+        .get("postgres", {})
+        .get("tiers", {})
+        .items()
+    ]
+    if "kafka" in before.get("overhead", {}) and "kafka" in after.get("overhead", {}):
+        sections.append(
+            (
+                "Kafka `produce()`",
+                before["overhead"]["kafka"],
+                after["overhead"]["kafka"],
+            )
+        )
+    for title, tb, ta in sections:
+        if ta is None:
+            out += [f"### 4b, {title}", "", "Not in the after run.", ""]
+            continue
+        rows = []
+        for config, vb in tb["versus_base"].items():
+            va = ta["versus_base"].get(config)
+            if va is None:
+                continue
+            rows.append(
+                [
+                    config,
+                    *_cmp(vb["added_p50_us"], va["added_p50_us"], ci),
+                    *_cmp(vb["added_p99_us"], va["added_p99_us"], ci),
+                    f"{vb['latency_verdict']} → {va['latency_verdict']}",
+                    *_cmp(
+                        vb["throughput_change_pct"], va["throughput_change_pct"], pct
+                    ),
+                    f"{vb['throughput_verdict']} → {va['throughput_verdict']}",
+                    *_cmp(vb.get("implied_added_us"), va.get("implied_added_us"), ci),
+                ]
+            )
+        out += [
+            f"### 4b, {title}",
+            "",
+            *table(
+                [
+                    "Config",
+                    "Added p50 µs before",
+                    "after",
+                    "Added p99 µs before",
+                    "after",
+                    "p99 verdict",
+                    "Throughput Δ before",
+                    "after",
+                    "throughput verdict",
+                    "Implied µs/call before",
+                    "after",
+                ],
+                rows,
+            ),
+            "",
+        ]
+        attr_b = {r["component"]: r for r in tb.get("attribution", [])}
+        attr_a = {r["component"]: r for r in ta.get("attribution", [])}
+        rows = [
+            [
+                name,
+                f"`{attr_b[name]['measured_as']}`",
+                *_cmp(attr_b[name]["p50_us"], attr_a[name]["p50_us"], ci),
+                *_cmp(attr_b[name]["implied_us"], attr_a[name]["implied_us"], ci),
+            ]
+            for name in attr_b
+            if name in attr_a
+        ]
+        if rows:
+            out += [
+                f"#### Attribution, {title}",
+                "",
+                *table(
+                    [
+                        "Component",
+                        "Measured as",
+                        "p50 µs before",
+                        "after",
+                        "Implied µs/call before",
+                        "after",
+                    ],
+                    rows,
+                ),
+                "",
+            ]
+    out += _fixed_cost(after)
+    sb = before.get("overhead", {}).get("startup")
+    sa = after.get("overhead", {}).get("startup")
+    if sb and sa:
+        rows = [
+            [
+                name,
+                *_cmp(v["p50"], sa["ms"].get(name, {}).get("p50"), ms),
+                *_cmp(v["p95"], sa["ms"].get(name, {}).get("p95"), ms),
+            ]
+            for name, v in sb["ms"].items()
+        ]
+        out += [
+            "### Process start-up (ms)",
+            "",
+            *table(["Command", "p50 before", "after", "p95 before", "after"], rows),
+            "",
+        ]
+    return out
+
+
+REPRESENTATIVE_QUERY_MS = (1, 10, 100)
+THROUGHPUT_TARGET = 0.02
+
+
+def loss_pct(cost_us: float, query_us: float) -> float:
+    """Throughput lost to a fixed cost per call: c / (query + c)."""
+    return 100 * cost_us / (query_us + cost_us)
+
+
+def _fixed_cost(results: dict) -> list[str]:
+    """What the implied fixed cost per call means for the < 2% target."""
+    tiers = results.get("overhead", {}).get("postgres", {}).get("tiers", {})
+    sections = [(f"{n} {tier['label']}", tier) for n, tier in tiers.items()]
+    kafka = results.get("overhead", {}).get("kafka")
+    if kafka:
+        sections.append(("Kafka `produce()`", kafka))
+    rows = []
+    for title, tier in sections:
+        for config, v in tier["versus_base"].items():
+            implied = v.get("implied_added_us")
+            if implied is None or config in ("wrap-only", "capture-null"):
+                continue
+            cost = implied["estimate"]
+            row = [title, config, ci(implied)]
+            row.append(
+                us(cost * (1 - THROUGHPUT_TARGET) / THROUGHPUT_TARGET)
+                if cost > 0
+                else "any"
+            )
+            row += [
+                f"{loss_pct(cost, ms * 1000):.2f}%" for ms in REPRESENTATIVE_QUERY_MS
+            ]
+            rows.append(row)
+    if not rows:
+        return []
+    return [
+        "### The fixed cost per call and the < 2% throughput target (after)",
+        "",
+        (
+            "From the after run's implied added µs per call (point estimate). A fixed cost "
+            "c per call takes c / (q + c) of the throughput of a query whose own latency is "
+            "q, so the loss is under 2% once q > 49 × c. The last columns apply each cost to "
+            "representative query latencies."
         ),
+        "",
+        *table(
+            [
+                "Tier",
+                "Config",
+                "Implied µs/call [95% CI]",
+                "Loss < 2% for queries slower than (µs)",
+                *[f"Loss at a {ms} ms query" for ms in REPRESENTATIVE_QUERY_MS],
+            ],
+            rows,
+        ),
+        "",
+    ]
+
+
+COMPARISON_TITLE = "P5 Stage 5: parse cache"
+
+
+def render_comparison(before: dict, after: dict, title: str = COMPARISON_TITLE) -> str:
+    lines = [
+        (f"# {title}, before (`{before['label']}`) and after (`{after['label']}`)"),
         "",
         (
             "Rendered by `benchmarks/render.py --compare` from the two runs' results JSON. "
@@ -625,7 +1245,11 @@ def render_comparison(before: dict, after: dict) -> str:
             ],
         ),
         "",
-        *_compare_rows(before, after),
+        *(
+            _compare_rows_p51(before, after)
+            if _is_p51(before) and _is_p51(after)
+            else _compare_rows(before, after)
+        ),
     ]
     return "\n".join(lines).rstrip("\n") + "\n"
 
@@ -637,6 +1261,9 @@ def main(argv=None) -> int:
     parser.add_argument(
         "--compare", action="store_true", help="BEFORE.json AFTER.json OUT.md"
     )
+    parser.add_argument(
+        "--title", default=COMPARISON_TITLE, help="the comparison's title"
+    )
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args(argv)
 
@@ -646,7 +1273,7 @@ def main(argv=None) -> int:
 
     if args.compare:
         before, after, out = args.paths
-        text = render_comparison(load(before), load(after))
+        text = render_comparison(load(before), load(after), args.title)
     else:
         source, out = args.paths
         text = render(load(source))

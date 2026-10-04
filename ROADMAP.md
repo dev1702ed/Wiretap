@@ -10,7 +10,8 @@ Three-week v1 sprint. Critical path is **P0 → P1 → P2 → P5**. P3 and P4 ma
 | **P2** | Prove multi-hop | Kafka interceptor + contextvars + header propagation; 2-hop flow links | 4–5 | ☑ |
 | **P3** | Queryable lineage | FastAPI ingest → networkx → `GET /downstream/{dataset}` | 2–3 | ☑ [results](docs/results/P3.md) |
 | **P4** | Interop | OpenLineage bridge → graph visible in Marquez | 1–2 | ☑ [results](docs/results/P4.md) (the Marquez view is written up but not yet run) |
-| **P5** | **The measurement** | Ground truth precision/recall, adversarial suite, overhead numbers | 4–5 | ☑ [results](docs/results/P5.md) for the delivered instruments; owner's full-mode run pending |
+| **P5** | **The measurement** | Ground truth precision/recall, adversarial suite, overhead numbers | 4–5 | ☑ [results](docs/results/P5.md) for the delivered instruments; owner's full-mode run done ([P5-local](docs/results/P5-local.md)): < 1 ms p99 met on every tier, < 2% throughput not met, cache-hit path only |
+| **P5.1** | Harden the evidence | Cache-miss tiers and cost attribution, start-up, scaled generated ground truth | — | ☑ [results](docs/results/P5.1.md): < 1 ms p99 met on every T and L tier in the sandbox after the literal-normalised cache; throughput not met; generated ground truth live; owner's `local-p51` run pending |
 
 ## Why the adversarial suite is written at P0
 
@@ -24,7 +25,7 @@ single largest risk reducer for a three-week P0–P5.
 - [ ] `docker-compose up` gives a lineage graph in Marquez in under 5 minutes
 - [x] The multi-hop trace context survives Postgres → Kafka → consumer ([evidence](docs/results/P5.md#8-v1-definition-of-done))
 - [x] The adversarial demo shows an edge OpenLineage misses and DCP catches ([evidence](docs/results/P5.md#8-v1-definition-of-done))
-- [ ] Measured overhead < 1 ms p99, < 2% throughput
+- [ ] Measured overhead < 1 ms p99, < 2% throughput — < 1 ms p99 met on the owner's machine on every tier and configuration, but only on the parameterised (parse-cache-hit) path; < 2% throughput not met ([evidence](docs/results/P5.md#8-v1-definition-of-done); cache-miss path, measured in P5.1 and met in the sandbox on every T and L tier after the literal-normalised cache: [P5.1](docs/results/P5.1.md))
 - [ ] Spec, quickstart, and concepts docs published under Apache 2.0
 
 ## After v1

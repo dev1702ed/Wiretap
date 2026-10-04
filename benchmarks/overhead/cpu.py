@@ -15,6 +15,13 @@ parenting, as in a script that reads, then writes.
 The emitter discards events, so this is capture alone: parsing, identity,
 parenting, event construction. Serialising and delivering an event is the
 sink's cost, measured live in 4b.
+
+The L tiers (added in P5.1) send a different text on every call, warm-up
+included, so every call misses the parse cache's exact-text level: the texts
+are built before timing starts, and each timed call gets the next one.
+
+Where the SDK has it (P5.1 O1 onwards), the literal-normalisation pass that
+builds the cache's second-level key is also timed on its own, per tier.
 """
 
 import argparse
@@ -25,7 +32,7 @@ import platform
 import sys
 import time
 
-from queries import TIERS
+from queries import TIERS, literal_texts
 from stats import summarize
 
 WARMUP = 1_000
@@ -68,9 +75,42 @@ def _time(fn, query, warmup: int, timed: int) -> list[int]:
     return samples
 
 
+def _time_each(fn, texts_warm: list[str], texts_timed: list[str]) -> list[int]:
+    """Like _time, but call k gets its own text: a literal tier's distinct texts."""
+    for text in texts_warm:
+        fn(text)
+    samples = []
+    clock = time.perf_counter_ns
+    for text in texts_timed:
+        start = clock()
+        fn(text)
+        samples.append(clock() - start)
+    return samples
+
+
+def _timer(tier, warmup: int, timed: int):
+    """time(fn) -> samples, for this tier: the same text, or a new text per call."""
+    if not tier.literal:
+        return lambda fn: _time(fn, tier.query, warmup, timed)
+    warm = literal_texts(tier, warmup)
+    texts = literal_texts(tier, timed, start=warmup)
+    return lambda fn: _time_each(fn, warm, texts)
+
+
+def _timer_offset(tier, warmup: int, timed: int):
+    """A literal tier's timer over texts numbered after the first timer's."""
+    start = warmup + timed
+    warm = literal_texts(tier, warmup, start=start)
+    texts = literal_texts(tier, timed, start=start + warmup)
+    return lambda fn: _time_each(fn, warm, texts)
+
+
 def run(warmup: int = WARMUP, timed: int = TIMED) -> dict:
     from dcp import config
+    from dcp.interceptors import postgres
     from dcp.interceptors.postgres import _capture, _classify
+
+    cache_key = getattr(postgres, "_cache_key", None)  # P5.1 O1 onwards
 
     cursor = FakeCursor()
     point_read = TIERS[0].query
@@ -81,18 +121,29 @@ def run(warmup: int = WARMUP, timed: int = TIMED) -> dict:
     tiers = {}
     try:
         for tier in TIERS:
+            timer = _timer(tier, warmup, timed)
 
-            def capture_samples(query=tier.query):
+            def capture_samples(timer=timer):
                 _capture(cursor, point_read)  # an earlier read, for job-level parenting
-                return _time(lambda q: _capture(cursor, q), query, warmup, timed)
+                return timer(lambda q: _capture(cursor, q))
 
             capture = contextvars.Context().run(capture_samples)
-            classify = _time(_classify, tier.query, warmup, timed)
+            # A literal tier's texts were all just parsed once by capture: rebuild
+            # the timer with texts it has not seen, so classify misses the cache too.
+            classify = (
+                _timer_offset(tier, warmup, timed)(_classify)
+                if tier.literal
+                else timer(_classify)
+            )
             tiers[tier.name] = {
                 "label": tier.label,
                 "capture_us": summarize(capture, scale=1000),
                 "classify_us": summarize(classify, scale=1000),
             }
+            if cache_key is not None:  # P5.1 O1: the normalisation pass alone
+                tiers[tier.name]["normalize_us"] = summarize(
+                    timer(cache_key), scale=1000
+                )
     finally:
         config._emitter, config._job, config._propagate_sql = saved
     return {

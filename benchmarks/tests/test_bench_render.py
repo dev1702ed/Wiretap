@@ -99,3 +99,101 @@ def test_trigger_reads_the_numbers():
 )
 def test_number_formats(value, text):
     assert render.us(value) == text
+
+
+# P5.1: the L tiers, ablations, implied cost, attribution, profile, pins.
+# data/render_p51_fixture.json is SYNTHETIC in the same way: trimmed from a
+# quick trial run, with a made-up environment and a fabricated pin mismatch.
+FIXTURE_P51 = DATA / "render_p51_fixture.json"
+EXPECTED_P51 = DATA / "render_p51_expected.md"
+EXPECTED_P51_COMPARISON = DATA / "render_p51_comparison_expected.md"
+
+
+def fixture_p51() -> dict:
+    return json.loads(FIXTURE_P51.read_text(encoding="utf-8"))
+
+
+def after_p51(before: dict) -> dict:
+    """A deterministic 'after' for the P5.1 comparison: capture halved, every
+    added and implied cost halved, start-up halved, one tier left out."""
+    out = after(before)
+    out["label"] = "fixture-p51-after"
+
+    def halve(result):
+        return {
+            k: (v / 2 if k in ("estimate", "low", "high") else v)
+            for k, v in result.items()
+        }
+
+    for tier in out["overhead"]["postgres"]["tiers"].values():
+        for v in tier["versus_base"].values():
+            for key in ("added_p50_us", "added_p99_us", "implied_added_us"):
+                v[key] = halve(v[key])
+        for row in tier["attribution"]:
+            row["p50_us"], row["implied_us"] = (
+                halve(row["p50_us"]),
+                halve(row["implied_us"]),
+            )
+    for py in out["cpu"]["pythons"]:
+        for tier in py["tiers"].values():
+            tier["normalize_us"] = {k: 1.0 for k in tier["capture_us"]}
+    for value in out["overhead"]["startup"]["ms"].values():
+        for k in ("p50", "p95"):
+            value[k] /= 2
+    del out["overhead"]["postgres"]["tiers"]["T2"]
+    return out
+
+
+def test_p51_render_matches_the_expected_markdown():
+    check(render.render(fixture_p51()), EXPECTED_P51)
+
+
+def test_p51_comparison_matches_the_expected_markdown():
+    before = fixture_p51()
+    text = render.render_comparison(before, after_p51(before), "P5.1: before and after")
+    check(text, EXPECTED_P51_COMPARISON)
+
+
+def test_p51_sections_are_present_and_disclosed():
+    text = render.render(fixture_p51())
+    assert render.P51_TIERS_NOTE in text and render.P51_CONFIGS_NOTE in text
+    assert "### L1 point read, literal (added in P5.1)" in text
+    assert "Implied added µs/call [95% CI]" in text
+    assert "### Attribution of the added cost (added in P5.1)" in text
+    assert "### Profiling round (added in P5.1)" in text and render.PROFILE_NOTE in text
+    assert "none by design (capture off)" in text
+    assert "**1 of 3 differ from the pins**" in text
+
+
+def test_the_p5_fixture_renders_without_any_p51_section():
+    """Results from before P5.1 (no implied cost, no ablations) render as they did."""
+    text = render.render(fixture())
+    for marker in (
+        "added in P5.1",
+        "Implied",
+        "Attribution",
+        "Profiling round",
+        "Pinned",
+    ):
+        assert marker not in text
+
+
+def test_the_normalisation_columns_appear_only_when_measured():
+    results = fixture_p51()
+    assert "normalise p50" not in render.render(results)
+    for py in results["cpu"]["pythons"]:
+        for tier in py["tiers"].values():
+            tier["normalize_us"] = {"p50": 2.5, "p99": 4.0}
+    text = render.render(results)
+    assert "| classify p99 | normalise p50 | normalise p99 |" in text
+    assert render.NORMALIZE_NOTE in text
+
+
+def test_the_fixed_cost_table_is_computed_from_the_implied_cost():
+    assert render.loss_pct(20.0, 980.0) == pytest.approx(2.0)
+    before = fixture_p51()
+    text = render.render_comparison(before, after_p51(before), "t")
+    assert "### The fixed cost per call and the < 2% throughput target (after)" in text
+    t1 = after_p51(before)["overhead"]["postgres"]["tiers"]["T1"]["versus_base"]["file"]
+    cost = t1["implied_added_us"]["estimate"]
+    assert f"| {render.us(cost * 49)} |" in text

@@ -21,8 +21,9 @@ IDS = [f"{workload}/{process['job']}" for workload, process in PROCESSES]
 
 
 class FakeMessage:
-    def __init__(self, value: bytes, error=None):
+    def __init__(self, value: bytes, error=None, topic="t", partition=0, offset=0):
         self._value, self._error = value, error
+        self._topic, self._partition, self._offset = topic, partition, offset
 
     def value(self):
         return self._value
@@ -30,31 +31,56 @@ class FakeMessage:
     def error(self):
         return self._error
 
+    def topic(self):
+        return self._topic
+
+    def partition(self):
+        return self._partition
+
+    def offset(self):
+        return self._offset
+
 
 class FakeKafka:
-    """confluent_kafka stand-in. Records produce/subscribe/poll; serves `queue`."""
+    """confluent_kafka stand-in. Records produce/assign/poll; serves `queue`.
+    Each produced record lands at the next offset of partition 0 of its topic,
+    reported through the on_delivery callback at flush(), as librdkafka does."""
 
     def __init__(self, log: list, queue: list):
         log_, queue_ = log, queue
+        offsets: dict = {}
+
+        class TopicPartition:
+            def __init__(self, topic, partition, offset):
+                self.topic, self.partition, self.offset = topic, partition, offset
 
         class Producer:
             def __init__(self, config):
                 log_.append(("producer", config["bootstrap.servers"]))
+                self.pending = []
 
-            def produce(self, topic, value=None):
+            def produce(self, topic, value=None, on_delivery=None):
                 log_.append(("produce", topic, value.decode()))
+                offset = offsets.get(topic, 0)
+                offsets[topic] = offset + 1
+                msg = FakeMessage(value, topic=topic, partition=0, offset=offset)
+                self.pending.append((on_delivery, msg))
 
             def flush(self, timeout):
+                for callback, msg in self.pending:
+                    callback(None, msg)
+                self.pending = []
                 return 0
 
         class Consumer:
             def __init__(self, config):
                 log_.append(
-                    ("consumer", config["group.id"], config["auto.offset.reset"])
+                    ("consumer", config["group.id"], config.get("auto.offset.reset"))
                 )
 
-            def subscribe(self, topics):
-                log_.append(("subscribe", tuple(topics)))
+            def assign(self, partitions):
+                for tp in partitions:
+                    log_.append(("assign", tp.topic, tp.partition, tp.offset))
 
             def poll(self, timeout):
                 return queue_.pop(0) if queue_ else None
@@ -62,7 +88,9 @@ class FakeKafka:
             def close(self):
                 log_.append(("close",))
 
-        self.module = types.SimpleNamespace(Producer=Producer, Consumer=Consumer)
+        self.module = types.SimpleNamespace(
+            Producer=Producer, Consumer=Consumer, TopicPartition=TopicPartition
+        )
 
 
 class FakePsycopg:
@@ -99,7 +127,9 @@ class FakePsycopg:
 
 
 @pytest.fixture
-def fakes(monkeypatch):
+def fakes(monkeypatch, tmp_path):
+    """Fake libraries, and a working directory for the run manifest."""
+    monkeypatch.chdir(tmp_path)
     log: list = []
     queue: list = []
     monkeypatch.setitem(sys.modules, "psycopg", FakePsycopg(log).module)
@@ -121,14 +151,26 @@ def expected_calls(process: dict) -> list[tuple]:
         elif "produce" in step:
             calls.append(("produce", step["produce"], step["record"]))
         else:
-            calls.append(("subscribe", (step["consume"],)))
+            calls.append(("assign", step["consume"], 0, OFFSET))
     return calls
 
 
+OFFSET = 7  # where records_to_serve puts each consumed record
+
+
 def records_to_serve(process: dict) -> list[FakeMessage]:
-    return [
-        FakeMessage(s["record"].encode()) for s in process["steps"] if "consume" in s
-    ]
+    """The consumed records, served at OFFSET, and logged in the run manifest
+    (the working directory is the test's) as an earlier process would have."""
+    served = []
+    with open(generate.MANIFEST, "a", encoding="utf-8") as f:
+        for s in process["steps"]:
+            if "consume" in s:
+                entry = {"record": s["record"], "topic": s["consume"], "partition": 0}
+                f.write(json.dumps(dict(entry, offset=OFFSET)) + "\n")
+                served.append(
+                    FakeMessage(s["record"].encode(), topic=s["consume"], offset=OFFSET)
+                )
+    return served
 
 
 @pytest.mark.parametrize(("workload", "process"), PROCESSES, ids=IDS)
@@ -148,7 +190,7 @@ def test_script_does_the_steps_in_order(workload, process, fakes):
     log, queue = fakes
     queue += records_to_serve(process)
     run_source(generate.script_source(workload, process, "g"))
-    calls = [c for c in log if c[0] in ("sql", "produce", "subscribe")]
+    calls = [c for c in log if c[0] in ("sql", "produce", "assign")]
     assert calls == expected_calls(process)
     assert log[0] == ("connect", generate.PG_CONNINFO, True)
     assert "password" not in generate.PG_CONNINFO  # libpq takes it from PGPASSWORD
@@ -174,9 +216,9 @@ def test_notebook_has_one_cell_per_step(workload, process, fakes):
     namespace: dict = {"__name__": "__notebook__"}
     for cell in cells:  # one kernel namespace, cell after cell
         exec(compile(cell["source"], cell["id"], "exec"), namespace)  # noqa: S102
-    assert [
-        c for c in log if c[0] in ("sql", "produce", "subscribe")
-    ] == expected_calls(process)
+    assert [c for c in log if c[0] in ("sql", "produce", "assign")] == expected_calls(
+        process
+    )
     assert log[-1] == ("conn-close",)
 
 
@@ -194,48 +236,115 @@ def test_notebook_is_written_as_json(tmp_path):
 
 @pytest.fixture
 def consume(fakes):
-    """The generated consume() on its own, with a short timeout."""
+    """The generated produce() and consume() on their own, with a short timeout."""
     log, queue = fakes
     namespace = run_source(generate._PRELUDE)
     namespace["CONSUME_TIMEOUT_S"] = 0.2
-    return namespace["consume"], log, queue
+    return namespace, log, queue
 
 
-def test_consume_accepts_the_expected_record(consume):
-    fn, log, queue = consume
-    queue.append(FakeMessage(b"from_orders"))
-    fn("enriched_orders", "from_orders", "group-1")
-    assert ("consumer", "group-1", "earliest") in log
+def manifest() -> list[dict]:
+    with open(generate.MANIFEST, encoding="utf-8") as f:
+        return [json.loads(line) for line in f]
+
+
+def test_produce_logs_where_each_record_landed(consume):
+    ns, _log, _queue = consume
+    ns["produce"]("from_orders", "enriched_orders")
+    ns["produce"]("from_refunds", "enriched_orders")
+    ns["produce"]("r9", "other")
+    assert manifest() == [
+        {
+            "record": "from_orders",
+            "topic": "enriched_orders",
+            "partition": 0,
+            "offset": 0,
+        },
+        {
+            "record": "from_refunds",
+            "topic": "enriched_orders",
+            "partition": 0,
+            "offset": 1,
+        },
+        {"record": "r9", "topic": "other", "partition": 0, "offset": 0},
+    ]
+
+
+def test_consume_seeks_to_the_records_exact_offset(consume):
+    """B1: not the earliest record: the named one, wherever it landed."""
+    ns, log, queue = consume
+    ns["produce"]("from_refunds", "enriched_orders")
+    ns["produce"]("from_orders", "enriched_orders")  # offset 1, not the earliest
+    queue.append(FakeMessage(b"from_orders", topic="enriched_orders", offset=1))
+    ns["consume"]("enriched_orders", "from_orders", "group-1")
+    assert ("consumer", "group-1", None) in log
+    assert ("assign", "enriched_orders", 0, 1) in log
     assert log[-1] == ("close",)
 
 
 def test_consume_fails_loudly_on_the_wrong_record(consume):
-    fn, log, queue = consume
-    queue.append(FakeMessage(b"from_refunds"))
+    ns, log, queue = consume
+    ns["produce"]("from_orders", "enriched_orders")
+    queue.append(FakeMessage(b"from_refunds", topic="enriched_orders", offset=0))
     with pytest.raises(
         SystemExit, match="expected record 'from_orders'.*got 'from_refunds'"
     ):
-        fn("enriched_orders", "from_orders", "g")
+        ns["consume"]("enriched_orders", "from_orders", "g")
     assert log[-1] == ("close",)
 
 
+def test_consume_fails_loudly_on_the_wrong_offset(consume):
+    ns, _log, queue = consume
+    ns["produce"]("from_orders", "enriched_orders")
+    queue.append(FakeMessage(b"from_orders", topic="enriched_orders", offset=3))
+    with pytest.raises(
+        SystemExit,
+        match=r"at 'enriched_orders' \(0, 0\), got 'from_orders' at \(0, 3\)",
+    ):
+        ns["consume"]("enriched_orders", "from_orders", "g")
+
+
+def test_consume_fails_loudly_when_the_record_was_never_produced(consume):
+    ns, _log, _queue = consume
+    with pytest.raises(SystemExit, match="0 entries for 'from_orders'"):
+        ns["consume"]("enriched_orders", "from_orders", "g")
+
+
 def test_consume_fails_loudly_when_nothing_arrives(consume):
-    fn, _log, _queue = consume
+    ns, _log, _queue = consume
+    ns["produce"]("from_orders", "enriched_orders")
     with pytest.raises(SystemExit, match="no record on 'enriched_orders'"):
-        fn("enriched_orders", "from_orders", "g")
+        ns["consume"]("enriched_orders", "from_orders", "g")
 
 
 def test_consume_fails_loudly_on_a_broker_error(consume):
-    fn, _log, queue = consume
+    ns, _log, queue = consume
+    ns["produce"]("from_orders", "enriched_orders")
     queue.append(FakeMessage(b"", error="broker down"))
     with pytest.raises(SystemExit, match="consume error"):
-        fn("enriched_orders", "from_orders", "g")
+        ns["consume"]("enriched_orders", "from_orders", "g")
 
 
 def test_consume_waits_through_empty_polls(consume):
-    fn, _log, queue = consume
-    queue += [None, None, FakeMessage(b"r1")]
-    fn("enriched_orders", "r1", "g")
+    ns, _log, queue = consume
+    ns["produce"]("r1", "enriched_orders")
+    queue += [None, None, FakeMessage(b"r1", topic="enriched_orders", offset=0)]
+    ns["consume"]("enriched_orders", "r1", "g")
+
+
+def test_a_failed_delivery_fails_loudly(consume, monkeypatch):
+    ns, _log, _queue = consume
+    producer_cls = ns["Producer"]
+
+    class Failing(producer_cls):
+        def flush(self, timeout):
+            for callback, msg in self.pending:
+                callback("broker said no", msg)
+            return 0
+
+    ns["Producer"] = Failing
+    with pytest.raises(SystemExit, match="failed delivery"):
+        ns["produce"]("r1", "enriched_orders")
 
 
 def test_consumer_groups_are_unique_per_run_and_process():

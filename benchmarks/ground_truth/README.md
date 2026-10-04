@@ -1,8 +1,15 @@
 # Ground truth
 
-Hand-written answer keys for known workloads. DCP's output is graded against
-them; DCP never generates them. An instrument that grades itself measures
-nothing.
+Answer keys for known workloads. DCP's output is graded against them; DCP
+never generates them. An instrument that grades itself measures nothing.
+
+There are two kinds, always scored and reported **apart, never pooled**:
+
+- **Hand-written keys** (one directory each, below): four small workloads,
+  each built to discriminate one property. Read-only.
+- **Generated keys** (`generated/`, P5.1): larger workloads produced by
+  `generate.py` from fixed seeds, with the truth derived from the generator's
+  own construction. See [Generated keys](#generated-keys-p51).
 
 Order matters: precision and recall here must land before the adversarial
 results mean anything. An instrument not shown to be accurate cannot be used to
@@ -85,3 +92,63 @@ These are replays, not live runs. Since P5, `benchmarks/live` also runs every ke
 `dcp-instrument`) and scores it with the same row functions; `score.py`'s event
 source is pluggable (`score_all(events_for)`) and its replay output is pinned byte
 for byte by `backend/tests/test_backend_score.py`.
+
+## Generated keys (P5.1)
+
+Four hand-written workloads that each score 1.0 read as a toy. `generate.py`
+builds larger ones, in the same answer-key format, and knows the truth because
+it decides what every program does.
+
+    python benchmarks/ground_truth/generate.py --write   # regenerate generated/*.json
+    python benchmarks/ground_truth/generate.py --check   # verify them byte for byte
+
+| Key | Seed | Jobs |
+|---|---|---|
+| `generated/scale_s01.json` … `scale_s10.json` | 1 … 10 | 30 each |
+| `generated/scale_large.json` | 100 | 100 |
+
+**What a workload contains:** source tables `gen_src_NN (id int, v int)` with
+seeded rows; *script* jobs that read tables, produce records to topics and
+sometimes insert one row; *consumer* jobs that consume specific named records
+and insert one row; *multi-statement* jobs of `INSERT … SELECT` statements;
+*notebook* jobs that read tables and insert one row; few topics with many
+producers (fan-in); and **distractor reads**: with probability `p_distractor`
+(default 0.3) a job reads a table whose values it then does not use.
+
+**The truth is real data flow.** A script's records and inserted row carry
+the sum of `v` over the rows of the tables it *uses*, computed by the generator
+from the seeded rows and written into the SQL text and the record's name (`r007=412`);
+a consumer inserts the sum of the records it consumed. The key credits only
+those inputs. Where a job read a distractor before an `INSERT … VALUES` or a
+produce, DCP's job-level parenting credits the distractor too, so DCP's
+precision drops below 1.0 there. That measures a known limitation; the
+generator is never configured to avoid it.
+
+**Not generated, by design:** a job never reads a table another generated job
+wrote (store-mediated lineage is out of v1 scope; Postgres reads carry no
+parents), and a consumer never reads two records from one topic (job-level
+parenting keeps the latest read per dataset). Both are documented v1
+limitations, not something the scaled benchmark should rediscover.
+
+**Format additions,** ignored by replay and scoring: a `generated` block
+(generator path, version, seed, parameters, `hand_written: false`, and each
+job's distractor reads), `tables` (columns and seeded rows) and `topics`, which
+`live/seed.py --key` uses to seed a live run. Every process names its `kind`.
+
+**Read-only means the seeds and the generator version.** Rule 3 of
+`docs/tasks/P5.md` §2 applies to them, never to hand edits: never edit a
+generated key by hand. `benchmarks/tests/test_bench_generate.py` checks that
+every committed key regenerates byte for byte, that the truth derivation
+matches hand-checked expectations on tiny workloads, and that the generated
+programs contain no DCP code. The files are committed with `-text`
+(`.gitattributes`), so a Windows checkout keeps their exact bytes.
+
+**Scoring** (`scale.py`, the `scale` stage of `benchmarks/run.py`): each key is
+scored with `score.py`'s own row functions, then grouped by method (DCP
+run-level, the dataset-level baseline, OpenLineage's core model, OpenLineage
+with the `dcp` facet) and level (nodes, dataset edges, run edges, provenance),
+and micro-averaged across the seeds, with the per-key distribution. `scale_large`
+is reported on its own. Every item DCP finds beyond the truth is checked
+against the generator's distractor reads, and any recall below 1.0 is listed.
+Replay covers every key; live covers every key in full mode and `scale_s01`
+only in quick mode (CI).
