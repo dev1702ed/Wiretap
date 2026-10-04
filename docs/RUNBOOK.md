@@ -62,25 +62,29 @@ ruff format --check sdk-python backend benchmarks bridges
 ```
 
 **Expect** the final summary lines below (the counts the CI `windows` job, Python 3.14
-on `windows-latest`, reported on this release's code; only the timings differ):
+on `windows-latest`, reported on this release's code, CI run 37220588929; only the timings
+differ):
 
 | Directory | Summary line on Windows |
 |---|---|
-| `sdk-python/tests` | `726 passed, 3 skipped, 1 xfailed` |
+| `sdk-python/tests` | `725 passed, 4 skipped, 1 xfailed` |
 | `backend/tests` | `80 passed` |
 | `bridges/openlineage/tests` | `68 passed` |
-| `benchmarks/tests` | `330 passed, 1 skipped` |
+| `benchmarks/tests` | `317 passed, 1 skipped` |
 
 Then `All checks passed!` and `... files already formatted`.
 
 The skips, all expected, are listed by `-rs`:
 
-- SDK: two `os.fork is not available here` (Windows has no `fork`), and
+- SDK: three `os.fork is not available here` (Windows has no `fork`), and
   `test_propagation.py`'s live-Postgres test (set `DCP_TEST_PG` to run it);
 - benchmarks: `test_b2_10_live_replay_of_a_tiny_stress_key` (opt-in with
   `DCP_TEST_LIVE=1`, because it drops and re-creates `gen_*` tables).
 
-The xfail is the documented thread-pool limitation (`test_threads.py`).
+The xfail is the documented thread-pool limitation (`test_threads.py`). (CI's `windows` job,
+which installs the packages without the pins, also prints `1 warning` for the backend:
+Starlette's deprecation of `httpx` in its `TestClient`, known since P3. With the pins it
+does not appear.)
 
 **If not:** any other failure or skip is a bug: note the test name and the message, and
 stop. A failure in `test_bench_evidence.py::test_the_committed_pack_and_readme_block_are_up_to_date`
