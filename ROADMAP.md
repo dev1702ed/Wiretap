@@ -14,7 +14,7 @@ Three-week v1 sprint. Critical path is **P0 → P1 → P2 → P5**. P3 and P4 ma
 | **P3** | Queryable lineage | FastAPI ingest → networkx → `GET /downstream/{dataset}` | 2–3 | ☑ [results](docs/results/P3.md) |
 | **P4** | Interop | OpenLineage bridge → graph visible in Marquez | 1–2 | ☑ [results](docs/results/P4.md) (the Marquez view is written up but not yet run) |
 | **P5** | **The measurement** | Ground truth precision/recall, adversarial suite, overhead numbers | 4–5 | ☑ [results](docs/results/P5.md) for the delivered instruments; owner's full-mode run done ([P5-local](docs/results/P5-local.md)): < 1 ms p99 met on every tier, < 2% throughput not met, cache-hit path only |
-| **P5.1** | Harden the evidence | Cache-miss tiers and cost attribution, start-up, scaled generated ground truth | — | ☑ [results](docs/results/P5.1.md): < 1 ms p99 met on every T and L tier in the sandbox after the literal-normalised cache; throughput not met; generated ground truth live; owner's `local-p51` run pending |
+| **P5.1** | Harden the evidence | Cache-miss tiers and cost attribution, start-up, scaled generated ground truth | — | ☑ [results](docs/results/P5.1.md): < 1 ms p99 met on every T and L tier in the sandbox after the literal-normalised cache ([after](docs/results/P5-p51-after-final.md)); throughput not met; generated ground truth live; owner's `local-p51` run pending. On the owner's machine, [`local-final`](docs/results/P5-local-final.md) met < 1 ms p99 in every cell except four inconclusive write-tier cells, in a run that deviated from runbook step 3; a compliant rerun is pending ([runs](docs/results/local-runs.md)) |
 | **P5.2** | Fair baselines; close v1 | Per-process OpenLineage mapping, the stress set (DCP's failure modes, measured), limitations, evidence pack, figures, release metadata, owner runbook | — | ☑ [results](docs/results/P5.2.md), [v1 report](docs/results/V1.md) |
 
 ## Why the adversarial suite is written at P0
@@ -31,13 +31,21 @@ meet it, is in [`docs/results/V1.md`](docs/results/V1.md#the-definition-of-done-
 - [ ] `pip install dcp` + two lines instruments a Postgres+Kafka Python flow — **not met**
   as worded: instrumenting takes no lines (`dcp-instrument`) and the packages are ready,
   but the name `dcp` is taken on PyPI (publishing under another name is owner step 11)
-- [ ] `docker-compose up` gives a lineage graph in Marquez in under 5 minutes — **owner
-  step pending** ([`RUNBOOK.md`](docs/RUNBOOK.md), step 7)
+- [x] `docker-compose up` gives a lineage graph in Marquez in under 5 minutes — **met**:
+  the owner's cold run (the demo's images removed first) and warm run were both under 5
+  minutes, with Marquez's API showing both jobs linked through `enriched_orders` and the
+  demo exiting `0` ([`demo-local.md`](docs/results/demo-local.md))
 - [x] The multi-hop trace context survives Postgres → Kafka → consumer — **met**
 - [x] The adversarial demo shows an edge OpenLineage misses and DCP catches — **met**
-- [ ] Measured overhead < 1 ms p99, < 2% throughput — **not met** (the throughput half;
-  < 1 ms p99 met in the sandbox on every T and L tier, the owner's final run pending,
-  step 4)
+- [ ] Measured overhead < 1 ms p99, < 2% throughput — **not met**: < 2% throughput is not
+  met. < 1 ms p99 added is met on every T and L tier in the sandbox
+  ([`P5-p51-after-final.md`](docs/results/P5-p51-after-final.md)). On the owner's machine
+  ([`P5-local-final.md`](docs/results/P5-local-final.md), evidence
+  [C6](docs/paper/evidence.md#c6-overhead)) it is met in every cell except four write-tier
+  cells, three with the `http` sink and one with `file`, which are inconclusive (their 95%
+  CI spans 1 ms). That run deviated from runbook step 3 (OneDrive was syncing and the
+  editor was open); one compliant rerun, `local-final-2`, is pending, and this wording is
+  updated once more after it, whatever it shows ([`local-runs.md`](docs/results/local-runs.md))
 - [ ] Spec, quickstart, and concepts docs published under Apache 2.0 — **owner step
   pending**: public under Apache 2.0, the citable `v0.1.0` release is step 10
 
