@@ -39,11 +39,11 @@ Copied from [`docs/paper/evidence.md`](docs/paper/evidence.md) by `python benchm
 
 | Claim | What | Result | Record |
 |---|---|---|---|
-| [C1](docs/paper/evidence.md#c1-coverage) | Coverage, live | case 1 (Ad-hoc script): demonstrated live; case 2 (Notebook): demonstrated live; case 3 (Shared topic, run-level precision): demonstrated live. OpenLineage events from the same programs without DCP: 0 | [`P5-p52-mapping.md`](docs/results/P5-p52-mapping.md), sandbox |
-| [C3](docs/paper/evidence.md#c3-accuracy-at-scale) | Accuracy at scale, provenance | DCP run-level: precision 891/995 = 0.895, recall 891/891 = 1.000; OpenLineage core (per process): precision 891/1855 = 0.480, recall 891/891 = 1.000 | [`P5-p52-stress.md`](docs/results/P5-p52-stress.md), sandbox |
-| [C4](docs/paper/evidence.md#c4-failure-modes) | Failure modes (stress set), provenance | DCP run-level: precision 402/452 = 0.889, recall 402/457 = 0.880; dataset-level baseline: precision 457/640 = 0.714, recall 457/457 = 1.000 | [`P5-p52-stress.md`](docs/results/P5-p52-stress.md), sandbox |
-| [C6](docs/paper/evidence.md#c6-overhead) | < 1 ms p99 added, `file` sink | T1 met, T2 met, T3 met, T4 met, T5 met, L1 met, L3 met, L5 met | [`P5-p51-after-final.md`](docs/results/P5-p51-after-final.md), sandbox |
-| [C8](docs/paper/evidence.md#c8-throughput-model) | Throughput, as a fixed cost per call (`file` sink) | T1 point read: +72.4 [+63.8, +81.0] µs per call, under 2% for queries slower than 3546.1 µs; L5 analytical, literal (added in P5.1): +257.8 [+235.3, +281.7] µs per call, under 2% for queries slower than 12631.1 µs | [`P5-p51-final-comparison.md`](docs/results/P5-p51-final-comparison.md), sandbox |
+| [C1](docs/paper/evidence.md#c1-coverage) | Coverage, live | case 1 (Ad-hoc script): demonstrated live; case 2 (Notebook): demonstrated live; case 3 (Shared topic, run-level precision): demonstrated live. OpenLineage events from the same programs without DCP: 0 | [`P5-local-final.md`](docs/results/P5-local-final.md), owner |
+| [C3](docs/paper/evidence.md#c3-accuracy-at-scale) | Accuracy at scale, provenance | DCP run-level: precision 891/995 = 0.895, recall 891/891 = 1.000; OpenLineage core (per process): precision 891/1855 = 0.480, recall 891/891 = 1.000 | [`P5-local-final.md`](docs/results/P5-local-final.md), owner |
+| [C4](docs/paper/evidence.md#c4-failure-modes) | Failure modes (stress set), provenance | DCP run-level: precision 402/452 = 0.889, recall 402/457 = 0.880; dataset-level baseline: precision 457/640 = 0.714, recall 457/457 = 1.000 | [`P5-local-final.md`](docs/results/P5-local-final.md), owner |
+| [C6](docs/paper/evidence.md#c6-overhead) | < 1 ms p99 added, `file` sink | T1 met, T2 met, T3 met, T4 met, T5 met, L1 met, L3 inconclusive, L5 met | [`P5-local-final.md`](docs/results/P5-local-final.md), owner |
+| [C8](docs/paper/evidence.md#c8-throughput-model) | Throughput, as a fixed cost per call (`file` sink) | T1 point read: +68.9 [+63.6, +73.9] µs per call, under 2% for queries slower than 3374.0 µs; L5 analytical, literal (added in P5.1): +172.2 [+160.6, +182.7] µs per call, under 2% for queries slower than 8437.6 µs | [`P5-local-final-fixed-cost.md`](docs/results/P5-local-final-fixed-cost.md), owner |
 
 <!-- evidence:summary:end -->
 
