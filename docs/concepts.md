@@ -20,8 +20,8 @@ requires payload introspection, which costs latency and creates a privacy surfac
 otherwise avoids entirely. How much semantic granularity is recoverable at what overhead is
 the open research question — not a detail to wave through.
 
-v1 answers it by refusing the question: table-level only, column *names* where they come free
-from the result schema, no payload inspection at all.
+v1 answers it by refusing the question: table-level only, no payload inspection at all. The
+envelope defines an optional `columns` field, but v1's interceptors do not fill it.
 
 ## Why this is not a service mesh
 

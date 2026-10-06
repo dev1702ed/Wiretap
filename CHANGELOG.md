@@ -45,6 +45,16 @@ number lives in those reports and the records they cite, not here.
   `docs/LIMITATIONS.md`; the paper evidence pack (`benchmarks/evidence.py`) and figures
   (`benchmarks/figures.py`); this changelog, `CITATION.cff` and the owner's runbook.
   [Results](docs/results/P5.2.md), [v1 report](docs/results/V1.md).
+- **The owner's final runs.** The full-mode benchmark runs on the owner's machine, each
+  with its protocol status; the first final run deviated from the runbook and is archived
+  byte-for-byte beside its compliant rerun. [Runs index](docs/results/local-runs.md).
+- **The demo record.** The dark-zone demo timed cold and warm, with Marquez's API checked
+  for both jobs linked through `enriched_orders`. [Record](docs/results/demo-local.md).
+
+### Fixed
+
+- `benchmarks/evidence.py` printed each table's Source line above the table, directly
+  under the previous one; it now follows its own table, with a test.
 
 ### Known limitations
 

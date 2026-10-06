@@ -43,7 +43,8 @@ and kept with the results.
 
 The live results are generated, never typed: `python benchmarks/run.py --label
 <label>` writes them to `docs/results/P5-<label>.md` (`sandbox`: this repo's
-sandbox run; `ci`: the CI `live` job's summary; `local`: the owner's machine).
+sandbox run; `ci`: the CI `live` job's summary; `local` and `local-final`: the owner's
+machine, indexed in [`docs/results/local-runs.md`](../../docs/results/local-runs.md)).
 The baseline side is measured too: `baseline_check.py` runs the same programs
 without `dcp-instrument` against a stub OpenLineage endpoint and counts what
 arrives (BASELINE.md §3).
@@ -88,7 +89,7 @@ Every other limitation of v1, with its product follow-up, is in
 | Reads inside `ThreadPoolExecutor` workers | The trace follows the work, but the context copy is one-way, so worker reads don't parent writes made after the pool returns |
 | Kafka writes | Attested at `produce()`, not at broker acknowledgement |
 | `SerializingProducer` / `DeserializingConsumer` | Bind the original C types at import; not covered |
-| Import order (explicit calls only) | `patch_kafka()` must run before `from confluent_kafka import Producer`. `dcp-instrument` removes this hazard: it patches before any user import |
+| Import order (explicit calls only) | `patch_kafka()` must run before `from confluent_kafka import Producer`. `dcp-instrument` removes this hazard: each library is patched as it is imported, before the import returns |
 
 ## Honest test for each case
 

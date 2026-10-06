@@ -1,15 +1,14 @@
 # The dark-zone demo (P5)
 
-> **Run end to end once (P5.2), not yet timed by the owner.** In the P5.2 sandbox
-> (Docker 29.6, Compose 5.3), `time-demo.ps1`'s warm run brought the stack up and
-> Marquez's API showed `nightly_enrich.py` writing `enriched_orders` and
-> `warehouse_loader.py` reading it (`docs/results/P5.2.md`, the runbook rehearsal).
-> That sandbox needed its proxy's CA added to the image build, which is not part
-> of the repository; CI does not run the demo. Its parts are tested elsewhere: `dcp-instrument`
-> (`sdk-python/tests/test_instrument.py`), the same flow live
-> (`benchmarks/live`, the `dark_zone` answer key) and the bridge
-> (`bridges/openlineage/tests`). **Time-to-first-graph is measured by the owner**
-> with `time-demo.ps1` (`docs/RUNBOOK.md`, step 7), which writes its own record.
+> **Verified on the owner's machine.** `time-demo.ps1` (`docs/RUNBOOK.md`, step 7) timed
+> a cold and a warm run: both reached the graph in under 5 minutes, Marquez's API showed
+> both jobs linked through `enriched_orders`, and the demo exited `0`
+> ([`docs/results/demo-local.md`](../../docs/results/demo-local.md)). Caveat, from the
+> record: the cold run reused the locally present `apache/kafka:3.8.0` and `postgres:16`
+> images, which were in use elsewhere and not removed. CI does not run the demo; its
+> parts are tested there: `dcp-instrument` (`sdk-python/tests/test_instrument.py`), the
+> same flow live (`benchmarks/live`, the `dark_zone` answer key) and the bridge
+> (`bridges/openlineage/tests`).
 
 The scenario the whole project exists to show:
 

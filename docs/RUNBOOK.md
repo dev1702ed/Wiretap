@@ -14,6 +14,12 @@ release, the uploads), which no sandbox can take. Step 7's logic (the timing, th
 Marquez API check and the record it writes) is also tested in
 `benchmarks/tests/test_bench_demo_timing.py`.
 
+**Status.** Steps 1-9 are done: the runs and their protocol status are in
+[`results/local-runs.md`](results/local-runs.md), the demo record is
+[`results/demo-local.md`](results/demo-local.md), and `CITATION.cff` names the author.
+Step 10, the `v0.1.0` release, is set for 2026-10-11; step 11 is deferred (the name `dcp`
+is taken on PyPI). The steps stay below as the procedure that produced the records.
+
 **Before you start.** You need: Git for Windows; Python 3.14 (`py -3.14 --version`);
 Docker Desktop, running; about 5 GB of free disk; and roughly 90 minutes, most of it
 step 4.
@@ -62,15 +68,15 @@ ruff format --check sdk-python backend benchmarks bridges
 ```
 
 **Expect** the final summary lines below (the counts the CI `windows` job, Python 3.14
-on `windows-latest`, reported on this release's code, CI run 37220588929; only the timings
-differ):
+on `windows-latest`, reported on this release's code, CI run 37220588929, plus the one
+test added since, for the evidence pack's Source lines; only the timings differ):
 
 | Directory | Summary line on Windows |
 |---|---|
 | `sdk-python/tests` | `725 passed, 4 skipped, 1 xfailed` |
 | `backend/tests` | `80 passed` |
 | `bridges/openlineage/tests` | `68 passed` |
-| `benchmarks/tests` | `317 passed, 1 skipped` |
+| `benchmarks/tests` | `318 passed, 1 skipped` |
 
 Then `All checks passed!` and `... files already formatted`.
 
@@ -293,8 +299,8 @@ at `git diff` before committing. `rejected ... fetch first` on push: `git pull` 
 
 ## Step 9 — Your name in `CITATION.cff`
 
-Open `CITATION.cff` and replace **both** `REPLACE_WITH_OWNER_NAME` values with your
-family name and given names (add an `orcid:` line under them if you have one). Then:
+Done. `CITATION.cff` names the author. To change the name, edit its `family-names` and
+`given-names` lines (add an `orcid:` line under them if you have one). Then:
 
 ```powershell
 Select-String -Path CITATION.cff -Pattern REPLACE
@@ -313,8 +319,8 @@ validate the file: `pip install cffconvert` then `cffconvert --validate` prints
 1. **Zenodo first**, or the release gets no DOI: sign in at https://zenodo.org with
    GitHub, open *Account → GitHub*, press *Sync now*, and switch **`dev1702ed/Wiretap`**
    on.
-2. If you want the release date to be the day you release, edit `date-released` in
-   `CITATION.cff` (format `"YYYY-MM-DD"`), commit and push.
+2. `date-released` in `CITATION.cff` is set to the planned release day, 2026-10-11. If you
+   release on another day, edit it (format `"YYYY-MM-DD"`), commit and push.
 3. Tag and release. The notes are the `0.1.0` section of `CHANGELOG.md`:
 
 ```powershell

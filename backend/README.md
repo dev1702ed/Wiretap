@@ -4,8 +4,10 @@ Stores every DCP event in an append-only SQLite log, rebuilds the lineage graph 
 exactly, and answers run-level provenance, dataset-level lineage and blast-radius
 queries over an HTTP API (FastAPI).
 
+Not on PyPI; install from a clone of the repository:
+
 ```bash
-pip install dcp-backend
+pip install -e ./backend
 uvicorn app.main:app
 ```
 

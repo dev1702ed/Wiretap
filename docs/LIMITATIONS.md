@@ -94,7 +94,7 @@ follow-up below is open.
 | A quoted Postgres identifier containing a `.` can be mis-qualified (names are qualified by structure) | [`P3.md`, §7](results/P3.md#7-known-limitations-and-follow-ups) | Qualify from sqlglot's parsed identifiers only |
 | The CTE fix is statement-wide, not scope-aware | [`P5.md`, §12](results/P5.md#12-known-limitations-and-follow-ups) | Resolve CTE names per scope |
 | `python -I`, `-E` and `-S` run uninstrumented; the default `console` sink writes events to the program's stdout | [`P5.md`, §12](results/P5.md#12-known-limitations-and-follow-ups) | Document; default to a file sink under `dcp-instrument` |
-| Column names only, no column-to-column lineage | v1 scope ([`README.md`](../README.md)) | A column-lineage facet, once DCP has column lineage |
+| No column names (the envelope's optional `columns` field is defined, and carried by the bridge, but v1's interceptors do not fill it) and no column-to-column lineage | v1 scope ([`README.md`](../README.md)) | A column-lineage facet, once DCP has column lineage |
 | Kafka namespaces come from `bootstrap.servers`: clients listing different brokers of one cluster fragment | [`docs/decisions/identity.md`](decisions/identity.md) | Use the cluster ID as the namespace |
 | `localhost` is never canonicalised: the same host seen as `localhost` and by name are two datasets | [`docs/decisions/identity.md`](decisions/identity.md) | An explicit identity alias map |
 
@@ -171,7 +171,7 @@ follow-up below is open.
 | The backend must run as one process (one uvicorn worker); one SQLite connection behind a lock caps ingest | [`P3.md`, §7](results/P3.md#7-known-limitations-and-follow-ups) | A shared store and a fold per worker |
 | The HTTP sink drops events under sustained overload (counted, but the graph disconnects); a `422` rejects a whole batch; no HTTPS or authentication | [`P3.md`, §7](results/P3.md#7-known-limitations-and-follow-ups) | Back-pressure policy per deployment; TLS and auth |
 | Events still queued when a process is killed (SIGKILL, `os._exit`) are lost | [`P3.md`, §7](results/P3.md#7-known-limitations-and-follow-ups) | The file sink, which writes before each call returns, where this matters |
-| The FastAPI app still reports version `0.1.0.dev0` (`backend/app/main.py`): P5.2 could change only `__version__` lines under `backend/app/`, and it has none | P5.2 ([`P5.2.md`, §8](results/P5.2.md#8-assumptions--needs-review)) | Read the version from package metadata |
+| The FastAPI app's version is a literal in `backend/app/main.py`, set by hand to `0.1.0` for the release, so it can drift from the package version | P5.2 ([`P5.2.md`, §8](results/P5.2.md#8-assumptions--needs-review)) | Read the version from package metadata |
 
 ## 4. The OpenLineage bridge
 
@@ -229,8 +229,9 @@ follow-up below is open.
 
 ## 6. Owner steps still open (not limitations of the code)
 
-These are in [`docs/RUNBOOK.md`](RUNBOOK.md), with exact commands: the full-mode overhead
-run on the final code (step 4); the dark-zone demo's timing and the Marquez check (step 7; the demo itself ran
-end to end once in the P5.2 sandbox, untimed); the owner's name in `CITATION.cff` (step 9); the release and
-its DOI (step 10); publishing, optional, under a different distribution name because
-`dcp` is taken on PyPI (step 11; [`V1.md`](results/V1.md#packaging-c2)).
+These are in [`docs/RUNBOOK.md`](RUNBOOK.md), with exact commands: the release and its
+DOI (step 10, set for 2026-10-11); publishing, optional, under a different distribution
+name because `dcp` is taken on PyPI (step 11; [`V1.md`](results/V1.md#packaging-c2)). The
+full-mode run on the final code (step 4), the demo's timing and the Marquez check (step 7)
+and the author in `CITATION.cff` (step 9) are done: [`local-runs.md`](results/local-runs.md),
+[`demo-local.md`](results/demo-local.md).

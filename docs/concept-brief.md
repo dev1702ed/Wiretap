@@ -1,5 +1,8 @@
 # DCP: Data Connectivity Protocol — Concept Brief
 
+> **Historical:** written before v1 was built and kept as the record of the plan. The
+> outcome, target by target, is [`docs/results/V1.md`](results/V1.md).
+
 *Solving data lineage at the transport layer*
 
 ## 1. The core thesis

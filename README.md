@@ -26,12 +26,20 @@ If the benchmarks show that, the thesis holds. If DCP merely re-derives edges Op
 already had, it is a demo, not a finding. That distinction is enforced in
 `benchmarks/README.md`.
 
+## Status
+
+**v0.1.0; v1 is closed.** The final report, with the definition of done item by item, is
+[`docs/results/V1.md`](docs/results/V1.md). Every known limitation and its product
+follow-up: [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md). How every owner-machine number
+was produced: [`docs/RUNBOOK.md`](docs/RUNBOOK.md), and each run's protocol status:
+[`docs/results/local-runs.md`](docs/results/local-runs.md).
+
 ## Results (v1)
 
 v1 is closed: [`docs/results/V1.md`](docs/results/V1.md) is the final report, with the
 definition of done item by item. Headline rows, copied from the paper evidence pack
 [`docs/paper/evidence.md`](docs/paper/evidence.md) by `benchmarks/evidence.py` (never
-retyped; the script moves them to the owner's machine's records once those are committed):
+retyped; taken from the owner's machine's records where they exist):
 
 <!-- evidence:summary:start -->
 
@@ -57,8 +65,9 @@ footer). F2, the same on the stress set, and F3-F5, overhead, are in
 - **Where DCP fails, measured:** the stress set exercises DCP's two known failure modes
   (multi-record consumers, store-mediated reads); every miss is counted by cause.
   Every known limitation and its product follow-up: [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md).
-- **The owner's remaining steps** (the final full-mode run, the demo timing, the release):
-  [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
+- **The owner's procedure** (the full-mode runs, the demo timing, the release):
+  [`docs/RUNBOOK.md`](docs/RUNBOOK.md); the runs themselves:
+  [`docs/results/local-runs.md`](docs/results/local-runs.md).
 - Phase by phase: [`CHANGELOG.md`](CHANGELOG.md).
 
 ## How it works
@@ -75,7 +84,7 @@ footer). F2, the same on the stress set, and F3-F5, overhead, are in
 | | IN | OUT (later) |
 |---|---|---|
 | Protocols | Postgres (Python DBAPI), Kafka | JDBC, gRPC, HTTP, S3, MySQL |
-| Granularity | Table/dataset-level (attested); column *names* only | Column-to-column mapping |
+| Granularity | Table/dataset-level (attested); the envelope's optional `columns` field is defined but not filled by v1's interceptors | Column names; column-to-column mapping |
 | Language | Python | Java, Go, Node |
 | Deployment | In-process library | Sidecar, eBPF |
 | Mode | Monitor-only | Inline enforcement / blocking |
@@ -86,7 +95,7 @@ glue jobs — are overwhelmingly Python. That is precisely the gap being measure
 
 ## Quickstart
 
-No code changes: run the script under `dcp-instrument`.
+No code changes: run the script under `dcp-instrument`. On Linux or macOS (bash):
 
 ```bash
 pip install -e "./sdk-python[postgres,kafka]"
@@ -141,7 +150,12 @@ dcp.patch_threadpool()   # optional: keep the trace inside ThreadPoolExecutor wo
 ## How to cite
 
 Cite the software with the metadata in [`CITATION.cff`](CITATION.cff) (GitHub's *Cite this
-repository* button reads it). Each release is archived with a DOI.
+repository* button reads it).
+
+## How this was built
+
+The code was written largely by Claude Code from owner-written task specifications and
+answer keys. The specifications are kept in [`docs/tasks/`](docs/tasks/) as the record.
 
 ## License
 

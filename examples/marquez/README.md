@@ -5,6 +5,9 @@
 > is tested (`bridges/openlineage/tests`, against the official OpenLineage schema
 > and a stub HTTP server); this example only wires it to a real Marquez. If a step
 > fails, please note which one.
+>
+> The dark-zone demo exercises the same bridge-to-Marquez path and is verified
+> ([`docs/results/demo-local.md`](../../docs/results/demo-local.md)).
 
 What you will see: two jobs, `nightly_enrich.py` and `warehouse_loader.py`,
 connected through the Kafka topic `enriched_orders`, in the Marquez web UI.
@@ -20,8 +23,7 @@ connected through the Kafka topic `enriched_orders`, in the Marquez web UI.
 
 - Docker Desktop, with `docker compose`.
 - Python 3.10 or newer.
-- Your own Postgres on `localhost:5432` and Kafka on `localhost:9092` (the same ones
-  the scratch scripts used). The scripts read `DCP_PG_DSN` and `DCP_KAFKA` if your
+- Your own Postgres on `localhost:5432` and Kafka on `localhost:9092`. The scripts read `DCP_PG_DSN` and `DCP_KAFKA` if your
   connection details differ from the defaults
   (`postgresql://postgres:postgres@localhost:5432/dcp` and `localhost:9092`).
 
@@ -130,6 +132,6 @@ Remove-Item examples/marquez/dcp_events.jsonl, examples/marquez/openlineage.json
 | `docker-compose.yml` | Marquez API, web UI and database, pinned to 0.51.1 / `postgres:14`, based on Marquez's official compose files |
 | `init-db.sh` | Creates Marquez's database and user. Copied unchanged from Marquez 0.51.1 (Apache-2.0) |
 | `seed.py` | Creates `orders` and `order_totals`. Not instrumented |
-| `nightly_enrich.py` | The producer (`scratch_produce.py`-style) |
-| `warehouse_loader.py` | The consumer (`scratch_consume.py`-style) |
+| `nightly_enrich.py` | The producer |
+| `warehouse_loader.py` | The consumer |
 | `.gitattributes` | Keeps `init-db.sh` in LF line endings on Windows checkouts, so bash can run it |

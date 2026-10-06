@@ -45,8 +45,9 @@ sets):
 - **precision** = |found ∩ expected| / |found|
 - **recall** = |found ∩ expected| / |expected|
 
-Target: 1.0 on every level. Capture is deterministic, not inferred, so anything
-below 1.0 is a bug rather than a limitation.
+Target, for the hand-written keys: 1.0 on every level. Capture is deterministic, not
+inferred, so anything below 1.0 there is a bug rather than a limitation. The generated keys
+and the stress set measure known limitations, explained item by item (below).
 
 ## Why two levels
 

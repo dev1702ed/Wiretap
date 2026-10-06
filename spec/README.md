@@ -3,7 +3,7 @@
 The envelope, the dataset identity scheme, and the propagation rules. This is the layer
 everything else depends on — and the most durable artifact in the repo.
 
-Status: **DRAFT v0.1.** Decisions 1–6 are closed (§4).
+Status: **v0.1**, released with DCP `0.1.0`. Decisions 1–6 are closed (§4).
 
 ---
 
@@ -69,8 +69,7 @@ with it to every consumer, so a consume is parented to the producer's write: the
 attested cross-process link in v1.
 
 **Protocols with no metadata channel:** v1 accepts context loss. The chain breaks, the
-graph degrades to disconnected-but-attested edges. This is a stated limitation, not a bug
-— and it is one of the things a protocol-native design would not have.
+graph degrades to disconnected-but-attested edges. This is a stated limitation, not a bug.
 
 ## 4. Decisions (closed)
 

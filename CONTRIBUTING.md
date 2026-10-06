@@ -21,7 +21,9 @@
 
 From the repository root, install every package in the pinned environment (one pip
 command, so `benchmarks/constraints.txt` applies to the three packages too), then run
-every CI step:
+every CI step. On Windows PowerShell, create and activate a virtualenv first
+(`py -3.14 -m venv .venv`, then `.venv\Scripts\Activate.ps1`); the commands below then run
+unchanged in PowerShell:
 
 ```bash
 pip install -c benchmarks/constraints.txt -e "./sdk-python[dev]" -e "./backend[dev]" -e "./bridges/openlineage[dev]" -r benchmarks/requirements.txt

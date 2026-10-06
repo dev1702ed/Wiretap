@@ -76,8 +76,9 @@ part of the `adversarial` stage:
 
 Expected: 0 events from the uninstrumented programs. The measured counts are in
 the generated results, verbatim: `docs/results/P5-sandbox.md` (this sandbox),
-the CI job summary (`--label ci`), and `docs/results/P5-local.md` (the owner's
-machine), under "Adversarial".
+the CI job summary (`--label ci`), and the owner's machine's records
+(`docs/results/P5-local.md`, and the final run, `docs/results/P5-local-final.md`, which the
+evidence pack cites as claim C1), under "Adversarial".
 
 ## 4. How the claim narrows — stated plainly
 

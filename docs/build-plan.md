@@ -1,5 +1,8 @@
 # DCP v1 — Report & Build Plan
 
+> **Historical:** written before v1 was built and kept as the record of the plan. The
+> outcome, target by target, is [`docs/results/V1.md`](results/V1.md).
+
 **DCP (Data Connectivity Protocol)** — transport-layer data lineage, open source.
 
 > One-liner: **"OpenTelemetry for data lineage."** Capture lineage where data physically

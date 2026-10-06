@@ -1,7 +1,8 @@
 # Roadmap
 
 **v1 is closed** (P5.2): the final report is [`docs/results/V1.md`](docs/results/V1.md),
-and the owner's remaining steps are in [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
+and the owner's procedure is [`docs/RUNBOOK.md`](docs/RUNBOOK.md); its one remaining step
+is the `v0.1.0` release (step 10).
 
 Three-week v1 sprint. Critical path is **P0 → P1 → P2 → P5**. P3 and P4 make DCP
 *usable*; P2 and P5 make it *true*. If the clock slips, P3/P4 compress — never P5.

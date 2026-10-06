@@ -5,7 +5,7 @@ recorded DCP events into OpenLineage RunEvents, so DCP's lineage lands in Marque
 DataHub or any other OpenLineage consumer.
 
 It is a **batch** bridge over recorded events, not a live sink. Record with the file
-sink, then translate:
+sink, then translate (from the repository root; the same commands run in PowerShell):
 
 ```bash
 pip install -e ./bridges/openlineage

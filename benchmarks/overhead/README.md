@@ -92,7 +92,7 @@ Method:
   configuration** (no DCP code); only its environment differs.
 - Each configuration runs as a **fresh process per round**. Rounds alternate the
   configurations in the fixed order `base, file, http, http-down,
-  file+sqlcomment` to cancel drift.
+  file+sqlcomment, wrap-only, capture-null` to cancel drift (the last two since P5.1).
 - **Full mode: 10 rounds × 2,000 calls per tier**, 200 warm-up calls per tier per
   round discarded. **Quick mode: 5 × 300**, warm-up 50.
 - Per call: `cursor.execute(q, params)` plus `fetchall()` where the tier returns
@@ -136,9 +136,9 @@ purpose, because `dcp-instrument` has no queue-size setting.
 |---|---|
 | The sandbox (`docs/results/P5-sandbox*.md`) | 4a, definitive for its machine; 4b on a shared cloud VM |
 | CI (`--label ci --quick`, job summary) | Noisy shared runners: **not** an authoritative overhead source |
-| The owner's machine (`docs/results/P5-local.md`) | The authoritative full-mode 4b numbers |
+| The owner's machine, P5 (`docs/results/P5-local.md`) | The authoritative full-mode 4b numbers for the P5 code |
 | The P5.1 sandbox (`docs/results/P5-p51-*.md`) | Same-machine before/after pairs for P5.1's optimisations, with the L tiers, ablations, attribution and profile; comparable only with each other |
-| The owner's machine, final code (`docs/results/P5-local-final.md`; it superseded the planned `P5-local-p51.md`) | The authoritative full-mode numbers for the final code |
+| The owner's machine, final code (`docs/results/P5-local-final.md`; it superseded the planned `P5-local-p51.md`; its runs: `docs/results/local-runs.md`) | The authoritative full-mode numbers for the final code |
 
 ## Do not
 
