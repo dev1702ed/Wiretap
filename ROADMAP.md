@@ -14,7 +14,7 @@ Three-week v1 sprint. Critical path is **P0 → P1 → P2 → P5**. P3 and P4 ma
 | **P3** | Queryable lineage | FastAPI ingest → networkx → `GET /downstream/{dataset}` | 2–3 | ☑ [results](docs/results/P3.md) |
 | **P4** | Interop | OpenLineage bridge → graph visible in Marquez | 1–2 | ☑ [results](docs/results/P4.md) (the Marquez view is written up but not yet run) |
 | **P5** | **The measurement** | Ground truth precision/recall, adversarial suite, overhead numbers | 4–5 | ☑ [results](docs/results/P5.md) for the delivered instruments; owner's full-mode run done ([P5-local](docs/results/P5-local.md)): < 1 ms p99 met on every tier, < 2% throughput not met, cache-hit path only |
-| **P5.1** | Harden the evidence | Cache-miss tiers and cost attribution, start-up, scaled generated ground truth | — | ☑ [results](docs/results/P5.1.md): < 1 ms p99 met on every T and L tier in the sandbox after the literal-normalised cache ([after](docs/results/P5-p51-after-final.md)); throughput not met; generated ground truth live; owner's `local-p51` run pending. On the owner's machine, [`local-final`](docs/results/P5-local-final.md) met < 1 ms p99 in every cell except four inconclusive write-tier cells, in a run that deviated from runbook step 3; a compliant rerun is pending ([runs](docs/results/local-runs.md)) |
+| **P5.1** | Harden the evidence | Cache-miss tiers and cost attribution, start-up, scaled generated ground truth | — | ☑ [results](docs/results/P5.1.md): < 1 ms p99 met on every T and L tier in the sandbox after the literal-normalised cache ([after](docs/results/P5-p51-after-final.md)); throughput not met; generated ground truth live; owner's `local-p51` run superseded by the compliant `local-final` rerun ([runs](docs/results/local-runs.md)) |
 | **P5.2** | Fair baselines; close v1 | Per-process OpenLineage mapping, the stress set (DCP's failure modes, measured), limitations, evidence pack, figures, release metadata, owner runbook | — | ☑ [results](docs/results/P5.2.md), [v1 report](docs/results/V1.md) |
 
 ## Why the adversarial suite is written at P0
@@ -38,14 +38,12 @@ meet it, is in [`docs/results/V1.md`](docs/results/V1.md#the-definition-of-done-
 - [x] The multi-hop trace context survives Postgres → Kafka → consumer — **met**
 - [x] The adversarial demo shows an edge OpenLineage misses and DCP catches — **met**
 - [ ] Measured overhead < 1 ms p99, < 2% throughput — **not met**: < 2% throughput is not
-  met. < 1 ms p99 added is met on every T and L tier in the sandbox
-  ([`P5-p51-after-final.md`](docs/results/P5-p51-after-final.md)). On the owner's machine
-  ([`P5-local-final.md`](docs/results/P5-local-final.md), evidence
-  [C6](docs/paper/evidence.md#c6-overhead)) it is met in every cell except four write-tier
-  cells, three with the `http` sink and one with `file`, which are inconclusive (their 95%
-  CI spans 1 ms). That run deviated from runbook step 3 (OneDrive was syncing and the
-  editor was open); one compliant rerun, `local-final-2`, is pending, and this wording is
-  updated once more after it, whatever it shows ([`local-runs.md`](docs/results/local-runs.md))
+  met. < 1 ms p99 added is met on every T and L tier and configuration on the owner's
+  machine in a compliant run ([`P5-local-final.md`](docs/results/P5-local-final.md),
+  evidence [C6](docs/paper/evidence.md#c6-overhead)), as it is in the sandbox
+  ([`P5-p51-after-final.md`](docs/results/P5-p51-after-final.md)). An earlier run with
+  documented interference had four inconclusive write-tier cells
+  ([`local-runs.md`](docs/results/local-runs.md))
 - [ ] Spec, quickstart, and concepts docs published under Apache 2.0 — **owner step
   pending**: public under Apache 2.0, the citable `v0.1.0` release is step 10
 
