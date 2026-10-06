@@ -12,7 +12,7 @@ Three-week v1 sprint. Critical path is **P0 → P1 → P2 → P5**. P3 and P4 ma
 | **P1** | Capture one protocol | `dcp.patch_psycopg()` emits schema-valid dataset events | 3–4 | ☑ |
 | **P2** | Prove multi-hop | Kafka interceptor + contextvars + header propagation; 2-hop flow links | 4–5 | ☑ |
 | **P3** | Queryable lineage | FastAPI ingest → networkx → `GET /downstream/{dataset}` | 2–3 | ☑ [results](docs/results/P3.md) |
-| **P4** | Interop | OpenLineage bridge → graph visible in Marquez | 1–2 | ☑ [results](docs/results/P4.md) (the Marquez view is written up but not yet run) |
+| **P4** | Interop | OpenLineage bridge → graph visible in Marquez | 1–2 | ☑ [results](docs/results/P4.md) (the Marquez view is verified through the dark-zone demo: [`demo-local.md`](docs/results/demo-local.md)) |
 | **P5** | **The measurement** | Ground truth precision/recall, adversarial suite, overhead numbers | 4–5 | ☑ [results](docs/results/P5.md) for the delivered instruments; owner's full-mode run done ([P5-local](docs/results/P5-local.md)): < 1 ms p99 met on every tier, < 2% throughput not met, cache-hit path only |
 | **P5.1** | Harden the evidence | Cache-miss tiers and cost attribution, start-up, scaled generated ground truth | — | ☑ [results](docs/results/P5.1.md): < 1 ms p99 met on every T and L tier in the sandbox after the literal-normalised cache ([after](docs/results/P5-p51-after-final.md)); throughput not met; generated ground truth live; owner's `local-p51` run superseded by the compliant `local-final` rerun ([runs](docs/results/local-runs.md)) |
 | **P5.2** | Fair baselines; close v1 | Per-process OpenLineage mapping, the stress set (DCP's failure modes, measured), limitations, evidence pack, figures, release metadata, owner runbook | — | ☑ [results](docs/results/P5.2.md), [v1 report](docs/results/V1.md) |
@@ -34,16 +34,18 @@ meet it, is in [`docs/results/V1.md`](docs/results/V1.md#the-definition-of-done-
 - [x] `docker-compose up` gives a lineage graph in Marquez in under 5 minutes — **met**:
   the owner's cold run (the demo's images removed first) and warm run were both under 5
   minutes, with Marquez's API showing both jobs linked through `enriched_orders` and the
-  demo exiting `0` ([`demo-local.md`](docs/results/demo-local.md))
+  demo exiting `0` ([`demo-local.md`](docs/results/demo-local.md)). Caveat, from the
+  record: the cold run reused the locally present `apache/kafka:3.8.0` and `postgres:16`
+  images, which were in use elsewhere and not removed
 - [x] The multi-hop trace context survives Postgres → Kafka → consumer — **met**
 - [x] The adversarial demo shows an edge OpenLineage misses and DCP catches — **met**
-- [ ] Measured overhead < 1 ms p99, < 2% throughput — **not met**: < 2% throughput is not
-  met. < 1 ms p99 added is met on every T and L tier and configuration on the owner's
-  machine in a compliant run ([`P5-local-final.md`](docs/results/P5-local-final.md),
-  evidence [C6](docs/paper/evidence.md#c6-overhead)), as it is in the sandbox
-  ([`P5-p51-after-final.md`](docs/results/P5-p51-after-final.md)). An earlier run with
-  documented interference had four inconclusive write-tier cells
-  ([`local-runs.md`](docs/results/local-runs.md))
+- [ ] Measured overhead < 1 ms p99, < 2% throughput — **half met**: < 1 ms p99 added is
+  **met** on every T and L tier and every configuration — in the sandbox
+  ([`P5-p51-after-final.md`](docs/results/P5-p51-after-final.md)) and on the owner's machine
+  in the compliant rerun ([`P5-local-final.md`](docs/results/P5-local-final.md), evidence
+  [C6](docs/paper/evidence.md#c6-overhead)). An earlier owner run, which deviated from
+  runbook step 3, had four inconclusive write-tier cells; it is archived and disclosed
+  ([`local-runs.md`](docs/results/local-runs.md)). < 2% throughput is **not met**
 - [ ] Spec, quickstart, and concepts docs published under Apache 2.0 — **owner step
   pending**: public under Apache 2.0, the citable `v0.1.0` release is step 10
 

@@ -1,3 +1,5 @@
+Executed 2026-10-05/06. The rerun used the label local-final, not local-final-2; see docs/results/local-runs.md.
+
 # Local tasks: close the owner's runs (Claude Code, owner's machine)
 
 You are Claude Code in the owner's VS Code, on Windows (PowerShell), in the DCP repo

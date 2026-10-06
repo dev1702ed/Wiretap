@@ -138,7 +138,7 @@ purpose, because `dcp-instrument` has no queue-size setting.
 | CI (`--label ci --quick`, job summary) | Noisy shared runners: **not** an authoritative overhead source |
 | The owner's machine (`docs/results/P5-local.md`) | The authoritative full-mode 4b numbers |
 | The P5.1 sandbox (`docs/results/P5-p51-*.md`) | Same-machine before/after pairs for P5.1's optimisations, with the L tiers, ablations, attribution and profile; comparable only with each other |
-| The owner's machine, P5.1 (`docs/results/P5-local-p51.md`, pending) | The authoritative full-mode numbers for the P5.1 code |
+| The owner's machine, final code (`docs/results/P5-local-final.md`; it superseded the planned `P5-local-p51.md`) | The authoritative full-mode numbers for the final code |
 
 ## Do not
 

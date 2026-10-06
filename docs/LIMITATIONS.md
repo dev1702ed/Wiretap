@@ -115,8 +115,9 @@ follow-up below is open.
 | T5 analytical | file | +104.6 [+95.8, +113.3] | 5125.4 | 9.47% | 1.04% | 0.10% |
 | L5 analytical, literal (added in P5.1) | file | +257.8 [+235.3, +281.7] | 12631.1 | 20.49% | 2.51% | 0.26% |
 
-  The owner's full-mode run on the final code is pending ([`RUNBOOK.md`](RUNBOOK.md),
-  step 4); the evidence pack and the figures switch to it when it is committed.
+  The owner's compliant full-mode run on the final code is
+  [`P5-local-final-fixed-cost.md`](results/P5-local-final-fixed-cost.md); the evidence pack
+  ([C8](paper/evidence.md#c8-throughput-model)) and the figures use it.
 - **Follow-up.** Less Python work per event (IDs, timestamps, capture's own logic);
   moving work to a thread does not reduce the cost per call.
 
