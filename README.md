@@ -152,6 +152,10 @@ dcp.patch_threadpool()   # optional: keep the trace inside ThreadPoolExecutor wo
 Cite the software with the metadata in [`CITATION.cff`](CITATION.cff) (GitHub's *Cite this
 repository* button reads it).
 
+## Development methodology
+
+DCP was conceived, designed and evaluated by Dev Desai, who set the research direction, made scope and design decisions. AI assistants supported the implementation. Each phase was built from a written task specification, retained in [`docs/tasks/`](docs/tasks/) as a record of the decisions and pre-registered expectations that preceded the results.
+
 ## License
 
 Apache 2.0 ([`LICENSE`](LICENSE)).
