@@ -45,7 +45,7 @@ def test_the_changelog_has_a_0_1_0_entry_for_every_phase():
         assert f"(docs/results/{report}.md)" in text, report
 
 
-def test_the_citation_file_is_cff_1_2_with_only_the_owner_name_placeholder():
+def test_the_citation_file_is_cff_1_2_with_no_placeholder():
     text = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
     fields = dict(re.findall(r"^([a-z-]+): (.+)$", text, re.MULTILINE))
     assert fields["cff-version"] == "1.2.0"
@@ -56,9 +56,8 @@ def test_the_citation_file_is_cff_1_2_with_only_the_owner_name_placeholder():
     assert fields["title"].startswith('"DCP')
     authors = text.split("authors:", 1)[1]
     assert "family-names:" in authors and "given-names:" in authors
-    # The one placeholder allowed; the owner fills it (docs/RUNBOOK.md, step 9).
-    placeholders = set(re.findall(r"REPLACE_[A-Z_]+", text))
-    assert placeholders <= {"REPLACE_WITH_OWNER_NAME"}
+    # The owner filled in the author (docs/RUNBOOK.md, step 9): no placeholder remains.
+    assert not re.findall(r"REPLACE_[A-Z_]+", text)
 
 
 def test_figures_are_committed_as_binary():
