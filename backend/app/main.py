@@ -39,7 +39,7 @@ def create_app(db_path: str | os.PathLike | None = None) -> FastAPI:
         finally:
             store.close()
 
-    app = FastAPI(title="DCP Backend", version="0.1.0.dev0", lifespan=lifespan)
+    app = FastAPI(title="DCP Backend", version="0.1.0", lifespan=lifespan)
     app.include_router(router)
     return app
 
