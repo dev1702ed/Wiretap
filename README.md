@@ -152,11 +152,6 @@ dcp.patch_threadpool()   # optional: keep the trace inside ThreadPoolExecutor wo
 Cite the software with the metadata in [`CITATION.cff`](CITATION.cff) (GitHub's *Cite this
 repository* button reads it).
 
-## How this was built
-
-The code was written largely by Claude Code from owner-written task specifications and
-answer keys. The specifications are kept in [`docs/tasks/`](docs/tasks/) as the record.
-
 ## License
 
 Apache 2.0 ([`LICENSE`](LICENSE)).
