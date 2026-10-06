@@ -212,6 +212,21 @@ def test_extracted_lines_are_verbatim_and_in_order(repo):
                 position = source.index(line, position) + 1  # raises if retyped
 
 
+def test_each_source_line_sits_under_its_own_table(repo):
+    """Every Source line follows the lines it names, so a reader attributes each
+    table to its own section, never to the one below it."""
+    records = evidence.load(repo[1])
+    pack = evidence.render(records).splitlines()
+    for claim in evidence.claims(records):
+        start = pack.index(f"**Claim.** {claim.statement}") + 1
+        for block in claim.blocks:
+            source = pack.index(evidence._source_line(block), start)
+            above = [line for line in pack[start:source] if line]
+            expected = [line for line in evidence.demote(block.lines) if line]
+            assert above == expected, (claim.key, block.where)
+            start = source + 1
+
+
 def test_live_is_preferred_and_replay_used_when_live_was_skipped(repo):
     by_key = {c.key: c for c in evidence.claims(evidence.load(repo[1]))}
     c3_lines = "\n".join(by_key["C3"].blocks[1].lines)
