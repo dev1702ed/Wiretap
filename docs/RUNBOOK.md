@@ -17,8 +17,8 @@ Marquez API check and the record it writes) is also tested in
 **Status.** Steps 1-9 are done: the runs and their protocol status are in
 [`results/local-runs.md`](results/local-runs.md), the demo record is
 [`results/demo-local.md`](results/demo-local.md), and `CITATION.cff` names the author.
-Step 10, the `v0.1.0` release, is set for 2026-10-11; step 11 is deferred (the name `dcp`
-is taken on PyPI). The steps stay below as the procedure that produced the records.
+Step 10, the `v0.1.0` release, is set for 2026-10-11, and step 11 publishes the SDK to PyPI
+as `wiretap-dcp` (the name `dcp` is taken there). The steps stay below as the procedure that produced the records.
 
 **Before you start.** You need: Git for Windows; Python 3.14 (`py -3.14 --version`);
 Docker Desktop, running; about 5 GB of free disk; and roughly 90 minutes, most of it
@@ -356,30 +356,34 @@ can stay).
 
 ## Step 11 — Optional: TestPyPI, then PyPI
 
-Only if the names are available. **`dcp` is taken on PyPI** (checked in P5.1 and again in
-P5.2, see [`V1.md`](results/V1.md#packaging-c2)); `dcp-backend` and `dcp-openlineage`
-were free. Publishing the SDK therefore needs a different distribution name first (for
-example `dcp-lineage`, free when checked): change `name = "dcp"` in
-`sdk-python/pyproject.toml` and the install line in `README.md`, run step 2's tests, and
-commit. The import name stays `dcp`.
+Only the SDK is published, as **`wiretap-dcp`**; the import name stays `dcp`. **`dcp` is
+taken on PyPI** (checked in P5.1 and again in P5.2, see [`V1.md`](results/V1.md#packaging-c2));
+`wiretap-dcp` was free on 2026-10-11. The repository keeps the distribution name `dcp`: the
+PyPI files are built from the `v0.1.0` tag in a temporary copy of `sdk-python/` in which only
+`name = "dcp"` in `pyproject.toml` is changed to `name = "wiretap-dcp"`. The backend is not
+published: its wheel installs a top-level package named `app`, which would collide with other
+projects in `site-packages`. The bridge can follow later. PyPI never accepts the same file
+twice, so TestPyPI comes first.
 
 ```powershell
-python -m pip install build twine
-Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
-python -m build sdk-python --outdir dist
-python -m build backend --outdir dist
-python -m build bridges/openlineage --outdir dist
-twine check dist/*
-twine upload --repository testpypi dist/*
+git archive --format=zip -o $env:TEMP\wiretap-src.zip v0.1.0 sdk-python
+Expand-Archive $env:TEMP\wiretap-src.zip -DestinationPath $env:TEMP\wiretap-src -Force
+# in $env:TEMP\wiretap-src\sdk-python\pyproject.toml change: name = "dcp"  ->  name = "wiretap-dcp"
+python -m pip install --upgrade build twine
+python -m build $env:TEMP\wiretap-src\sdk-python --outdir $env:TEMP\wiretap-src\dist
+twine check $env:TEMP\wiretap-src\dist\*
+twine upload --repository testpypi $env:TEMP\wiretap-src\dist\*
 py -3.14 -m venv $env:TEMP\dcp-testpypi
-& $env:TEMP\dcp-testpypi\Scripts\python.exe -m pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "dcp-lineage==0.1.0"
-& $env:TEMP\dcp-testpypi\Scripts\dcp-instrument.exe python -c "print('ok')"
-twine upload dist/*
+& $env:TEMP\dcp-testpypi\Scripts\python.exe -m pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "wiretap-dcp==0.1.0"
+& $env:TEMP\dcp-testpypi\Scripts\dcp-instrument.exe python -c "import dcp; print('ok', dcp.__version__)"
+twine upload $env:TEMP\wiretap-src\dist\*
 ```
 
-**Expect:** six `Successfully built` names and six `PASSED` lines from `twine check`;
-the TestPyPI install succeeds and prints `ok`; the final upload prints a
-`View at: https://pypi.org/project/...` line per package.
+**Expect:** `Successfully built wiretap_dcp-0.1.0.tar.gz and wiretap_dcp-0.1.0-py3-none-any.whl`;
+two `PASSED` lines from `twine check`; the TestPyPI install succeeds and prints `ok 0.1.0`;
+the final upload prints `View at: https://pypi.org/project/wiretap-dcp/0.1.0/`.
 
 **If not:** `403 ... isn't allowed to upload to project`: the name is taken; choose
-another. `twine` asks for credentials: use an API token (user `__token__`).
+another. `400 File already exists`: that version is already uploaded and cannot be replaced;
+release the next version. `twine` asks for credentials: use an API token (user `__token__`),
+one for TestPyPI and one for PyPI.

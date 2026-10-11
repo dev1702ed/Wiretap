@@ -3,7 +3,7 @@
 All notable changes to DCP. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the three packages (`dcp`, `dcp-backend`, `dcp-openlineage`) share one version.
 
-## [0.1.0] - v1
+## [0.1.0] - 2026-10-11
 
 The first release: transport-layer lineage capture for Python (Postgres and Kafka),
 a queryable lineage graph, an OpenLineage bridge, and the benchmarks that measure what
@@ -50,6 +50,11 @@ number lives in those reports and the records they cite, not here.
   byte-for-byte beside its compliant rerun. [Runs index](docs/results/local-runs.md).
 - **The demo record.** The dark-zone demo timed cold and warm, with Marquez's API checked
   for both jobs linked through `enriched_orders`. [Record](docs/results/demo-local.md).
+- **PyPI.** The SDK is published as `wiretap-dcp` (`pip install "wiretap-dcp[postgres,kafka]"`);
+  the import name stays `dcp`, because the PyPI name `dcp` belongs to an unrelated project.
+  The PyPI files are built from the `v0.1.0` tag with two changes in `sdk-python/` only: the
+  distribution name in `pyproject.toml` (`dcp` to `wiretap-dcp`) and nothing else. The
+  backend and the bridge are not published.
 
 ### Fixed
 

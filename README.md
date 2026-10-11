@@ -98,9 +98,12 @@ glue jobs — are overwhelmingly Python. That is precisely the gap being measure
 No code changes: run the script under `dcp-instrument`. On Linux or macOS (bash):
 
 ```bash
-pip install -e "./sdk-python[postgres,kafka]"
+pip install "wiretap-dcp[postgres,kafka]"     # from PyPI; the import name is dcp
 DCP_EMIT=file://dcp_events.jsonl dcp-instrument python my_script.py
 ```
+
+From a clone instead: `pip install -e "./sdk-python[postgres,kafka]"` (the same code; the
+distribution is named `dcp` there).
 
 On Windows PowerShell: `$env:DCP_EMIT = "file://dcp_events.jsonl"; dcp-instrument python my_script.py`.
 
