@@ -17,8 +17,8 @@ Marquez API check and the record it writes) is also tested in
 **Status.** Steps 1-9 are done: the runs and their protocol status are in
 [`results/local-runs.md`](results/local-runs.md), the demo record is
 [`results/demo-local.md`](results/demo-local.md), and `CITATION.cff` names the author.
-Step 10, the `v0.1.0` release, is set for 2026-10-11, and step 11 publishes the SDK to PyPI
-as `wiretap-dcp` (the name `dcp` is taken there). The steps stay below as the procedure that produced the records.
+Steps 10 and 11 are done too: `v0.1.0` was released on 2026-10-11 with its Zenodo DOI, and
+the SDK is on PyPI as `wiretap-dcp` (the name `dcp` is taken there). The steps stay below as the procedure that produced the records.
 
 **Before you start.** You need: Git for Windows; Python 3.14 (`py -3.14 --version`);
 Docker Desktop, running; about 5 GB of free disk; and roughly 90 minutes, most of it
@@ -42,9 +42,9 @@ python -c "import dcp, dcp_openlineage, matplotlib, psycopg, confluent_kafka; pr
 ```
 
 **Expect:** `pip install` ends with `Successfully installed ...`, a list that includes
-`dcp-0.1.0`, `dcp-backend-0.1.0`, `dcp-openlineage-0.1.0` and `matplotlib-3.11.2`. The
+`dcp-0.1.1`, `dcp-backend-0.1.1`, `dcp-openlineage-0.1.1` and `matplotlib-3.11.2`. The
 kernel line prints `Installed kernelspec python3 in ...`. The last line prints
-`0.1.0 0.1.0 3.11.2`.
+`0.1.1 0.1.1 3.11.2`.
 
 **If not:**
 

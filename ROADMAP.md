@@ -1,8 +1,8 @@
 # Roadmap
 
 **v1 is closed** (P5.2): the final report is [`docs/results/V1.md`](docs/results/V1.md),
-and the owner's procedure is [`docs/RUNBOOK.md`](docs/RUNBOOK.md); its one remaining step
-is the `v0.1.0` release (step 10).
+and the owner's procedure is [`docs/RUNBOOK.md`](docs/RUNBOOK.md). `v0.1.0` was released on
+2026-10-11 on GitHub and Zenodo, and the SDK on PyPI as `wiretap-dcp`.
 
 Three-week v1 sprint. Critical path is **P0 → P1 → P2 → P5**. P3 and P4 make DCP
 *usable*; P2 and P5 make it *true*. If the clock slips, P3/P4 compress — never P5.
@@ -29,9 +29,10 @@ single largest risk reducer for a three-week P0–P5.
 Final states, as of v1's close (P5.2). Each item's evidence, and what would be needed to
 meet it, is in [`docs/results/V1.md`](docs/results/V1.md#the-definition-of-done-final).
 
-- [ ] `pip install dcp` + two lines instruments a Postgres+Kafka Python flow — **not met**
-  as worded: instrumenting takes no lines (`dcp-instrument`) and the packages are ready,
-  but the name `dcp` is taken on PyPI (publishing under another name is owner step 11)
+- [x] `pip install dcp` + two lines instruments a Postgres+Kafka Python flow — **met**,
+  under the PyPI name `wiretap-dcp` (the name `dcp` is taken there; the import name is
+  `dcp`): `pip install "wiretap-dcp[postgres,kafka]"`, and instrumenting takes no lines
+  (`dcp-instrument`)
 - [x] `docker-compose up` gives a lineage graph in Marquez in under 5 minutes — **met**:
   the owner's cold run (the demo's images removed first) and warm run were both under 5
   minutes, with Marquez's API showing both jobs linked through `enriched_orders` and the
@@ -47,8 +48,8 @@ meet it, is in [`docs/results/V1.md`](docs/results/V1.md#the-definition-of-done-
   [C6](docs/paper/evidence.md#c6-overhead)). An earlier owner run, which deviated from
   runbook step 3, had four inconclusive write-tier cells; it is archived and disclosed
   ([`local-runs.md`](docs/results/local-runs.md)). < 2% throughput is **not met**
-- [ ] Spec, quickstart, and concepts docs published under Apache 2.0 — **owner step
-  pending**: public under Apache 2.0, the citable `v0.1.0` release is step 10
+- [x] Spec, quickstart, and concepts docs published under Apache 2.0 — **met**: public
+  under Apache 2.0, and citable through the `v0.1.0` release and its Zenodo DOI
 
 ## After v1: product follow-ups
 

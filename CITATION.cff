@@ -3,7 +3,8 @@ message: "If you use DCP or its benchmarks, please cite it as below."
 type: software
 title: "DCP: transport-layer data lineage"
 abstract: "DCP captures data lineage where data physically moves, inside the Postgres and Kafka client libraries, and measures what application-layer lineage (OpenLineage) misses."
-version: 0.1.0
+version: 0.1.1
+doi: 10.5281/zenodo.23297070
 date-released: "2026-10-11"
 license: Apache-2.0
 repository-code: "https://github.com/dev1702ed/Wiretap"

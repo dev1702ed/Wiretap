@@ -6,7 +6,7 @@ import pathlib
 import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 PYPROJECTS = ("sdk-python", "backend", "bridges/openlineage")
 
 

@@ -3,6 +3,24 @@
 All notable changes to DCP. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the three packages (`dcp`, `dcp-backend`, `dcp-openlineage`) share one version.
 
+## [0.1.1] - 2026-10-11
+
+Metadata and documentation only; the code is unchanged from 0.1.0.
+
+### Added
+
+- The SDK's PyPI page (`wiretap-dcp`) links to the repository, the changelog and the DOI.
+- The Zenodo DOI: a badge in the README, and `doi` in `CITATION.cff` (the concept DOI,
+  10.5281/zenodo.23297070, which always resolves to the latest version).
+
+### Fixed
+
+- The 0.1.0 entry said the PyPI files were built with "two changes"; there is one, the
+  distribution name.
+- After the 0.1.0 release, the status lines in the README, `ROADMAP.md`,
+  [`docs/results/V1.md`](docs/results/V1.md), [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md)
+  and [`docs/RUNBOOK.md`](docs/RUNBOOK.md) still called the release and PyPI pending.
+
 ## [0.1.0] - 2026-10-11
 
 The first release: transport-layer lineage capture for Python (Postgres and Kafka),
@@ -52,8 +70,8 @@ number lives in those reports and the records they cite, not here.
   for both jobs linked through `enriched_orders`. [Record](docs/results/demo-local.md).
 - **PyPI.** The SDK is published as `wiretap-dcp` (`pip install "wiretap-dcp[postgres,kafka]"`);
   the import name stays `dcp`, because the PyPI name `dcp` belongs to an unrelated project.
-  The PyPI files are built from the `v0.1.0` tag with two changes in `sdk-python/` only: the
-  distribution name in `pyproject.toml` (`dcp` to `wiretap-dcp`) and nothing else. The
+  The PyPI files are built from the `v0.1.0` tag with one change, in a temporary copy of
+  `sdk-python/`: the distribution name in `pyproject.toml` (`dcp` to `wiretap-dcp`). The
   backend and the bridge are not published.
 
 ### Fixed
@@ -65,4 +83,5 @@ number lives in those reports and the records they cite, not here.
 
 Every known limitation and its product follow-up: [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md).
 
+[0.1.1]: https://github.com/dev1702ed/Wiretap/releases/tag/v0.1.1
 [0.1.0]: https://github.com/dev1702ed/Wiretap/releases/tag/v0.1.0

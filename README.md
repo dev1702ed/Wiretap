@@ -1,5 +1,7 @@
 # DCP — Data Connectivity Protocol
 
+[![DOI](https://zenodo.org/badge/1367347351.svg)](https://doi.org/10.5281/zenodo.23297070)
+
 **Transport-layer data lineage.** Capture lineage where data physically moves — the wire —
 not from what applications report they did.
 
@@ -28,7 +30,7 @@ already had, it is a demo, not a finding. That distinction is enforced in
 
 ## Status
 
-**v0.1.0; v1 is closed.** The final report, with the definition of done item by item, is
+**v0.1.1; v1 is closed.** Released on GitHub and Zenodo, and on PyPI as `wiretap-dcp`. The final report, with the definition of done item by item, is
 [`docs/results/V1.md`](docs/results/V1.md). Every known limitation and its product
 follow-up: [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md). How every owner-machine number
 was produced: [`docs/RUNBOOK.md`](docs/RUNBOOK.md), and each run's protocol status:
@@ -153,7 +155,8 @@ dcp.patch_threadpool()   # optional: keep the trace inside ThreadPoolExecutor wo
 ## How to cite
 
 Cite the software with the metadata in [`CITATION.cff`](CITATION.cff) (GitHub's *Cite this
-repository* button reads it).
+repository* button reads it). The DOI [10.5281/zenodo.23297070](https://doi.org/10.5281/zenodo.23297070)
+always resolves to the latest version; each version's own DOI is on its Zenodo record.
 
 ## Development methodology
 

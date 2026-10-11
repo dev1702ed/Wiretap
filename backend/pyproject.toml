@@ -1,6 +1,6 @@
 [project]
 name = "dcp-backend"
-version = "0.1.0"
+version = "0.1.1"
 description = "DCP ingest, identity resolution, and lineage graph."
 readme = "README.md"
 requires-python = ">=3.10"
